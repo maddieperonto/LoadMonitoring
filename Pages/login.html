@@ -403,8 +403,19 @@
             return;
         }
 
-        // Success — redirect to command center
-        window.location.href = './index.html';
+        // Success — redirect based on role
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', (await supabase.auth.getUser()).data.user.id)
+            .single();
+
+        const role = profile?.role;
+        if (role === 'athletic_trainer') {
+            window.location.href = './injury_risk.html';
+        } else {
+            window.location.href = './index.html';
+    }
     });
 
     // Clear error when user starts typing again
