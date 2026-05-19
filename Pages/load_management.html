@@ -1,0 +1,782 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     DATA SOURCE: Supabase (live fetch)
+     To swap real data: import your CSV exports using the Python scripts
+     in /scripts/ then run seed_data.sql replacements.
+     Table/column documentation: see /DATA_SOURCES.md
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load Management — UF S&C</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --uf-orange: #FA4616;
+            --uf-blue:   #003087;
+            --uf-navy:   #001F5B;
+            --bg:        #F5F5F5;
+            --surface:   #FFFFFF;
+            --text:      #1A1A1A;
+            --muted:     #6B7280;
+            --border:    #E5E7EB;
+            --red:       #DC2626;
+            --amber:     #D97706;
+            --green:     #16A34A;
+            --red-bg:    #FEF2F2;
+            --amber-bg:  #FFFBEB;
+            --green-bg:  #F0FDF4;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .page-wrap { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+        .page-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.75rem;
+        }
+        .page-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.8rem; font-weight: 700; color: var(--uf-navy);
+        }
+
+        /* ── Section ────────────────────────────────────────────────────── */
+        .section-label {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem;
+        }
+
+        /* ── Cards ──────────────────────────────────────────────────────── */
+        .card {
+            background: var(--surface); border-radius: 10px;
+            border: 1px solid var(--border); padding: 1.25rem;
+        }
+        .card-title {
+            font-weight: 600; font-size: 0.95rem; color: var(--uf-navy);
+            margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem;
+        }
+        .card-sub { font-size: 0.75rem; color: var(--muted); margin-bottom: 1rem; }
+        .chart-wrap { position: relative; height: 260px; }
+
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.75rem; }
+        .full-col { margin-bottom: 1.75rem; }
+
+        /* ── Zone labels ────────────────────────────────────────────────── */
+        .zone-tags {
+            display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;
+        }
+        .zone-tag {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            padding: 0.2rem 0.6rem; border-radius: 6px;
+            font-size: 0.72rem; font-weight: 600;
+        }
+        .zone-safe   { background: var(--green-bg); color: var(--green); }
+        .zone-caution{ background: var(--amber-bg); color: var(--amber); }
+        .zone-danger { background: var(--red-bg);   color: var(--red);   }
+
+        /* ── Filters bar ────────────────────────────────────────────────── */
+        .filters-bar {
+            display: flex; align-items: center; gap: 0.75rem;
+            flex-wrap: wrap; margin-bottom: 1.25rem;
+        }
+        .filter-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+        select, .btn-apply {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0.38rem 0.65rem;
+            color: var(--text);
+            background: var(--surface);
+            cursor: pointer;
+        }
+        .btn-apply {
+            background: var(--uf-orange); color: #fff;
+            border-color: transparent; font-weight: 600;
+        }
+        .btn-apply:hover { background: #e03d10; }
+
+        /* ── Table ──────────────────────────────────────────────────────── */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        thead th {
+            background: #F9FAFB; padding: 0.6rem 0.85rem;
+            text-align: left; font-size: 0.7rem; font-weight: 600;
+            letter-spacing: 0.05em; text-transform: uppercase;
+            color: var(--muted); border-bottom: 1px solid var(--border);
+            white-space: nowrap; cursor: pointer; user-select: none;
+        }
+        thead th:hover { background: #F3F4F6; }
+        thead th.sorted-asc::after  { content: ' ↑'; }
+        thead th.sorted-desc::after { content: ' ↓'; }
+        tbody tr { border-bottom: 1px solid #F3F4F6; transition: background 0.1s; }
+        tbody tr:nth-child(even) { background: #FAFAFA; }
+        tbody tr:hover { background: #F0F4FF; }
+        tbody td { padding: 0.6rem 0.85rem; vertical-align: middle; }
+
+        .acwr-cell { font-weight: 700; border-radius: 4px; padding: 0.15rem 0.4rem; font-size: 0.8rem; }
+        .acwr-safe    { background: var(--green-bg); color: var(--green); }
+        .acwr-caution { background: var(--amber-bg); color: var(--amber); }
+        .acwr-danger  { background: var(--red-bg);   color: var(--red);   }
+
+        .flag-dot {
+            display: inline-block; width: 8px; height: 8px;
+            border-radius: 50%; margin-right: 4px;
+        }
+
+        /* ── Export button ──────────────────────────────────────────────── */
+        .btn-export {
+            font-family: 'Inter', sans-serif; font-size: 0.78rem; font-weight: 600;
+            color: var(--uf-blue); background: none;
+            border: 1px solid var(--uf-blue); border-radius: 6px;
+            padding: 0.35rem 0.75rem; cursor: pointer; transition: background 0.15s;
+        }
+        .btn-export:hover { background: rgba(0,48,135,0.06); }
+
+        /* ── RPE Panel ──────────────────────────────────────────────────── */
+        .rpe-panel {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+        }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label {
+            display: block; font-size: 0.75rem; font-weight: 600;
+            letter-spacing: 0.04em; text-transform: uppercase;
+            color: var(--uf-navy); margin-bottom: 0.4rem;
+        }
+        .form-group input, .form-group select {
+            width: 100%; padding: 0.6rem 0.85rem;
+            font-family: 'Inter', sans-serif; font-size: 0.9rem;
+            color: var(--text); background: #F9FAFB;
+            border: 1.5px solid var(--border); border-radius: 8px; outline: none;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--uf-blue);
+            box-shadow: 0 0 0 3px rgba(0,48,135,0.1);
+            background: #fff;
+        }
+        .btn-submit {
+            width: 100%; padding: 0.75rem; font-family: 'Inter', sans-serif;
+            font-size: 0.9rem; font-weight: 600; color: #fff;
+            background: var(--uf-orange); border: none; border-radius: 8px;
+            cursor: pointer; transition: background 0.15s; margin-top: 0.25rem;
+        }
+        .btn-submit:hover { background: #e03d10; }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .session-load-display {
+            background: var(--uf-navy); border-radius: 10px; padding: 1.25rem;
+            color: #fff; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center; gap: 0.5rem;
+            min-height: 160px;
+        }
+        .session-load-label { font-size: 0.75rem; color: rgba(255,255,255,0.6); letter-spacing: 0.06em; text-transform: uppercase; }
+        .session-load-value { font-family: 'Barlow Condensed', sans-serif; font-size: 3.5rem; font-weight: 700; color: var(--uf-orange); line-height: 1; }
+        .session-load-formula { font-size: 0.75rem; color: rgba(255,255,255,0.5); }
+
+        .toast {
+            position: fixed; bottom: 1.5rem; right: 1.5rem;
+            background: var(--uf-navy); color: #fff;
+            border-radius: 8px; padding: 0.75rem 1.25rem;
+            font-size: 0.85rem; font-weight: 500;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transform: translateY(80px); opacity: 0;
+            transition: all 0.3s ease; z-index: 9999;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+
+        [data-tip] { border-bottom: 1px dashed var(--muted); cursor: help; }
+
+        @media (max-width: 900px) {
+            .two-col   { grid-template-columns: 1fr; }
+            .rpe-panel { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <div class="page-header">
+        <h1 class="page-title">GPS & Load Management</h1>
+        <button class="btn-export" id="export-btn">⬇ Export CSV</button>
+    </div>
+
+    <!-- ── ACWR Charts ─────────────────────────────────────────────────── -->
+    <div class="section-label">Acute:Chronic Workload Ratio</div>
+    <div class="zone-tags">
+        <span class="zone-tag zone-safe">● Safe (0.8–1.3)</span>
+        <span class="zone-tag zone-caution">● Caution (1.3–1.5)</span>
+        <span class="zone-tag zone-danger">● Danger (&gt;1.5 or &lt;0.8)</span>
+        <span style="font-size:0.72rem;color:var(--muted);margin-left:0.25rem">
+            <span data-tip="Acute:Chronic Workload Ratio — compares the last 7-day load (acute) to the rolling 28-day average load (chronic). Values above 1.5 indicate excessive spike risk. Values below 0.8 may indicate undertraining.">What is ACWR?</span>
+        </span>
+    </div>
+
+    <div class="two-col">
+        <!-- Multi-line ACWR by position group -->
+        <div class="card">
+            <div class="card-title">ACWR by Position Group — Last 28 Days</div>
+            <div class="card-sub">Toggle position groups using the legend</div>
+            <div class="chart-wrap"><canvas id="acwr-group-chart"></canvas></div>
+        </div>
+
+        <!-- Individual ACWR bar chart -->
+        <div class="card">
+            <div class="card-title">Individual ACWR — Current Week</div>
+            <div class="card-sub">Sorted high → low · Color = zone</div>
+            <div class="chart-wrap"><canvas id="acwr-individual-chart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ── Daily Load Table ────────────────────────────────────────────── -->
+    <div class="section-label">Daily Load Table</div>
+    <div class="card full-col">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+            <div class="filters-bar" style="margin-bottom:0">
+                <span class="filter-label">Position:</span>
+                <select id="pos-filter">
+                    <option value="all">All Positions</option>
+                    <option value="QB">QB</option>
+                    <option value="RB">RB</option>
+                    <option value="WR">WR</option>
+                    <option value="TE">TE</option>
+                    <option value="OL">OL</option>
+                    <option value="DL">DL</option>
+                    <option value="LB">LB</option>
+                    <option value="DB">DB</option>
+                    <option value="ST">ST</option>
+                </select>
+            </div>
+        </div>
+        <div class="table-wrap" id="load-table-wrap">
+            <div style="padding:1rem;color:var(--muted)">Loading…</div>
+        </div>
+    </div>
+
+    <!-- ── Monotony & Strain ───────────────────────────────────────────── -->
+    <div class="section-label">
+        <span data-tip="Training Monotony = Mean daily load ÷ Standard Deviation of daily loads over 7 days. High monotony (>2.0) means load is too uniform — the body adapts less.">Monotony</span>
+        &amp;
+        <span data-tip="Training Strain = Acute Load × Monotony. A composite stress index. Flag athletes in the top 10% of the squad.">Strain</span>
+    </div>
+    <div class="two-col">
+        <div class="card">
+            <div class="card-title">7-Day Training Monotony per Player</div>
+            <div class="card-sub">Flag threshold: &gt; 2.0 · Showing top 25 by monotony</div>
+            <div class="chart-wrap"><canvas id="monotony-chart"></canvas></div>
+        </div>
+        <div class="card">
+            <div class="card-title">Weekly Training Strain per Player</div>
+            <div class="card-sub">Acute Load × Monotony · Top 10% flagged in red</div>
+            <div class="chart-wrap"><canvas id="strain-chart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- ── Session RPE Input ───────────────────────────────────────────── -->
+    <div class="section-label">Session RPE Entry</div>
+    <div class="card full-col">
+        <div class="card-title">Log Session RPE</div>
+        <div class="card-sub">Manually enter RPE and duration after each session · Saves to gps_sessions table</div>
+        <div class="rpe-panel">
+            <div>
+                <div class="form-group">
+                    <label for="rpe-athlete">Athlete</label>
+                    <select id="rpe-athlete"><option value="">— Select athlete —</option></select>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                    <div class="form-group">
+                        <label for="rpe-value">
+                            Session <span data-tip="Rating of Perceived Exertion — a subjective scale from 1 (very easy) to 10 (maximal effort) used to quantify how hard a session felt.">RPE</span>
+                            (1–10)
+                        </label>
+                        <input type="number" id="rpe-value" min="1" max="10" placeholder="e.g. 7">
+                    </div>
+                    <div class="form-group">
+                        <label for="rpe-duration">Duration (min)</label>
+                        <input type="number" id="rpe-duration" min="1" max="300" placeholder="e.g. 90">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="rpe-date">Session Date</label>
+                    <input type="date" id="rpe-date">
+                </div>
+                <button class="btn-submit" id="rpe-submit">Save Session RPE</button>
+            </div>
+
+            <!-- Live session load preview -->
+            <div class="session-load-display" id="session-load-display">
+                <div class="session-load-label">Session Load</div>
+                <div class="session-load-value" id="session-load-val">—</div>
+                <div class="session-load-formula">RPE × Duration (min)</div>
+                <div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:0.5rem">
+                    Enter RPE and duration to preview
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { supabase } from '../scripts/supabase_client.js';
+import { initAuth } from '../scripts/auth.js';
+
+await initAuth('load_management');
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function posGroup(pos) {
+    if (['QB','WR','DB','RB','K','P'].includes(pos)) return 'Skill';
+    if (['OL','DL'].includes(pos))                   return 'Linemen';
+    return 'Hybrid';
+}
+
+function computeACWR(rows) {
+    if (!rows || rows.length < 7) return null;
+    const sorted  = [...rows].sort((a,b) => new Date(b.session_date) - new Date(a.session_date));
+    const acute   = sorted.slice(0,7).reduce((s,r) => s + Number(r.player_load), 0);
+    const weeks   = [0,1,2,3].map(w => sorted.slice(w*7, w*7+7).reduce((s,r) => s + Number(r.player_load), 0));
+    const chronic = weeks.reduce((s,w) => s+w, 0) / 4;
+    return chronic > 0 ? acute / chronic : null;
+}
+
+function acwrZone(v) {
+    if (v === null) return 'safe';
+    if (v > 1.5 || v < 0.8) return 'danger';
+    if (v > 1.3)             return 'caution';
+    return 'safe';
+}
+
+function acwrColor(zone) {
+    return zone === 'danger' ? '#DC2626' : zone === 'caution' ? '#D97706' : '#16A34A';
+}
+
+function computeMonotonyStrain(rows) {
+    const sorted = [...rows].sort((a,b) => new Date(b.session_date)-new Date(a.session_date));
+    const last7  = sorted.slice(0,7).map(r => Number(r.player_load));
+    if (last7.length < 3) return { monotony: null, strain: null, acute: 0 };
+    const acute  = last7.reduce((s,v) => s+v, 0);
+    const mean   = acute / last7.length;
+    const sd     = Math.sqrt(last7.reduce((s,v) => s+(v-mean)**2, 0) / last7.length);
+    const mono   = sd > 0 ? mean / sd : null;
+    return { monotony: mono, strain: mono !== null ? acute * mono : null, acute };
+}
+
+function showToast(msg, ok = true) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = ok ? 'var(--uf-navy)' : '#991b1b';
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ── Fetch data ────────────────────────────────────────────────────────────
+const [
+    { data: athletes, error: errA },
+    { data: sessions, error: errS },
+] = await Promise.all([
+    supabase.from('athletes').select('*').order('name'),
+    supabase.from('gps_sessions').select('*').order('session_date', { ascending: false }),
+]);
+
+if (errA || errS) {
+    document.querySelector('.page-wrap').innerHTML =
+        `<div style="padding:2rem;color:#991b1b;background:#fef2f2;border-radius:8px;">
+            ⚠️ Failed to load data: ${(errA||errS)?.message}
+         </div>`;
+    throw new Error('Fetch failed');
+}
+
+// ── Per-athlete computed metrics ──────────────────────────────────────────
+const metrics = athletes.map(ath => {
+    const rows = sessions.filter(r => r.athlete_id === ath.id);
+    const sorted = [...rows].sort((a,b) => new Date(b.session_date)-new Date(a.session_date));
+
+    const acwr = computeACWR(rows);
+    const { monotony, strain, acute } = computeMonotonyStrain(rows);
+
+    // Chronic load
+    const weeks = [0,1,2,3].map(w => sorted.slice(w*7, w*7+7).reduce((s,r) => s+Number(r.player_load),0));
+    const chronic = weeks.reduce((s,w) => s+w, 0) / 4;
+
+    // Today's session
+    const todayStr = new Date().toISOString().slice(0,10);
+    const today = sorted.find(r => r.session_date === todayStr);
+
+    return {
+        ath,
+        acwr,
+        acute: Math.round(acute),
+        chronic: Math.round(chronic),
+        monotony,
+        strain,
+        today,
+        rows,
+    };
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// CHART 1: ACWR by position group — 28-day trend
+// ─────────────────────────────────────────────────────────────────────────
+const today = new Date();
+const dateLabels = Array.from({length: 28}, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (27-i));
+    return d.toISOString().slice(0,10);
+});
+
+const groups = ['Skill', 'Linemen', 'Hybrid'];
+const groupColors = { Skill: '#FA4616', Linemen: '#003087', Hybrid: '#16A34A' };
+
+const groupTrends = groups.map(grp => {
+    const grpAthletes = athletes.filter(a => posGroup(a.position) === grp);
+    return dateLabels.map(dateStr => {
+        const vals = grpAthletes.map(ath => {
+            const rows = sessions.filter(r => r.athlete_id === ath.id && r.session_date <= dateStr);
+            return computeACWR(rows);
+        }).filter(v => v !== null);
+        return vals.length ? vals.reduce((s,v) => s+v, 0) / vals.length : null;
+    });
+});
+
+const acwrGroupCtx = document.getElementById('acwr-group-chart').getContext('2d');
+new Chart(acwrGroupCtx, {
+    type: 'line',
+    data: {
+        labels: dateLabels.map(d => d.slice(5)),
+        datasets: [
+            ...groups.map((grp, i) => ({
+                label: grp,
+                data: groupTrends[i],
+                borderColor: groupColors[grp],
+                backgroundColor: groupColors[grp] + '15',
+                borderWidth: 2, pointRadius: 1.5, tension: 0.35,
+            })),
+            {
+                label: 'Danger (1.5)', data: Array(28).fill(1.5),
+                borderColor: '#DC2626', borderDash: [5,3], borderWidth: 1.5, pointRadius: 0,
+            },
+            {
+                label: 'Lower (0.8)', data: Array(28).fill(0.8),
+                borderColor: '#D97706', borderDash: [5,3], borderWidth: 1.5, pointRadius: 0,
+            },
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: { mode: 'index', intersect: false },
+        },
+        scales: {
+            y: { min: 0.4, max: 2.1, title: { display: true, text: 'ACWR', font: { size: 10 } }, ticks: { font: { size: 10 } } },
+            x: { ticks: { maxTicksLimit: 7, font: { size: 10 } } }
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// CHART 2: Individual ACWR bar — current week, sorted high→low
+// ─────────────────────────────────────────────────────────────────────────
+const indivData = metrics
+    .filter(m => m.acwr !== null)
+    .sort((a,b) => (b.acwr ?? 0) - (a.acwr ?? 0));
+
+const acwrIndivCtx = document.getElementById('acwr-individual-chart').getContext('2d');
+new Chart(acwrIndivCtx, {
+    type: 'bar',
+    data: {
+        labels: indivData.map(m => m.ath.name.split(' ')[1] || m.ath.name),
+        datasets: [{
+            label: 'ACWR',
+            data: indivData.map(m => m.acwr?.toFixed(2)),
+            backgroundColor: indivData.map(m => acwrColor(acwrZone(m.acwr)) + 'CC'),
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                callbacks: {
+                    label: ctx => {
+                        const m = indivData[ctx.dataIndex];
+                        return `ACWR: ${ctx.raw} (${m.ath.position}) — ${acwrZone(m.acwr).toUpperCase()}`;
+                    }
+                }
+            }
+        },
+        scales: {
+            x: {
+                min: 0, max: 2.2,
+                title: { display: true, text: 'ACWR', font: { size: 10 } },
+                ticks: { font: { size: 10 } }
+            },
+            y: { ticks: { font: { size: 9 } } }
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// DAILY LOAD TABLE
+// ─────────────────────────────────────────────────────────────────────────
+let sortCol = 'acwr';
+let sortDir = 'desc';
+let posFilter = 'all';
+
+function acwrCellClass(zone) {
+    return zone === 'danger' ? 'acwr-danger' : zone === 'caution' ? 'acwr-caution' : 'acwr-safe';
+}
+
+function renderTable() {
+    let rows = metrics.filter(m => posFilter === 'all' || m.ath.position === posFilter);
+
+    rows.sort((a, b) => {
+        const va = a[sortCol] ?? a.today?.[sortCol] ?? 0;
+        const vb = b[sortCol] ?? b.today?.[sortCol] ?? 0;
+        return sortDir === 'asc' ? va - vb : vb - va;
+    });
+
+    const colDefs = [
+        { key: 'name',       label: 'Player',          render: m => `<strong>${m.ath.name}</strong>` },
+        { key: 'pos',        label: 'Pos',              render: m => m.ath.position },
+        { key: 'total',      label: 'Total Dist (m)',   render: m => m.today ? Math.round(m.today.total_distance_m).toLocaleString() : '—' },
+        { key: 'hsd',        label: 'HSD (m)',          render: m => m.today ? Math.round(m.today.high_speed_distance_m).toLocaleString() : '—' },
+        { key: 'sprint',     label: 'Sprint (m)',       render: m => m.today ? Math.round(m.today.sprint_distance_m).toLocaleString() : '—' },
+        { key: 'load',       label: 'Player Load',      render: m => m.today ? Number(m.today.player_load).toFixed(1) : '—' },
+        { key: 'acute',      label: 'Acute 7d',         render: m => m.acute.toLocaleString() },
+        { key: 'chronic',    label: 'Chronic 28d',      render: m => m.chronic.toLocaleString() },
+        { key: 'acwr',       label: 'ACWR',             render: m => {
+            if (m.acwr === null) return '—';
+            const z = acwrZone(m.acwr);
+            return `<span class="acwr-cell ${acwrCellClass(z)}">${m.acwr.toFixed(2)}</span>`;
+        }},
+        { key: 'flag',       label: 'Flag',             render: m => {
+            const z = acwrZone(m.acwr);
+            if (z === 'danger')  return `<span style="color:var(--red);font-weight:600">⚠ DANGER</span>`;
+            if (z === 'caution') return `<span style="color:var(--amber);font-weight:600">△ CAUTION</span>`;
+            return `<span style="color:var(--green)">✓</span>`;
+        }},
+    ];
+
+    document.getElementById('load-table-wrap').innerHTML = `
+        <table>
+            <thead>
+                <tr>${colDefs.map(c => `
+                    <th data-col="${c.key}" class="${sortCol === c.key ? 'sorted-'+sortDir : ''}">${c.label}</th>
+                `).join('')}</tr>
+            </thead>
+            <tbody>
+                ${rows.map(m => `
+                    <tr>
+                        ${colDefs.map(c => `<td>${c.render(m)}</td>`).join('')}
+                    </tr>`).join('')}
+            </tbody>
+        </table>`;
+
+    // Sort on header click
+    document.querySelectorAll('#load-table-wrap thead th').forEach(th => {
+        th.addEventListener('click', () => {
+            const col = th.dataset.col;
+            if (sortCol === col) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            else { sortCol = col; sortDir = 'desc'; }
+            renderTable();
+        });
+    });
+}
+
+renderTable();
+
+document.getElementById('pos-filter').addEventListener('change', function() {
+    posFilter = this.value;
+    renderTable();
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// CHART 3 & 4: Monotony & Strain
+// ─────────────────────────────────────────────────────────────────────────
+const monoData = metrics
+    .filter(m => m.monotony !== null)
+    .sort((a,b) => (b.monotony ?? 0) - (a.monotony ?? 0))
+    .slice(0, 25);
+
+new Chart(document.getElementById('monotony-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: monoData.map(m => m.ath.name.split(' ')[1] || m.ath.name),
+        datasets: [{
+            label: 'Monotony',
+            data: monoData.map(m => m.monotony?.toFixed(2)),
+            backgroundColor: monoData.map(m => (m.monotony ?? 0) > 2.0 ? '#DC262688' : '#003087AA'),
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => `Monotony: ${ctx.raw}${parseFloat(ctx.raw) > 2 ? ' ⚠ HIGH' : ''}` } },
+            annotation: { /* future: reference line at 2.0 */ }
+        },
+        scales: {
+            y: { title: { display: true, text: 'Monotony Index', font: { size: 10 } }, ticks: { font: { size: 10 } } },
+            x: { ticks: { font: { size: 9 }, maxRotation: 45 } }
+        }
+    }
+});
+
+const strainData = metrics
+    .filter(m => m.strain !== null)
+    .sort((a,b) => (b.strain ?? 0) - (a.strain ?? 0));
+const p90idx = Math.floor(strainData.length * 0.1);
+
+new Chart(document.getElementById('strain-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: strainData.slice(0,25).map(m => m.ath.name.split(' ')[1] || m.ath.name),
+        datasets: [{
+            label: 'Strain',
+            data: strainData.slice(0,25).map(m => Math.round(m.strain ?? 0)),
+            backgroundColor: strainData.slice(0,25).map((m,i) => i < p90idx ? '#DC262688' : '#FA461688'),
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => `Strain: ${ctx.raw.toLocaleString()}` } }
+        },
+        scales: {
+            y: { title: { display: true, text: 'Training Strain', font: { size: 10 } }, ticks: { font: { size: 10 } } },
+            x: { ticks: { font: { size: 9 }, maxRotation: 45 } }
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// RPE INPUT PANEL
+// ─────────────────────────────────────────────────────────────────────────
+
+// Populate athlete dropdown
+const athSelect = document.getElementById('rpe-athlete');
+athletes.forEach(a => {
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = `${a.name} (#${a.jersey_number} · ${a.position})`;
+    athSelect.appendChild(opt);
+});
+
+// Default date to today
+document.getElementById('rpe-date').value = new Date().toISOString().slice(0,10);
+
+// Live session load preview
+function updateLoadPreview() {
+    const rpe = parseInt(document.getElementById('rpe-value').value);
+    const dur = parseInt(document.getElementById('rpe-duration').value);
+    const el  = document.getElementById('session-load-val');
+    if (!isNaN(rpe) && !isNaN(dur) && rpe >= 1 && rpe <= 10 && dur > 0) {
+        el.textContent = (rpe * dur).toLocaleString();
+    } else {
+        el.textContent = '—';
+    }
+}
+
+document.getElementById('rpe-value').addEventListener('input', updateLoadPreview);
+document.getElementById('rpe-duration').addEventListener('input', updateLoadPreview);
+
+// Submit RPE
+document.getElementById('rpe-submit').addEventListener('click', async () => {
+    const athleteId = document.getElementById('rpe-athlete').value;
+    const rpe       = parseInt(document.getElementById('rpe-value').value);
+    const duration  = parseInt(document.getElementById('rpe-duration').value);
+    const dateVal   = document.getElementById('rpe-date').value;
+
+    if (!athleteId) { showToast('Please select an athlete.', false); return; }
+    if (isNaN(rpe) || rpe < 1 || rpe > 10) { showToast('RPE must be between 1 and 10.', false); return; }
+    if (isNaN(duration) || duration < 1)    { showToast('Enter a valid duration.', false); return; }
+    if (!dateVal) { showToast('Please select a session date.', false); return; }
+
+    const btn = document.getElementById('rpe-submit');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+
+    // Check if a session already exists for this athlete/date
+    const { data: existing } = await supabase
+        .from('gps_sessions')
+        .select('id')
+        .eq('athlete_id', athleteId)
+        .eq('session_date', dateVal)
+        .maybeSingle();
+
+    let error;
+    if (existing) {
+        // Update existing row's RPE and duration
+        ({ error } = await supabase
+            .from('gps_sessions')
+            .update({ session_rpe: rpe, session_duration_min: duration })
+            .eq('id', existing.id));
+    } else {
+        // Insert minimal new row — GPS metrics will be 0 (manual RPE-only entry)
+        ({ error } = await supabase
+            .from('gps_sessions')
+            .insert({
+                athlete_id: athleteId,
+                session_date: dateVal,
+                total_distance_m: 0,
+                high_speed_distance_m: 0,
+                sprint_distance_m: 0,
+                player_load: rpe * duration,
+                session_rpe: rpe,
+                session_duration_min: duration,
+            }));
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Save Session RPE';
+
+    if (error) {
+        showToast('Error saving: ' + error.message, false);
+    } else {
+        showToast(`✓ Saved — Session Load: ${rpe * duration}`, true);
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// CSV EXPORT
+// ─────────────────────────────────────────────────────────────────────────
+document.getElementById('export-btn').addEventListener('click', () => {
+    const headers = ['Name','Position','Total Distance (m)','HSD (m)','Sprint (m)',
+                     'Player Load','Acute 7d','Chronic 28d','ACWR','Zone'];
+    const rows = metrics.map(m => [
+        m.ath.name, m.ath.position,
+        m.today ? Math.round(m.today.total_distance_m) : '',
+        m.today ? Math.round(m.today.high_speed_distance_m) : '',
+        m.today ? Math.round(m.today.sprint_distance_m) : '',
+        m.today ? Number(m.today.player_load).toFixed(1) : '',
+        m.acute, m.chronic,
+        m.acwr?.toFixed(2) ?? '',
+        acwrZone(m.acwr).toUpperCase(),
+    ]);
+
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `UF_LoadManagement_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+});
+</script>
+
+</body>
+</html>

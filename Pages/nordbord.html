@@ -1,0 +1,692 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     DATA SOURCE: Supabase (live fetch)
+     To swap real data: import your CSV exports using the Python scripts
+     in /scripts/ then run seed_data.sql replacements.
+     Table/column documentation: see /DATA_SOURCES.md
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NordBord — UF S&C</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --uf-orange: #FA4616;
+            --uf-blue:   #003087;
+            --uf-navy:   #001F5B;
+            --bg:        #F5F5F5;
+            --surface:   #FFFFFF;
+            --text:      #1A1A1A;
+            --muted:     #6B7280;
+            --border:    #E5E7EB;
+            --red:       #DC2626;
+            --amber:     #D97706;
+            --green:     #16A34A;
+            --red-bg:    #FEF2F2;
+            --amber-bg:  #FFFBEB;
+            --green-bg:  #F0FDF4;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .page-wrap { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+        .page-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.75rem; flex-wrap: wrap; gap: 0.75rem;
+        }
+        .page-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--uf-navy); }
+
+        .section-label {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem;
+        }
+
+        .card { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); padding: 1.25rem; }
+        .card-title { font-weight: 600; font-size: 0.95rem; color: var(--uf-navy); margin-bottom: 0.25rem; }
+        .card-sub   { font-size: 0.75rem; color: var(--muted); margin-bottom: 1rem; }
+        .chart-wrap { position: relative; height: 260px; }
+
+        .two-col  { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.75rem; }
+        .full-col { margin-bottom: 1.75rem; }
+
+        /* ── Flag rules strip ───────────────────────────────────────────── */
+        .flag-rules {
+            display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem;
+        }
+        .flag-rule {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.4rem 0.85rem; border-radius: 8px;
+            font-size: 0.78rem; font-weight: 500;
+        }
+        .rule-red   { background: var(--red-bg);   color: var(--red);   border: 1px solid #FECACA; }
+        .rule-amber { background: var(--amber-bg); color: var(--amber); border: 1px solid #FDE68A; }
+
+        /* ── Player selector ────────────────────────────────────────────── */
+        .player-selector { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .filter-label    { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+
+        select, .btn-export {
+            font-family: 'Inter', sans-serif; font-size: 0.82rem;
+            border: 1px solid var(--border); border-radius: 6px;
+            padding: 0.38rem 0.65rem; color: var(--text); background: var(--surface); cursor: pointer;
+        }
+        .btn-export {
+            color: var(--uf-blue); font-weight: 600;
+            border-color: var(--uf-blue); background: none;
+        }
+        .btn-export:hover { background: rgba(0,48,135,0.06); }
+
+        /* ── RTP Tracker cards ──────────────────────────────────────────── */
+        .rtp-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 0.85rem;
+        }
+
+        .rtp-card {
+            background: #F9FAFB; border-radius: 10px; padding: 1rem 1.1rem;
+            border-left: 4px solid transparent;
+            display: flex; flex-direction: column; gap: 0.5rem;
+        }
+        .rtp-card.rtp-not-ready  { border-color: var(--red);   }
+        .rtp-card.rtp-approaching{ border-color: var(--amber); }
+        .rtp-card.rtp-cleared    { border-color: var(--green); }
+
+        .rtp-header { display: flex; align-items: center; justify-content: space-between; }
+        .rtp-name   { font-weight: 700; font-size: 0.9rem; color: var(--text); }
+        .rtp-pos    { font-size: 0.72rem; color: var(--muted); }
+
+        .rtp-badge {
+            font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.6rem;
+            border-radius: 999px; letter-spacing: 0.04em; white-space: nowrap;
+        }
+        .badge-not-ready  { background: var(--red-bg);   color: var(--red);   }
+        .badge-approaching{ background: var(--amber-bg); color: var(--amber); }
+        .badge-cleared    { background: var(--green-bg); color: var(--green); }
+
+        .rtp-lsi-row {
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .rtp-lsi-val {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.8rem; font-weight: 700; line-height: 1;
+        }
+
+        /* LSI progress bar */
+        .lsi-bar-wrap {
+            flex: 1; background: #E5E7EB; border-radius: 999px; height: 8px; overflow: hidden;
+        }
+        .lsi-bar-fill { height: 100%; border-radius: 999px; transition: width 0.4s ease; }
+
+        .rtp-meta { font-size: 0.72rem; color: var(--muted); }
+        .rtp-thresh { font-size: 0.72rem; font-weight: 600; }
+
+        /* ── Table ──────────────────────────────────────────────────────── */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        thead th {
+            background: #F9FAFB; padding: 0.6rem 0.85rem; text-align: left;
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
+            text-transform: uppercase; color: var(--muted);
+            border-bottom: 1px solid var(--border); white-space: nowrap;
+            cursor: pointer; user-select: none;
+        }
+        thead th:hover { background: #F3F4F6; }
+        thead th.sorted-asc::after  { content: ' ↑'; }
+        thead th.sorted-desc::after { content: ' ↓'; }
+        tbody tr { border-bottom: 1px solid #F3F4F6; }
+        tbody tr:nth-child(even) { background: #FAFAFA; }
+        tbody tr:hover { background: #F0F4FF; }
+        tbody td { padding: 0.6rem 0.85rem; vertical-align: middle; }
+
+        .lsi-pill {
+            display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px;
+            font-size: 0.78rem; font-weight: 700;
+        }
+        .lsi-red   { background: var(--red-bg);   color: var(--red);   }
+        .lsi-amber { background: var(--amber-bg); color: var(--amber); }
+        .lsi-green { background: var(--green-bg); color: var(--green); }
+
+        .force-cell { font-weight: 600; }
+        .force-low  { color: var(--red); }
+
+        [data-tip] { border-bottom: 1px dashed var(--muted); cursor: help; }
+
+        @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <div class="page-header">
+        <h1 class="page-title">NordBord Hamstring Strength</h1>
+        <button class="btn-export" id="export-btn">⬇ Export CSV</button>
+    </div>
+
+    <!-- ── Flag rules ─────────────────────────────────────────────────── -->
+    <div class="flag-rules">
+        <div class="flag-rule rule-red">
+            🔴 <span data-tip="Limb Symmetry Index — weaker limb ÷ stronger limb × 100. Below 90% indicates clinically significant asymmetry and elevated hamstring injury risk.">LSI</span>
+            &lt; 90%: Hamstring Asymmetry — RTP Risk
+        </div>
+        <div class="flag-rule rule-amber">🟡 LSI 90–95%: Monitor Hamstring Symmetry</div>
+        <div class="flag-rule rule-red">
+            🔴 Absolute Force &lt; 200N either limb: Absolute Strength Deficit
+        </div>
+        <div class="flag-rule rule-amber">
+            🟡 <span data-tip="Body Weight Ratio — peak force divided by athlete body weight (in Newtons). Below 0.45 in male athletes indicates hamstring weakness relative to body mass.">BW Ratio</span>
+            &lt; 0.45: Below Strength Threshold
+        </div>
+    </div>
+
+    <!-- ── Charts row ─────────────────────────────────────────────────── -->
+    <div class="section-label">Force & Symmetry Overview</div>
+    <div class="two-col">
+
+        <!-- Left vs Right force bar chart sorted by LSI -->
+        <div class="card">
+            <div class="card-title">Left vs Right Peak Force — Sorted by
+                <span data-tip="Limb Symmetry Index: weaker ÷ stronger × 100. Lower = more asymmetric.">LSI</span>
+            </div>
+            <div class="card-sub">Most asymmetric athletes at top · Red line = 200N minimum threshold</div>
+            <div class="chart-wrap" style="height:320px"><canvas id="force-bar-chart"></canvas></div>
+        </div>
+
+        <!-- Position group box-style bar chart -->
+        <div class="card">
+            <div class="card-title">Average Force by Position Group</div>
+            <div class="card-sub">Mean left + right peak force (N) per position</div>
+            <div class="chart-wrap"><canvas id="pos-group-chart"></canvas></div>
+        </div>
+
+    </div>
+
+    <!-- ── Individual LSI Trend ───────────────────────────────────────── -->
+    <div class="section-label">Individual LSI Trend</div>
+    <div class="card full-col">
+        <div class="card-title">
+            <span data-tip="Limb Symmetry Index over time. Target ≥ 90% for return-to-play clearance, ≥ 95% for full unrestricted training.">LSI</span>
+            Trend Over Time — Per Player
+        </div>
+        <div class="player-selector">
+            <span class="filter-label">Player:</span>
+            <select id="lsi-player-select" style="min-width:220px"></select>
+        </div>
+        <div class="chart-wrap"><canvas id="lsi-trend-chart"></canvas></div>
+    </div>
+
+    <!-- ── RTP Tracker ────────────────────────────────────────────────── -->
+    <div class="section-label">Return-to-Play Tracker</div>
+    <div class="card full-col">
+        <div class="card-title">Athletes with Prior Injury Flags</div>
+        <div class="card-sub">
+            LSI target ≥ 90% for RTP clearance · ≥ 95% for full training ·
+            Athletes pulled from flags table (Injured / Limited status)
+        </div>
+        <div class="rtp-grid" id="rtp-grid">
+            <div style="color:var(--muted);font-size:0.85rem">Loading…</div>
+        </div>
+    </div>
+
+    <!-- ── Full Table ─────────────────────────────────────────────────── -->
+    <div class="section-label">All Athletes — NordBord Results</div>
+    <div class="card full-col">
+        <div class="filters-bar" style="margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+            <span class="filter-label">Position:</span>
+            <select id="table-pos-filter">
+                <option value="all">All</option>
+                <option value="QB">QB</option><option value="RB">RB</option>
+                <option value="WR">WR</option><option value="TE">TE</option>
+                <option value="OL">OL</option><option value="DL">DL</option>
+                <option value="LB">LB</option><option value="DB">DB</option>
+                <option value="ST">ST</option>
+            </select>
+            <span class="filter-label" style="margin-left:0.5rem">Show:</span>
+            <select id="table-flag-filter">
+                <option value="all">All Athletes</option>
+                <option value="flagged">Flagged Only</option>
+            </select>
+        </div>
+        <div class="table-wrap" id="main-table-wrap">
+            <div style="padding:1rem;color:var(--muted)">Loading…</div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+import { supabase } from '../scripts/supabase_client.js';
+import { initAuth } from '../scripts/auth.js';
+
+await initAuth('nordbord');
+
+// ─────────────────────────────────────────────────────────────────────────
+// FETCH
+// ─────────────────────────────────────────────────────────────────────────
+const [
+    { data: athletes, error: errA },
+    { data: nordbord, error: errN },
+    { data: flags,    error: errF },
+] = await Promise.all([
+    supabase.from('athletes').select('*').order('name'),
+    supabase.from('nordbord_tests').select('*').order('test_date', { ascending: true }),
+    supabase.from('flags').select('athlete_id, flag_type, severity, resolved')
+             .in('flag_type', ['Injury History Risk','NordBord Deficit']),
+]);
+
+if (errA || errN || errF) {
+    document.querySelector('.page-wrap').innerHTML =
+        `<div style="padding:2rem;color:#991b1b;background:#fef2f2;border-radius:8px;">
+            ⚠️ Failed to load data: ${(errA||errN||errF)?.message}
+         </div>`;
+    throw new Error('Fetch failed');
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PER-ATHLETE LATEST NORDBORD
+// ─────────────────────────────────────────────────────────────────────────
+function getLatestTest(athleteId) {
+    const rows = nordbord
+        .filter(r => r.athlete_id === athleteId)
+        .sort((a,b) => new Date(b.test_date) - new Date(a.test_date));
+    return rows[0] ?? null;
+}
+
+function getTestHistory(athleteId) {
+    return nordbord
+        .filter(r => r.athlete_id === athleteId)
+        .sort((a,b) => new Date(a.test_date) - new Date(b.test_date));
+}
+
+function lsiClass(lsi) {
+    if (lsi < 90) return 'lsi-red';
+    if (lsi < 95) return 'lsi-amber';
+    return 'lsi-green';
+}
+
+function lsiBarColor(lsi) {
+    if (lsi < 90) return 'var(--red)';
+    if (lsi < 95) return 'var(--amber)';
+    return 'var(--green)';
+}
+
+function isFlagged(latest) {
+    if (!latest) return false;
+    return Number(latest.lsi_pct) < 95 ||
+           Number(latest.left_peak_force_n) < 200 ||
+           Number(latest.right_peak_force_n) < 200 ||
+           Number(latest.bw_ratio) < 0.45;
+}
+
+// Build per-athlete summary
+const athleteData = athletes.map(ath => {
+    const latest  = getLatestTest(ath.id);
+    const history = getTestHistory(ath.id);
+    const hasFlag = flags.some(f => f.athlete_id === ath.id && !f.resolved);
+    const isInjured = ath.status === 'Injured' || ath.status === 'Limited';
+    return { ath, latest, history, hasFlag, isInjured };
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// CHART 1: Left vs Right force bar, sorted by LSI ascending
+// ─────────────────────────────────────────────────────────────────────────
+const forceData = athleteData
+    .filter(d => d.latest !== null)
+    .sort((a,b) => Number(a.latest.lsi_pct) - Number(b.latest.lsi_pct))
+    .slice(0, 30); // top 30 most asymmetric
+
+new Chart(document.getElementById('force-bar-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: forceData.map(d => d.ath.name.split(' ')[1] || d.ath.name),
+        datasets: [
+            {
+                label: 'Left Peak Force (N)',
+                data: forceData.map(d => Number(d.latest.left_peak_force_n).toFixed(1)),
+                backgroundColor: '#003087BB',
+                borderRadius: 3,
+            },
+            {
+                label: 'Right Peak Force (N)',
+                data: forceData.map(d => Number(d.latest.right_peak_force_n).toFixed(1)),
+                backgroundColor: '#FA4616BB',
+                borderRadius: 3,
+            },
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+                mode: 'index', intersect: false,
+                callbacks: {
+                    afterBody: (items) => {
+                        const d = forceData[items[0].dataIndex];
+                        return [`LSI: ${Number(d.latest.lsi_pct).toFixed(1)}%`];
+                    }
+                }
+            },
+            annotation: {}
+        },
+        scales: {
+            x: { title: { display: true, text: 'Peak Force (N)', font: { size: 10 } }, ticks: { font: { size: 10 } } },
+            y: { ticks: { font: { size: 9 } } }
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// CHART 2: Average force by position group
+// ─────────────────────────────────────────────────────────────────────────
+const positions = [...new Set(athletes.map(a => a.position))].sort();
+const posForceAvg = positions.map(pos => {
+    const rows = athleteData.filter(d => d.ath.position === pos && d.latest);
+    if (rows.length === 0) return { pos, left: 0, right: 0 };
+    const left  = rows.reduce((s,d) => s + Number(d.latest.left_peak_force_n),  0) / rows.length;
+    const right = rows.reduce((s,d) => s + Number(d.latest.right_peak_force_n), 0) / rows.length;
+    return { pos, left, right };
+}).filter(d => d.left > 0);
+
+new Chart(document.getElementById('pos-group-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: posForceAvg.map(d => d.pos),
+        datasets: [
+            {
+                label: 'Left Peak Force (N)',
+                data: posForceAvg.map(d => Math.round(d.left)),
+                backgroundColor: '#003087BB', borderRadius: 4,
+            },
+            {
+                label: 'Right Peak Force (N)',
+                data: posForceAvg.map(d => Math.round(d.right)),
+                backgroundColor: '#FA4616BB', borderRadius: 4,
+            },
+        ]
+    },
+    options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+            y: { title: { display: true, text: 'Avg Peak Force (N)', font: { size: 10 } }, ticks: { font: { size: 10 } } },
+            x: { ticks: { font: { size: 10 } } }
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// LSI TREND CHART — individual player
+// ─────────────────────────────────────────────────────────────────────────
+const lsiSelect = document.getElementById('lsi-player-select');
+athletes.forEach(a => {
+    const opt       = document.createElement('option');
+    opt.value       = a.id;
+    opt.textContent = `${a.name} (${a.position})`;
+    lsiSelect.appendChild(opt);
+});
+
+let lsiChart = null;
+
+function updateLSIChart(athleteId) {
+    const history = getTestHistory(athleteId);
+    if (history.length === 0) return;
+
+    const chartData = {
+        labels: history.map(t => t.test_date),
+        datasets: [
+            {
+                label: 'LSI (%)',
+                data: history.map(t => Number(t.lsi_pct).toFixed(1)),
+                borderColor: '#FA4616', backgroundColor: 'rgba(250,70,22,0.1)',
+                borderWidth: 2.5, pointRadius: 5, tension: 0.3,
+            },
+            {
+                label: 'RTP Threshold (90%)',
+                data: Array(history.length).fill(90),
+                borderColor: '#DC2626', borderDash: [6,3], borderWidth: 1.5, pointRadius: 0,
+            },
+            {
+                label: 'Full Training (95%)',
+                data: Array(history.length).fill(95),
+                borderColor: '#D97706', borderDash: [4,3], borderWidth: 1.5, pointRadius: 0,
+            },
+        ]
+    };
+
+    if (lsiChart) {
+        lsiChart.data = chartData;
+        lsiChart.update();
+    } else {
+        lsiChart = new Chart(document.getElementById('lsi-trend-chart').getContext('2d'), {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                    tooltip: { mode: 'index', intersect: false }
+                },
+                scales: {
+                    y: {
+                        min: 50, max: 105,
+                        title: { display: true, text: 'LSI (%)', font: { size: 10 } },
+                        ticks: { font: { size: 10 } }
+                    },
+                    x: { ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    }
+}
+
+lsiSelect.addEventListener('change', () => updateLSIChart(lsiSelect.value));
+if (athletes.length > 0) updateLSIChart(athletes[0].id);
+
+// ─────────────────────────────────────────────────────────────────────────
+// RTP TRACKER
+// ─────────────────────────────────────────────────────────────────────────
+// Show athletes with Injured/Limited status OR unresolved NordBord/Injury flags
+const rtpAthletes = athleteData.filter(d => d.isInjured || d.hasFlag);
+
+function rtpStatus(lsi) {
+    if (lsi === null) return { cls: 'rtp-not-ready',   badge: 'badge-not-ready',   label: 'Not Ready' };
+    if (lsi >= 95)   return { cls: 'rtp-cleared',      badge: 'badge-cleared',     label: 'Cleared'   };
+    if (lsi >= 90)   return { cls: 'rtp-approaching',  badge: 'badge-approaching', label: 'Approaching'};
+    return             { cls: 'rtp-not-ready',          badge: 'badge-not-ready',   label: 'Not Ready' };
+}
+
+document.getElementById('rtp-grid').innerHTML = rtpAthletes.length === 0
+    ? '<div style="color:var(--green);font-size:0.85rem;font-weight:600;">✓ No athletes currently in RTP protocol</div>'
+    : rtpAthletes.map(({ ath, latest, history }) => {
+        const lsi    = latest ? Number(latest.lsi_pct) : null;
+        const status = rtpStatus(lsi);
+        const barW   = lsi !== null ? Math.min(100, lsi) : 0;
+        const distTo90 = lsi !== null ? (90 - lsi).toFixed(1) : null;
+        const testCount = history.length;
+
+        return `
+        <div class="rtp-card ${status.cls}">
+            <div class="rtp-header">
+                <div>
+                    <div class="rtp-name">${ath.name}</div>
+                    <div class="rtp-pos">#${ath.jersey_number} · ${ath.position} · ${ath.status}</div>
+                </div>
+                <span class="rtp-badge ${status.badge}">${status.label}</span>
+            </div>
+
+            <div class="rtp-lsi-row">
+                <div class="rtp-lsi-val" style="color:${lsiBarColor(lsi ?? 0)}">
+                    ${lsi !== null ? lsi.toFixed(1) + '%' : '—'}
+                </div>
+                <div class="lsi-bar-wrap">
+                    <div class="lsi-bar-fill" style="width:${barW}%;background:${lsiBarColor(lsi ?? 0)}"></div>
+                </div>
+            </div>
+
+            <div class="rtp-meta">
+                ${lsi !== null && lsi < 90
+                    ? `<span class="rtp-thresh" style="color:var(--red)">
+                        ${distTo90}% below RTP threshold (90%)
+                       </span>`
+                    : lsi !== null && lsi < 95
+                        ? `<span class="rtp-thresh" style="color:var(--amber)">
+                            ${(95 - lsi).toFixed(1)}% below full training threshold (95%)
+                           </span>`
+                        : '<span style="color:var(--green);font-weight:600">RTP threshold met</span>'
+                }
+            </div>
+
+            <div class="rtp-meta">
+                ${latest ? `Left: ${Number(latest.left_peak_force_n).toFixed(0)}N ·
+                Right: ${Number(latest.right_peak_force_n).toFixed(0)}N ·
+                BW Ratio: ${Number(latest.bw_ratio).toFixed(3)}` : 'No test data'}
+            </div>
+
+            <div class="rtp-meta">
+                ${testCount} test${testCount !== 1 ? 's' : ''} on record ·
+                Last: ${latest?.test_date ?? 'None'}
+            </div>
+        </div>`;
+    }).join('');
+
+// ─────────────────────────────────────────────────────────────────────────
+// MAIN TABLE — sortable, filterable
+// ─────────────────────────────────────────────────────────────────────────
+let tableSort = { col: 'lsi', dir: 'asc' };
+let tablePosFilter  = 'all';
+let tableFlagFilter = 'all';
+
+function renderMainTable() {
+    let rows = athleteData.filter(d => d.latest !== null);
+    if (tablePosFilter  !== 'all')     rows = rows.filter(d => d.ath.position === tablePosFilter);
+    if (tableFlagFilter === 'flagged') rows = rows.filter(d => isFlagged(d.latest));
+
+    rows.sort((a, b) => {
+        let va, vb;
+        switch (tableSort.col) {
+            case 'name':  va = a.ath.name; vb = b.ath.name;
+                return tableSort.dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+            case 'pos':   va = a.ath.position; vb = b.ath.position;
+                return tableSort.dir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va);
+            case 'lsi':   va = Number(a.latest.lsi_pct);            vb = Number(b.latest.lsi_pct); break;
+            case 'left':  va = Number(a.latest.left_peak_force_n);  vb = Number(b.latest.left_peak_force_n); break;
+            case 'right': va = Number(a.latest.right_peak_force_n); vb = Number(b.latest.right_peak_force_n); break;
+            case 'bw':    va = Number(a.latest.bw_ratio);           vb = Number(b.latest.bw_ratio); break;
+            default:      va = 0; vb = 0;
+        }
+        return tableSort.dir === 'asc' ? va - vb : vb - va;
+    });
+
+    const mkTh = (col, label) =>
+        `<th data-col="${col}" class="${tableSort.col === col ? 'sorted-'+tableSort.dir : ''}">${label}</th>`;
+
+    document.getElementById('main-table-wrap').innerHTML = `
+        <table>
+            <thead>
+                <tr>
+                    ${mkTh('name',  'Athlete')}
+                    ${mkTh('pos',   'Pos')}
+                    <th>Status</th>
+                    ${mkTh('left',  'Left (N)')}
+                    ${mkTh('right', 'Right (N)')}
+                    ${mkTh('lsi',   'LSI %')}
+                    ${mkTh('bw',    'BW Ratio')}
+                    <th>Last Test</th>
+                    <th>Flags</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows.map(({ ath, latest, hasFlag }) => {
+                    const lsi   = Number(latest.lsi_pct);
+                    const lf    = Number(latest.left_peak_force_n);
+                    const rf    = Number(latest.right_peak_force_n);
+                    const bw    = Number(latest.bw_ratio);
+                    const lowL  = lf < 200;
+                    const lowR  = rf < 200;
+                    const lowBW = bw < 0.45;
+
+                    const flags = [];
+                    if (lsi < 90) flags.push(`<span style="color:var(--red);font-size:0.72rem;font-weight:600">⚠ LSI &lt;90%</span>`);
+                    else if (lsi < 95) flags.push(`<span style="color:var(--amber);font-size:0.72rem;font-weight:600">△ LSI &lt;95%</span>`);
+                    if (lowL || lowR) flags.push(`<span style="color:var(--red);font-size:0.72rem;font-weight:600">⚠ Force &lt;200N</span>`);
+                    if (lowBW) flags.push(`<span style="color:var(--amber);font-size:0.72rem;font-weight:600">△ BW Ratio &lt;0.45</span>`);
+
+                    const athStatusColor = ath.status === 'Active' ? 'var(--green)'
+                        : ath.status === 'Injured' ? 'var(--red)' : 'var(--amber)';
+
+                    return `<tr>
+                        <td style="font-weight:600;white-space:nowrap">${ath.name}</td>
+                        <td>${ath.position}</td>
+                        <td style="font-size:0.78rem;font-weight:600;color:${athStatusColor}">${ath.status}</td>
+                        <td class="force-cell ${lowL ? 'force-low' : ''}">${lf.toFixed(0)}</td>
+                        <td class="force-cell ${lowR ? 'force-low' : ''}">${rf.toFixed(0)}</td>
+                        <td><span class="lsi-pill ${lsiClass(lsi)}">${lsi.toFixed(1)}%</span></td>
+                        <td style="color:${lowBW ? 'var(--red)' : 'var(--text)'};font-weight:${lowBW ? '600' : '400'}">${bw.toFixed(3)}</td>
+                        <td style="color:var(--muted);font-size:0.78rem">${latest.test_date}</td>
+                        <td style="display:flex;flex-direction:column;gap:2px">${flags.length ? flags.join('') : '<span style="color:var(--green);font-size:0.72rem">✓ Clear</span>'}</td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>`;
+
+    document.querySelectorAll('#main-table-wrap thead th[data-col]').forEach(th => {
+        th.addEventListener('click', () => {
+            const col = th.dataset.col;
+            if (tableSort.col === col) tableSort.dir = tableSort.dir === 'asc' ? 'desc' : 'asc';
+            else { tableSort.col = col; tableSort.dir = 'asc'; }
+            renderMainTable();
+        });
+    });
+}
+
+renderMainTable();
+
+document.getElementById('table-pos-filter').addEventListener('change', function() {
+    tablePosFilter = this.value; renderMainTable();
+});
+document.getElementById('table-flag-filter').addEventListener('change', function() {
+    tableFlagFilter = this.value; renderMainTable();
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// CSV EXPORT
+// ─────────────────────────────────────────────────────────────────────────
+document.getElementById('export-btn').addEventListener('click', () => {
+    const headers = ['Name','Position','Status','Left Force (N)','Right Force (N)',
+                     'LSI (%)','BW Ratio','Last Test Date','Flagged'];
+    const rows = athleteData
+        .filter(d => d.latest)
+        .map(({ ath, latest }) => [
+            ath.name, ath.position, ath.status,
+            Number(latest.left_peak_force_n).toFixed(0),
+            Number(latest.right_peak_force_n).toFixed(0),
+            Number(latest.lsi_pct).toFixed(1),
+            Number(latest.bw_ratio).toFixed(3),
+            latest.test_date,
+            isFlagged(latest) ? 'YES' : 'NO',
+        ]);
+
+    const csv  = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `UF_NordBord_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+});
+</script>
+
+</body>
+</html>

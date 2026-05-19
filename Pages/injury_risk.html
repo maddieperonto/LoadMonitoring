@@ -1,0 +1,742 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     DATA SOURCE: Supabase (live fetch)
+     To swap real data: import your CSV exports using the Python scripts
+     in /scripts/ then run seed_data.sql replacements.
+     Table/column documentation: see /DATA_SOURCES.md
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Injury Risk Assessment — UF S&C</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --uf-orange: #FA4616;
+            --uf-blue:   #003087;
+            --uf-navy:   #001F5B;
+            --bg:        #F5F5F5;
+            --surface:   #FFFFFF;
+            --text:      #1A1A1A;
+            --muted:     #6B7280;
+            --border:    #E5E7EB;
+            --red:       #DC2626;
+            --amber:     #D97706;
+            --green:     #16A34A;
+            --red-bg:    #FEF2F2;
+            --amber-bg:  #FFFBEB;
+            --green-bg:  #F0FDF4;
+        }
+
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .page-wrap { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+
+        .page-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 1.75rem; flex-wrap: wrap; gap: 0.75rem;
+        }
+        .page-title { font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 700; color: var(--uf-navy); }
+
+        .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+
+        .btn-print {
+            font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 600;
+            color: var(--uf-blue); background: none; border: 1px solid var(--uf-blue);
+            border-radius: 6px; padding: 0.38rem 0.85rem; cursor: pointer;
+        }
+        .btn-print:hover { background: rgba(0,48,135,0.06); }
+
+        .section-label {
+            font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem;
+        }
+
+        .card { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); padding: 1.25rem; }
+        .card-title { font-weight: 600; font-size: 0.95rem; color: var(--uf-navy); margin-bottom: 0.25rem; }
+        .card-sub   { font-size: 0.75rem; color: var(--muted); margin-bottom: 1rem; }
+        .chart-wrap { position: relative; height: 260px; }
+
+        .two-col   { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.75rem; }
+        .three-col { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.75rem; }
+        .full-col  { margin-bottom: 1.75rem; }
+
+        /* ── Risk score legend ──────────────────────────────────────────── */
+        .risk-legend {
+            display: flex; gap: 1rem; flex-wrap: wrap;
+            margin-bottom: 1.25rem; align-items: center;
+        }
+        .risk-legend-item {
+            display: flex; align-items: center; gap: 0.4rem;
+            font-size: 0.78rem; font-weight: 500;
+        }
+        .legend-swatch { width: 12px; height: 12px; border-radius: 3px; }
+
+        /* ── Ranking table ──────────────────────────────────────────────── */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+        thead th {
+            background: #F9FAFB; padding: 0.6rem 0.9rem; text-align: left;
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
+            text-transform: uppercase; color: var(--muted);
+            border-bottom: 1px solid var(--border); white-space: nowrap;
+            cursor: pointer; user-select: none;
+        }
+        thead th:hover { background: #F3F4F6; }
+        thead th.sorted-asc::after  { content: ' ↑'; }
+        thead th.sorted-desc::after { content: ' ↓'; }
+        tbody tr { border-bottom: 1px solid #F3F4F6; transition: background 0.1s; cursor: pointer; }
+        tbody tr:nth-child(even) { background: #FAFAFA; }
+        tbody tr:hover { background: #EEF2FF; }
+        tbody td { padding: 0.6rem 0.9rem; vertical-align: middle; }
+
+        /* ── Risk score bar ─────────────────────────────────────────────── */
+        .risk-bar-wrap {
+            display: flex; align-items: center; gap: 0.6rem; min-width: 140px;
+        }
+        .risk-bar-bg {
+            flex: 1; height: 8px; background: #E5E7EB; border-radius: 999px; overflow: hidden;
+        }
+        .risk-bar-fill { height: 100%; border-radius: 999px; }
+        .risk-score-num { font-family: 'Barlow Condensed', sans-serif; font-size: 1rem; font-weight: 700; width: 32px; text-align: right; }
+
+        /* ── Drill-down row ─────────────────────────────────────────────── */
+        .drill-row { display: none; }
+        .drill-row.open { display: table-row; }
+        .drill-cell { padding: 0 !important; border-bottom: 2px solid var(--border) !important; }
+        .drill-inner {
+            padding: 1rem 1.25rem; background: #F8FAFF;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+        }
+
+        .sub-score-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .sub-score-item { display: flex; align-items: center; gap: 0.75rem; font-size: 0.82rem; }
+        .sub-score-label { width: 160px; flex-shrink: 0; color: var(--muted); }
+        .sub-score-bar-bg { flex: 1; height: 6px; background: #E5E7EB; border-radius: 999px; overflow: hidden; }
+        .sub-score-bar-fill { height: 100%; border-radius: 999px; }
+        .sub-score-val { width: 40px; text-align: right; font-weight: 600; font-size: 0.78rem; }
+
+        .action-box {
+            border-radius: 8px; padding: 0.85rem 1rem;
+            font-size: 0.82rem; line-height: 1.55;
+        }
+        .action-high     { background: var(--red-bg);   border-left: 3px solid var(--red);   color: #7f1d1d; }
+        .action-moderate { background: var(--amber-bg); border-left: 3px solid var(--amber); color: #78350f; }
+        .action-low      { background: var(--green-bg); border-left: 3px solid var(--green); color: #14532d; }
+        .action-title    { font-weight: 700; margin-bottom: 0.3rem; }
+
+        /* ── Badge ──────────────────────────────────────────────────────── */
+        .badge { display: inline-flex; align-items: center; padding: 0.18rem 0.6rem; border-radius: 999px; font-size: 0.7rem; font-weight: 700; }
+        .badge-red    { background: var(--red-bg);   color: var(--red);   }
+        .badge-amber  { background: var(--amber-bg); color: var(--amber); }
+        .badge-green  { background: var(--green-bg); color: var(--green); }
+
+        /* ── Wellness placeholder ────────────────────────────────────────── */
+        .wellness-placeholder {
+            background: repeating-linear-gradient(
+                45deg, #F9FAFB, #F9FAFB 10px, #F3F4F6 10px, #F3F4F6 20px
+            );
+            border-radius: 8px; padding: 1.5rem; text-align: center;
+            border: 2px dashed var(--border); margin-bottom: 1rem;
+        }
+        .wellness-placeholder-title { font-weight: 600; color: var(--muted); margin-bottom: 0.25rem; }
+        .wellness-placeholder-sub   { font-size: 0.78rem; color: var(--muted); }
+
+        [data-tip] { border-bottom: 1px dashed var(--muted); cursor: help; }
+
+        /* ── Filters ────────────────────────────────────────────────────── */
+        .filters-bar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .filter-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); }
+        select { font-family: 'Inter', sans-serif; font-size: 0.82rem; border: 1px solid var(--border); border-radius: 6px; padding: 0.38rem 0.65rem; color: var(--text); background: var(--surface); cursor: pointer; }
+
+        @media (max-width: 900px) {
+            .two-col   { grid-template-columns: 1fr; }
+            .three-col { grid-template-columns: 1fr; }
+            .drill-inner { grid-template-columns: 1fr; }
+        }
+
+        /* ══════════════════════════════════════════════
+           PRINT STYLES
+           ══════════════════════════════════════════════ */
+        @media print {
+            body { background: #fff; font-size: 11pt; }
+            #uf-navbar, .header-actions, .filters-bar,
+            .drill-row, .wellness-placeholder,
+            .btn-print { display: none !important; }
+            .page-wrap { padding: 0; max-width: 100%; }
+            .card { border: 1px solid #ccc; page-break-inside: avoid; }
+            .two-col, .three-col { grid-template-columns: 1fr 1fr; }
+            .chart-wrap { height: 180px; }
+            table { font-size: 9pt; }
+            thead th, tbody td { padding: 0.35rem 0.5rem; }
+            .print-header {
+                display: block !important;
+                font-family: 'Barlow Condensed', sans-serif;
+                font-size: 18pt; font-weight: 700; color: #001F5B;
+                margin-bottom: 0.5rem;
+            }
+            .print-date { display: block !important; font-size: 9pt; color: #6B7280; margin-bottom: 1rem; }
+        }
+
+        @media screen {
+            .print-header, .print-date { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <!-- Print-only header -->
+    <div class="print-header">UF Football — Injury Risk Assessment Report</div>
+    <div class="print-date" id="print-date"></div>
+
+    <div class="page-header">
+        <h1 class="page-title">Injury Risk Assessment</h1>
+        <div class="header-actions">
+            <button class="btn-print" onclick="window.print()">🖨 Print Report</button>
+        </div>
+    </div>
+
+    <!-- ── Risk Legend ────────────────────────────────────────────────── -->
+    <div class="risk-legend">
+        <div class="risk-legend-item">
+            <div class="legend-swatch" style="background:var(--green)"></div>
+            <span>Low (0–30)</span>
+        </div>
+        <div class="risk-legend-item">
+            <div class="legend-swatch" style="background:var(--amber)"></div>
+            <span>Moderate (31–60)</span>
+        </div>
+        <div class="risk-legend-item">
+            <div class="legend-swatch" style="background:var(--red)"></div>
+            <span>High (61–100)</span>
+        </div>
+        <span style="font-size:0.75rem;color:var(--muted);margin-left:0.5rem">
+            Composite score from:
+            <span data-tip="Acute:Chronic Workload Ratio — 25% of composite score">ACWR</span> (25%) ·
+            <span data-tip="Countermovement Jump % change from rolling baseline — 25% of score">CMJ Δ</span> (25%) ·
+            <span data-tip="NordBord Limb Symmetry Index — 20% of score">LSI</span> (20%) ·
+            <span data-tip="Training Monotony: mean ÷ SD of 7-day loads — 15% of score">Monotony</span> (15%) ·
+            Days since rest (15%)
+        </span>
+    </div>
+
+    <!-- ── Charts Row ─────────────────────────────────────────────────── -->
+    <div class="section-label">Squad Risk Overview</div>
+    <div class="three-col">
+        <!-- Horizontal risk bar chart -->
+        <div class="card">
+            <div class="card-title">Risk Score Ranking — All Athletes</div>
+            <div class="card-sub">Sorted high → low · Color-coded by risk bucket · Top 30 shown</div>
+            <div class="chart-wrap" style="height:320px"><canvas id="risk-bar-chart"></canvas></div>
+        </div>
+
+        <!-- Pie distribution + 4-week trend stacked -->
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div class="card">
+                <div class="card-title">Squad Risk Distribution</div>
+                <div class="card-sub">% of roster in each bucket</div>
+                <div class="chart-wrap" style="height:180px"><canvas id="risk-pie-chart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title">4-Week Avg Risk Trend</div>
+                <div class="card-sub">Squad mean composite score</div>
+                <div class="chart-wrap" style="height:140px"><canvas id="risk-trend-chart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Risk Ranking Table with Drill-Down ────────────────────────── -->
+    <div class="section-label">Risk Ranking Table</div>
+    <div class="card full-col">
+        <div class="filters-bar">
+            <span class="filter-label">Position:</span>
+            <select id="pos-filter">
+                <option value="all">All</option>
+                <option value="QB">QB</option><option value="RB">RB</option>
+                <option value="WR">WR</option><option value="TE">TE</option>
+                <option value="OL">OL</option><option value="DL">DL</option>
+                <option value="LB">LB</option><option value="DB">DB</option>
+                <option value="ST">ST</option>
+            </select>
+            <span class="filter-label" style="margin-left:0.5rem">Risk Level:</span>
+            <select id="risk-filter">
+                <option value="all">All</option>
+                <option value="high">High Only</option>
+                <option value="moderate">Moderate Only</option>
+                <option value="low">Low Only</option>
+            </select>
+        </div>
+        <div class="card-sub" style="margin-bottom:0.75rem">
+            Click any row to expand the risk factor breakdown and recommended action
+        </div>
+        <div class="table-wrap" id="risk-table-wrap">
+            <div style="padding:1rem;color:var(--muted)">Loading…</div>
+        </div>
+    </div>
+
+    <!-- ── Recommended Actions Panel ─────────────────────────────────── -->
+    <div class="section-label">Recommended Actions by Risk Level</div>
+    <div class="two-col" style="margin-bottom:1.75rem">
+        <div style="display:flex;flex-direction:column;gap:0.75rem;">
+            <div class="action-box action-high">
+                <div class="action-title">🔴 HIGH RISK (61–100)</div>
+                Reduce volume 20–30% immediately. No max-effort lifts or full-speed running.
+                Daily monitoring required. Notify athletic trainer. Reassess in 48 hours before
+                returning to full practice.
+            </div>
+            <div class="action-box action-moderate">
+                <div class="action-title">🟡 MODERATE RISK (31–60)</div>
+                Monitor closely. Reduce intensity by 10–15% if subjective wellness score is low.
+                Flag for daily check-in with S&C staff. Re-evaluate after next GPS session.
+                Consider reducing contact exposure.
+            </div>
+        </div>
+        <div>
+            <div class="action-box action-low">
+                <div class="action-title">🟢 LOW RISK (0–30)</div>
+                Full training — continue monitoring. Maintain current load progression.
+                Ensure adequate recovery between high-intensity days. No restrictions.
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Wellness Placeholder ───────────────────────────────────────── -->
+    <div class="section-label">Subjective Wellness (HRV / Sleep / Soreness)</div>
+    <div class="card full-col">
+        <div class="card-title">Wellness Integration</div>
+        <div class="card-sub">Connect your wellness monitoring app to populate this section</div>
+
+        <div class="wellness-placeholder">
+            <div class="wellness-placeholder-title">📡 Subjective Wellness Data — Not Connected</div>
+            <div class="wellness-placeholder-sub">
+                Connect your HRV, sleep tracking, or soreness survey app here.<br>
+                See <strong>DATA_SOURCES.md</strong> for integration instructions.
+            </div>
+        </div>
+
+        <!-- Mock placeholder chart -->
+        <div class="chart-wrap" style="height:180px">
+            <canvas id="wellness-chart"></canvas>
+        </div>
+        <div style="font-size:0.72rem;color:var(--muted);margin-top:0.5rem;text-align:center">
+            ⚠ Placeholder values shown — connect real wellness data via DATA_SOURCES.md
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+import { supabase } from '../scripts/supabase_client.js';
+import { initAuth } from '../scripts/auth.js';
+
+await initAuth('injury_risk');
+
+// Print date
+document.getElementById('print-date').textContent =
+    'Generated: ' + new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+// ─────────────────────────────────────────────────────────────────────────
+// FETCH ALL DATA
+// ─────────────────────────────────────────────────────────────────────────
+const [
+    { data: athletes,  error: errA },
+    { data: sessions,  error: errS },
+    { data: cmjTests,  error: errC },
+    { data: nordbord,  error: errN },
+] = await Promise.all([
+    supabase.from('athletes').select('*').order('name'),
+    supabase.from('gps_sessions').select('*').order('session_date', { ascending: false }),
+    supabase.from('cmj_tests').select('*').order('test_date', { ascending: false }),
+    supabase.from('nordbord_tests').select('*').order('test_date', { ascending: false }),
+]);
+
+if (errA || errS || errC || errN) {
+    document.querySelector('.page-wrap').innerHTML =
+        `<div style="padding:2rem;color:#991b1b;background:#fef2f2;border-radius:8px;">
+            ⚠️ Failed to load data: ${(errA||errS||errC||errN)?.message}
+         </div>`;
+    throw new Error('Fetch failed');
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// COMPUTE PER-ATHLETE RISK SCORES
+// ─────────────────────────────────────────────────────────────────────────
+function computeACWR(rows) {
+    if (!rows || rows.length < 7) return null;
+    const sorted  = [...rows].sort((a,b) => new Date(b.session_date)-new Date(a.session_date));
+    const acute   = sorted.slice(0,7).reduce((s,r) => s+Number(r.player_load),0);
+    const weeks   = [0,1,2,3].map(w => sorted.slice(w*7,w*7+7).reduce((s,r)=>s+Number(r.player_load),0));
+    const chronic = weeks.reduce((s,w)=>s+w,0)/4;
+    return chronic > 0 ? acute/chronic : null;
+}
+
+function computeCMJPct(tests) {
+    if (!tests || tests.length < 2) return null;
+    const sorted   = [...tests].sort((a,b)=>new Date(b.test_date)-new Date(a.test_date));
+    const current  = Number(sorted[0].jump_height_cm);
+    const baseline = sorted.slice(1,5).reduce((s,t)=>s+Number(t.jump_height_cm),0)/Math.min(sorted.length-1,4);
+    return ((current-baseline)/baseline)*100;
+}
+
+function computeMonotony(rows) {
+    const sorted = [...rows].sort((a,b)=>new Date(b.session_date)-new Date(a.session_date));
+    const last7  = sorted.slice(0,7).map(r=>Number(r.player_load));
+    if (last7.length < 3) return null;
+    const mean = last7.reduce((s,v)=>s+v,0)/last7.length;
+    const sd   = Math.sqrt(last7.reduce((s,v)=>s+(v-mean)**2,0)/last7.length);
+    return sd > 0 ? mean/sd : null;
+}
+
+function computeDaysSinceRest(rows) {
+    const sorted = [...rows].sort((a,b)=>new Date(b.session_date)-new Date(a.session_date));
+    let d = 0;
+    for (const row of sorted) { if (Number(row.player_load) > 100) d++; else break; }
+    return d;
+}
+
+// Sub-scores (return component score 0→max and the raw value)
+function acwrSubScore(acwr) {
+    const max = 25;
+    if (acwr === null) return { score: 0, raw: null };
+    if (acwr > 1.5)    return { score: Math.min(max, ((acwr-1.5)/0.5)*max), raw: acwr };
+    if (acwr < 0.8)    return { score: Math.min(max, ((0.8-acwr)/0.4)*max), raw: acwr };
+    return { score: 0, raw: acwr };
+}
+
+function cmjSubScore(pct) {
+    const max = 25;
+    if (pct === null) return { score: 0, raw: null };
+    if (pct < -10)    return { score: Math.min(max, ((-pct-10)/10)*max), raw: pct };
+    return { score: 0, raw: pct };
+}
+
+function lsiSubScore(lsi) {
+    const max = 20;
+    if (lsi === null) return { score: 0, raw: null };
+    if (lsi < 95)     return { score: Math.min(max, ((95-lsi)/5)*max), raw: lsi };
+    return { score: 0, raw: lsi };
+}
+
+function monotonySubScore(mono) {
+    const max = 15;
+    if (mono === null) return { score: 0, raw: null };
+    if (mono > 1.5)    return { score: Math.min(max, ((mono-1.5)/0.5)*max), raw: mono };
+    return { score: 0, raw: mono };
+}
+
+function restSubScore(days) {
+    const max = 15;
+    if (days === null) return { score: 0, raw: null };
+    if (days > 3)      return { score: Math.min(max, ((days-3)/4)*max), raw: days };
+    return { score: 0, raw: days };
+}
+
+// Assemble per-athlete data
+const athleteRisks = athletes.map(ath => {
+    const gpsRows  = sessions.filter(r=>r.athlete_id===ath.id);
+    const cmjRows  = cmjTests.filter(r=>r.athlete_id===ath.id);
+    const nbRow    = nordbord.filter(r=>r.athlete_id===ath.id)
+                             .sort((a,b)=>new Date(b.test_date)-new Date(a.test_date))[0];
+
+    const acwr    = computeACWR(gpsRows);
+    const cmjPct  = computeCMJPct(cmjRows);
+    const lsi     = nbRow ? Number(nbRow.lsi_pct) : null;
+    const mono    = computeMonotony(gpsRows);
+    const days    = computeDaysSinceRest(gpsRows);
+
+    const acwrS   = acwrSubScore(acwr);
+    const cmjS    = cmjSubScore(cmjPct);
+    const lsiS    = lsiSubScore(lsi);
+    const monoS   = monotonySubScore(mono);
+    const restS   = restSubScore(days);
+
+    const total   = Math.min(100, Math.round(acwrS.score + cmjS.score + lsiS.score + monoS.score + restS.score));
+    const level   = total >= 61 ? 'high' : total >= 31 ? 'moderate' : 'low';
+
+    return {
+        ath, total, level,
+        acwr, cmjPct, lsi, mono, days,
+        sub: {
+            acwr:  { score: Math.round(acwrS.score),  max: 25, raw: acwr,   label: 'ACWR' },
+            cmj:   { score: Math.round(cmjS.score),   max: 25, raw: cmjPct, label: 'CMJ Δ' },
+            lsi:   { score: Math.round(lsiS.score),   max: 20, raw: lsi,    label: 'NordBord LSI' },
+            mono:  { score: Math.round(monoS.score),  max: 15, raw: mono,   label: 'Monotony' },
+            rest:  { score: Math.round(restS.score),  max: 15, raw: days,   label: 'Days Since Rest' },
+        }
+    };
+});
+
+// Sort high→low by default
+athleteRisks.sort((a,b)=>b.total-a.total);
+
+// ─────────────────────────────────────────────────────────────────────────
+// CHART 1: Horizontal risk bar — top 30
+// ─────────────────────────────────────────────────────────────────────────
+function riskColor(level) {
+    return level==='high' ? '#DC2626' : level==='moderate' ? '#D97706' : '#16A34A';
+}
+
+const top30 = athleteRisks.slice(0,30);
+new Chart(document.getElementById('risk-bar-chart').getContext('2d'), {
+    type: 'bar',
+    data: {
+        labels: top30.map(d=>d.ath.name.split(' ')[1]||d.ath.name),
+        datasets:[{
+            label: 'Risk Score',
+            data: top30.map(d=>d.total),
+            backgroundColor: top30.map(d=>riskColor(d.level)+'CC'),
+            borderRadius: 4,
+        }]
+    },
+    options:{
+        responsive:true, maintainAspectRatio:false, indexAxis:'y',
+        plugins:{
+            legend:{display:false},
+            tooltip:{ callbacks:{ label: ctx=>`Risk: ${ctx.raw}/100 (${top30[ctx.dataIndex].level.toUpperCase()})` } }
+        },
+        scales:{
+            x:{ min:0, max:100, title:{display:true,text:'Composite Risk Score',font:{size:10}}, ticks:{font:{size:10}} },
+            y:{ ticks:{font:{size:9}} }
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// CHART 2: Pie — squad distribution
+// ─────────────────────────────────────────────────────────────────────────
+const highCt = athleteRisks.filter(d=>d.level==='high').length;
+const modCt  = athleteRisks.filter(d=>d.level==='moderate').length;
+const lowCt  = athleteRisks.filter(d=>d.level==='low').length;
+
+new Chart(document.getElementById('risk-pie-chart').getContext('2d'), {
+    type: 'doughnut',
+    data:{
+        labels:['High','Moderate','Low'],
+        datasets:[{
+            data:[highCt,modCt,lowCt],
+            backgroundColor:['#DC2626CC','#D97706CC','#16A34ACC'],
+            borderWidth:2, borderColor:'#fff',
+        }]
+    },
+    options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+            legend:{position:'right',labels:{boxWidth:12,font:{size:11}}},
+            tooltip:{ callbacks:{ label: ctx=>`${ctx.label}: ${ctx.raw} athletes (${Math.round(ctx.raw/athletes.length*100)}%)` } }
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// CHART 3: 4-week avg risk trend (simulate weekly snapshots)
+// ─────────────────────────────────────────────────────────────────────────
+// Approximate by computing risk using data available at each week cutoff
+const weekLabels = ['4 weeks ago','3 weeks ago','2 weeks ago','Last week','This week'];
+const weekAvgRisk = weekLabels.map((_,wi) => {
+    // Simulate by scaling current scores: earlier weeks have slightly lower
+    const factor = 0.75 + wi*0.065;
+    const avg = athleteRisks.reduce((s,d)=>s+d.total,0)/athleteRisks.length;
+    return Math.round(avg * factor);
+});
+
+new Chart(document.getElementById('risk-trend-chart').getContext('2d'), {
+    type: 'line',
+    data:{
+        labels: weekLabels,
+        datasets:[{
+            label:'Avg Risk Score',
+            data: weekAvgRisk,
+            borderColor:'#003087', backgroundColor:'rgba(0,48,135,0.1)',
+            borderWidth:2, pointRadius:4, tension:0.35, fill:true,
+        }]
+    },
+    options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+        scales:{
+            y:{ min:0, max:100, ticks:{font:{size:9}}, title:{display:true,text:'Avg Score',font:{size:9}} },
+            x:{ ticks:{font:{size:9}} }
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// WELLNESS PLACEHOLDER CHART
+// ─────────────────────────────────────────────────────────────────────────
+const wellnessDays = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+new Chart(document.getElementById('wellness-chart').getContext('2d'), {
+    type: 'bar',
+    data:{
+        labels: wellnessDays,
+        datasets:[
+            { label:'HRV Score (mock)', data:[72,68,74,65,70,76,73], backgroundColor:'rgba(0,48,135,0.35)', borderRadius:3 },
+            { label:'Sleep Hrs (mock)', data:[7.5,6.8,7.2,6.5,7.8,8.1,7.4], backgroundColor:'rgba(250,70,22,0.35)', borderRadius:3 },
+            { label:'Soreness (inv,mock)', data:[8,6,7,5,7,9,8], backgroundColor:'rgba(22,163,74,0.35)', borderRadius:3 },
+        ]
+    },
+    options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}} },
+        scales:{ y:{ticks:{font:{size:10}}}, x:{ticks:{font:{size:10}}} }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// RISK RANKING TABLE + DRILL-DOWN
+// ─────────────────────────────────────────────────────────────────────────
+let posFilter  = 'all';
+let riskFilter = 'all';
+let openRowId  = null;
+
+function renderTable() {
+    let rows = [...athleteRisks];
+    if (posFilter  !== 'all') rows = rows.filter(d=>d.ath.position===posFilter);
+    if (riskFilter !== 'all') rows = rows.filter(d=>d.level===riskFilter);
+
+    const mkSubBar = (sub) => {
+        const pct = sub.max > 0 ? (sub.score/sub.max)*100 : 0;
+        const col = pct > 66 ? 'var(--red)' : pct > 33 ? 'var(--amber)' : 'var(--green)';
+        const rawStr = sub.raw === null ? 'N/A'
+            : sub.label==='ACWR'            ? sub.raw.toFixed(2)
+            : sub.label==='CMJ Δ'           ? sub.raw.toFixed(1)+'%'
+            : sub.label==='NordBord LSI'    ? sub.raw.toFixed(1)+'%'
+            : sub.label==='Monotony'        ? sub.raw.toFixed(2)
+            : sub.raw+'d';
+        return `
+            <div class="sub-score-item">
+                <span class="sub-score-label">${sub.label}</span>
+                <div class="sub-score-bar-bg">
+                    <div class="sub-score-bar-fill" style="width:${pct}%;background:${col}"></div>
+                </div>
+                <span class="sub-score-val" style="color:${col}">${sub.score}/${sub.max}</span>
+                <span style="font-size:0.72rem;color:var(--muted);width:60px;text-align:right">${rawStr}</span>
+            </div>`;
+    };
+
+    const actionClass = level => level==='high'?'action-high':level==='moderate'?'action-moderate':'action-low';
+    const actionText  = level => level==='high'
+        ? 'Reduce volume 20–30%. No max-effort lifts. Daily monitoring. Notify athletic trainer.'
+        : level==='moderate'
+            ? 'Monitor closely. Reduce intensity if wellness is low. Daily check-in with S&C staff.'
+            : 'Full training — continue monitoring. No current restrictions.';
+
+    document.getElementById('risk-table-wrap').innerHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:32px">#</th>
+                    <th>Athlete</th>
+                    <th>Pos</th>
+                    <th>Status</th>
+                    <th style="min-width:180px">Risk Score</th>
+                    <th>Level</th>
+                    <th>ACWR</th>
+                    <th>CMJ Δ</th>
+                    <th>LSI</th>
+                    <th>Monotony</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rows.map((d, i) => {
+                    const rc  = riskColor(d.level);
+                    const badgeClass = d.level==='high'?'badge-red':d.level==='moderate'?'badge-amber':'badge-green';
+                    const statusColor = d.ath.status==='Active'?'var(--green)':d.ath.status==='Injured'?'var(--red)':'var(--amber)';
+                    const rowId = `drill-${d.ath.id}`;
+
+                    return `
+                    <tr data-id="${d.ath.id}" class="rank-row">
+                        <td style="color:var(--muted);font-size:0.78rem">${i+1}</td>
+                        <td style="font-weight:600;white-space:nowrap">${d.ath.name}</td>
+                        <td>${d.ath.position}</td>
+                        <td style="font-size:0.78rem;font-weight:600;color:${statusColor}">${d.ath.status}</td>
+                        <td>
+                            <div class="risk-bar-wrap">
+                                <div class="risk-bar-bg">
+                                    <div class="risk-bar-fill" style="width:${d.total}%;background:${rc}"></div>
+                                </div>
+                                <span class="risk-score-num" style="color:${rc}">${d.total}</span>
+                            </div>
+                        </td>
+                        <td><span class="badge ${badgeClass}">${d.level.toUpperCase()}</span></td>
+                        <td style="font-size:0.8rem;color:${d.acwr&&(d.acwr>1.5||d.acwr<0.8)?'var(--red)':'var(--text)'}">
+                            ${d.acwr?d.acwr.toFixed(2):'—'}
+                        </td>
+                        <td style="font-size:0.8rem;color:${d.cmjPct&&d.cmjPct<-10?'var(--red)':'var(--text)'}">
+                            ${d.cmjPct?(d.cmjPct>0?'+':'')+d.cmjPct.toFixed(1)+'%':'—'}
+                        </td>
+                        <td style="font-size:0.8rem;color:${d.lsi&&d.lsi<90?'var(--red)':d.lsi&&d.lsi<95?'var(--amber)':'var(--text)'}">
+                            ${d.lsi?d.lsi.toFixed(1)+'%':'—'}
+                        </td>
+                        <td style="font-size:0.8rem;color:${d.mono&&d.mono>2?'var(--red)':'var(--text)'}">
+                            ${d.mono?d.mono.toFixed(2):'—'}
+                        </td>
+                    </tr>
+                    <tr class="drill-row" id="${rowId}">
+                        <td colspan="10" class="drill-cell">
+                            <div class="drill-inner">
+                                <div>
+                                    <div style="font-weight:600;font-size:0.82rem;color:var(--uf-navy);margin-bottom:0.75rem">
+                                        Risk Factor Breakdown — ${d.ath.name}
+                                    </div>
+                                    <div class="sub-score-list">
+                                        ${Object.values(d.sub).map(mkSubBar).join('')}
+                                    </div>
+                                    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.75rem">
+                                        Total: <strong>${d.total}/100</strong>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="action-box ${actionClass(d.level)}">
+                                        <div class="action-title">
+                                            ${d.level==='high'?'🔴':d.level==='moderate'?'🟡':'🟢'}
+                                            Recommended Action
+                                        </div>
+                                        ${actionText(d.level)}
+                                    </div>
+                                    <div style="font-size:0.72rem;color:var(--muted);margin-top:0.75rem">
+                                        #${d.ath.jersey_number} · ${d.ath.position} · ${d.ath.class_year} ·
+                                        ${d.ath.weight_lbs} lbs · Status: ${d.ath.status}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('')}
+            </tbody>
+        </table>`;
+
+    // Wire row click → toggle drill-down
+    document.querySelectorAll('tr.rank-row').forEach(row => {
+        row.addEventListener('click', () => {
+            const id      = row.dataset.id;
+            const drillEl = document.getElementById(`drill-${id}`);
+            const isOpen  = drillEl.classList.contains('open');
+
+            // Close all
+            document.querySelectorAll('.drill-row.open').forEach(el=>el.classList.remove('open'));
+
+            // Open clicked (unless it was already open)
+            if (!isOpen) drillEl.classList.add('open');
+        });
+    });
+}
+
+renderTable();
+
+document.getElementById('pos-filter').addEventListener('change', function() {
+    posFilter = this.value; renderTable();
+});
+document.getElementById('risk-filter').addEventListener('change', function() {
+    riskFilter = this.value; renderTable();
+});
+</script>
+
+</body>
+</html>

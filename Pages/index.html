@@ -1,0 +1,1226 @@
+<!-- ═══════════════════════════════════════════════════════════════════════
+     DATA SOURCE: Supabase (live fetch)
+     To swap real data: import your CSV exports using the Python scripts
+     in /scripts/ then run seed_data.sql replacements.
+     Table/column documentation: see /DATA_SOURCES.md
+     ═══════════════════════════════════════════════════════════════════════ -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Center — UF S&C</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.363.0/dist/umd/lucide.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --uf-orange:  #FA4616;
+            --uf-blue:    #003087;
+            --uf-navy:    #001F5B;
+            --bg:         #F5F5F5;
+            --surface:    #FFFFFF;
+            --text:       #1A1A1A;
+            --muted:      #6B7280;
+            --border:     #E5E7EB;
+            --red:        #DC2626;
+            --amber:      #D97706;
+            --green:      #16A34A;
+            --red-bg:     #FEF2F2;
+            --amber-bg:   #FFFBEB;
+            --green-bg:   #F0FDF4;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ── Page wrapper (navbar injected above) ───────────────────────── */
+        .page-wrap {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        /* ── Page header ────────────────────────────────────────────────── */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.75rem;
+        }
+
+        .page-title {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--uf-navy);
+            letter-spacing: 0.02em;
+        }
+
+        .page-date {
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        /* ── KPI Strip ──────────────────────────────────────────────────── */
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .kpi-card {
+            background: var(--surface);
+            border-radius: 10px;
+            padding: 1.25rem 1.25rem 1rem;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .kpi-label {
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .kpi-value {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--uf-navy);
+        }
+
+        .kpi-sub {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        .badge-green  { background: var(--green-bg);  color: var(--green); }
+        .badge-amber  { background: var(--amber-bg);  color: var(--amber); }
+        .badge-red    { background: var(--red-bg);    color: var(--red);   }
+
+        /* ── Section label ──────────────────────────────────────────────── */
+        .section-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+        }
+
+        /* ── Flag Panel ─────────────────────────────────────────────────── */
+        .flag-panel {
+            background: var(--surface);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            margin-bottom: 1.75rem;
+            overflow: hidden;
+        }
+
+        .flag-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .flag-panel-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--uf-navy);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flag-count-badge {
+            background: var(--red);
+            color: #fff;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.1rem 0.5rem;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        thead th {
+            background: #F9FAFB;
+            padding: 0.6rem 1rem;
+            text-align: left;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--muted);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #F3F4F6;
+            transition: background 0.1s;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #F9FAFB; }
+
+        tbody tr.row-red   { background: #FFF5F5; }
+        tbody tr.row-amber { background: #FFFDF0; }
+        tbody tr.row-red:hover   { background: #FEE2E2; }
+        tbody tr.row-amber:hover { background: #FEF3C7; }
+
+        tbody td {
+            padding: 0.75rem 1rem;
+            color: var(--text);
+            vertical-align: middle;
+        }
+
+        .severity-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .pill-high     { background: var(--red-bg);   color: var(--red);   }
+        .pill-moderate { background: var(--amber-bg); color: var(--amber); }
+
+        .btn-view {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--uf-blue);
+            background: none;
+            border: 1px solid var(--uf-blue);
+            border-radius: 6px;
+            padding: 0.25rem 0.65rem;
+            cursor: pointer;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .btn-view:hover { background: rgba(0,48,135,0.06); }
+
+        /* ── Two-column grid ────────────────────────────────────────────── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        /* ── Card ───────────────────────────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--uf-navy);
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-sub {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 240px;
+        }
+
+        /* ── Heatmap ────────────────────────────────────────────────────── */
+        .heatmap-card {
+            background: var(--surface);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            padding: 1.25rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .heatmap-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .heatmap-legend {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: var(--muted);
+            align-items: center;
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .heatmap-groups {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .heatmap-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .heatmap-pos-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--muted);
+            width: 36px;
+            flex-shrink: 0;
+            letter-spacing: 0.04em;
+        }
+
+        .heatmap-cells {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .heatmap-cell {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.62rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.1s, box-shadow 0.1s;
+            color: #fff;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.12);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+            z-index: 10;
+        }
+
+        .cell-green { background: var(--green); }
+        .cell-amber { background: var(--amber); }
+        .cell-red   { background: var(--red);   }
+
+        /* Tooltip */
+        .hm-tooltip {
+            position: fixed;
+            background: var(--uf-navy);
+            color: #fff;
+            border-radius: 8px;
+            padding: 0.65rem 0.9rem;
+            font-size: 0.78rem;
+            line-height: 1.5;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.1s;
+            max-width: 200px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .hm-tooltip.visible { opacity: 1; }
+        .hm-tooltip-name { font-weight: 700; font-size: 0.85rem; margin-bottom: 0.25rem; }
+
+        /* ── Activity Feed ──────────────────────────────────────────────── */
+        .activity-feed {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #F3F4F6;
+            font-size: 0.82rem;
+        }
+
+        .activity-item:last-child { border-bottom: none; }
+
+        .activity-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .icon-catapult  { background: #EFF6FF; color: var(--uf-blue); }
+        .icon-forcedeck { background: #FFF7ED; color: #EA580C; }
+        .icon-nordbord  { background: #F0FDF4; color: var(--green); }
+
+        .activity-detail { flex: 1; }
+        .activity-source { font-weight: 600; color: var(--text); }
+        .activity-time   { color: var(--muted); font-size: 0.75rem; }
+
+        /* ── Athlete Modal ──────────────────────────────────────────────── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.open { display: flex; }
+
+        .modal {
+            background: var(--surface);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 680px;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 1.75rem;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 1.2rem;
+            line-height: 1;
+        }
+
+        .modal-close:hover { color: var(--text); }
+
+        .modal-name {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--uf-navy);
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-meta {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-stat {
+            background: #F9FAFB;
+            border-radius: 8px;
+            padding: 0.85rem 1rem;
+        }
+
+        .modal-stat-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-stat-value {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--uf-navy);
+        }
+
+        .modal-flags-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--uf-navy);
+            margin-bottom: 0.75rem;
+        }
+
+        .modal-flag-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.65rem 0;
+            border-bottom: 1px solid #F3F4F6;
+            font-size: 0.82rem;
+        }
+
+        .modal-flag-item:last-child { border-bottom: none; }
+
+        /* ── Responsive ─────────────────────────────────────────────────── */
+        @media (max-width: 1100px) {
+            .kpi-strip { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .kpi-strip { grid-template-columns: 1fr 1fr; }
+            .two-col   { grid-template-columns: 1fr; }
+            .modal-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .kpi-strip { grid-template-columns: 1fr; }
+        }
+
+        /* ── Tooltip for technical terms ────────────────────────────────── */
+        [data-tip] {
+            border-bottom: 1px dashed var(--muted);
+            cursor: help;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+    <!-- Page header -->
+    <div class="page-header">
+        <h1 class="page-title">Command Center</h1>
+        <span class="page-date" id="today-date"></span>
+    </div>
+
+    <!-- ── KPI Strip ──────────────────────────────────────────────────── -->
+    <div class="kpi-strip" id="kpi-strip">
+        <!-- Populated by JS -->
+        <div class="kpi-card"><div class="kpi-label">Loading…</div></div>
+        <div class="kpi-card"><div class="kpi-label">Loading…</div></div>
+        <div class="kpi-card"><div class="kpi-label">Loading…</div></div>
+        <div class="kpi-card"><div class="kpi-label">Loading…</div></div>
+        <div class="kpi-card"><div class="kpi-label">Loading…</div></div>
+    </div>
+
+    <!-- ── Daily Flag Panel ───────────────────────────────────────────── -->
+    <div class="section-label">Today's Unresolved Flags</div>
+    <div class="flag-panel">
+        <div class="flag-panel-header">
+            <div class="flag-panel-title">
+                Active Athlete Flags
+                <span class="flag-count-badge" id="flag-count">—</span>
+            </div>
+        </div>
+        <div id="flag-table-wrap">
+            <div style="padding:1.5rem;color:var(--muted);font-size:0.85rem;">Loading flags…</div>
+        </div>
+    </div>
+
+    <!-- ── Squad Heatmap ─────────────────────────────────────────────── -->
+    <div class="section-label">Squad Risk Heatmap</div>
+    <div class="heatmap-card">
+        <div class="heatmap-header">
+            <div class="card-title">Roster — Composite Risk Score</div>
+            <div class="heatmap-legend">
+                <span><span class="legend-dot" style="background:var(--green)"></span>Low (0–30)</span>
+                <span><span class="legend-dot" style="background:var(--amber)"></span>Moderate (31–60)</span>
+                <span><span class="legend-dot" style="background:var(--red)"></span>High (61–100)</span>
+            </div>
+        </div>
+        <div id="heatmap-groups" class="heatmap-groups">
+            <div style="color:var(--muted);font-size:0.85rem;">Loading heatmap…</div>
+        </div>
+    </div>
+
+    <!-- ── Charts Row ─────────────────────────────────────────────────── -->
+    <div class="two-col">
+        <div class="card">
+            <div class="card-title">28-Day Squad <span data-tip="Acute:Chronic Workload Ratio — compares recent load to long-term average">ACWR</span> Trend</div>
+            <div class="card-sub">Squad average · Reference lines: Safe zone 0.8–1.5</div>
+            <div class="chart-wrap">
+                <canvas id="acwr-chart"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">Weekly Training Load by Position</div>
+            <div class="card-sub">
+                Total player load · Current week
+                <select id="load-pos-filter" style="margin-left:0.5rem;font-size:0.75rem;border:1px solid var(--border);border-radius:4px;padding:0.1rem 0.3rem;color:var(--text);">
+                    <option value="all">All Groups</option>
+                    <option value="skill">Skill (QB/WR/DB/RB)</option>
+                    <option value="big">Linemen (OL/DL)</option>
+                    <option value="hybrid">Hybrid (LB/TE/ST)</option>
+                </select>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="load-chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Bottom Row: Activity Feed ─────────────────────────────────── -->
+    <div class="two-col">
+        <div class="card" style="grid-column:2;">
+            <div class="card-title">Recent Data Imports</div>
+            <div class="card-sub">Last 5 manual imports · Update after each upload</div>
+            <div class="activity-feed">
+                <div class="activity-item">
+                    <div class="activity-icon icon-catapult">GPS</div>
+                    <div class="activity-detail">
+                        <div class="activity-source">Catapult GPS Export</div>
+                        <div class="activity-time">Today · 85 athlete sessions loaded</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon icon-forcedeck">CMJ</div>
+                    <div class="activity-detail">
+                        <div class="activity-source">ForceDeck CMJ Test</div>
+                        <div class="activity-time">2 days ago · 24 athletes tested</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon icon-nordbord">NB</div>
+                    <div class="activity-detail">
+                        <div class="activity-source">NordBord Screen</div>
+                        <div class="activity-time">4 days ago · 18 athletes tested</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon icon-catapult">GPS</div>
+                    <div class="activity-detail">
+                        <div class="activity-source">Catapult GPS Export</div>
+                        <div class="activity-time">5 days ago · 82 athlete sessions loaded</div>
+                    </div>
+                </div>
+                <div class="activity-item">
+                    <div class="activity-icon icon-forcedeck">CMJ</div>
+                    <div class="activity-detail">
+                        <div class="activity-source">ForceDeck CMJ Test</div>
+                        <div class="activity-time">12 days ago · 31 athletes tested</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Heatmap Tooltip ─────────────────────────────────────────────────── -->
+<div class="hm-tooltip" id="hm-tooltip"></div>
+
+<!-- ── Athlete Detail Modal ───────────────────────────────────────────── -->
+<div class="modal-overlay" id="athlete-modal">
+    <div class="modal">
+        <button class="modal-close" id="modal-close-btn">✕</button>
+        <div id="modal-content">Loading…</div>
+    </div>
+</div>
+
+<script type="module">
+import { supabase } from '../scripts/supabase_client.js';
+import { initAuth } from '../scripts/auth.js';
+
+// ── Auth guard ────────────────────────────────────────────────────────────
+await initAuth('index');
+
+// ── Today's date display ─────────────────────────────────────────────────
+document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+});
+
+// ── Tooltip init ─────────────────────────────────────────────────────────
+lucide.createIcons();
+
+// ─────────────────────────────────────────────────────────────────────────
+// HELPER FUNCTIONS
+// ─────────────────────────────────────────────────────────────────────────
+
+function posGroup(pos) {
+    if (['QB','WR','DB','RB','K','P'].includes(pos)) return 'skill';
+    if (['OL','DL'].includes(pos))                   return 'big';
+    return 'hybrid';
+}
+
+// Compute ACWR from gps rows (sorted desc by date)
+function computeACWR(rows) {
+    if (!rows || rows.length < 7) return null;
+    const sorted = [...rows].sort((a,b) => new Date(b.session_date) - new Date(a.session_date));
+    const acute  = sorted.slice(0, 7).reduce((s, r) => s + Number(r.player_load), 0);
+    // Chronic: average of 4 weekly sums
+    const weeks  = [0,1,2,3].map(w => {
+        const start = w * 7, end = start + 7;
+        return sorted.slice(start, end).reduce((s,r) => s + Number(r.player_load), 0);
+    });
+    const chronic = weeks.reduce((s,w) => s + w, 0) / 4;
+    return chronic > 0 ? acute / chronic : null;
+}
+
+// Compute CMJ % change vs 4-test rolling baseline
+function computeCMJChange(tests) {
+    if (!tests || tests.length < 2) return null;
+    const sorted   = [...tests].sort((a,b) => new Date(b.test_date) - new Date(a.test_date));
+    const current  = Number(sorted[0].jump_height_cm);
+    const baseline = sorted.slice(1, 5).reduce((s,t) => s + Number(t.jump_height_cm), 0) /
+                     Math.min(sorted.length - 1, 4);
+    return ((current - baseline) / baseline) * 100;
+}
+
+// Composite risk score 0–100
+function computeRisk(acwr, cmjPct, lsi, monotony, daysSinceRest) {
+    let score = 0;
+
+    // ACWR (25 pts)
+    if (acwr !== null) {
+        if (acwr > 1.5)       score += Math.min(25, ((acwr - 1.5) / 0.5) * 25);
+        else if (acwr < 0.8)  score += Math.min(25, ((0.8 - acwr) / 0.4) * 25);
+    }
+
+    // CMJ (25 pts)
+    if (cmjPct !== null) {
+        if (cmjPct < -10)     score += Math.min(25, ((-cmjPct - 10) / 10) * 25);
+    }
+
+    // LSI (20 pts)
+    if (lsi !== null) {
+        if (lsi < 95)         score += Math.min(20, ((95 - lsi) / 5) * 20);
+    }
+
+    // Monotony (15 pts)
+    if (monotony !== null) {
+        if (monotony > 1.5)   score += Math.min(15, ((monotony - 1.5) / 0.5) * 15);
+    }
+
+    // Days since rest (15 pts) — approximate from daysSinceRest
+    if (daysSinceRest !== null) {
+        if (daysSinceRest > 3) score += Math.min(15, ((daysSinceRest - 3) / 4) * 15);
+    }
+
+    return Math.min(100, Math.round(score));
+}
+
+function riskClass(score) {
+    if (score >= 61) return 'cell-red';
+    if (score >= 31) return 'cell-amber';
+    return 'cell-green';
+}
+
+function riskBadgeClass(score) {
+    if (score >= 61) return 'badge-red';
+    if (score >= 31) return 'badge-amber';
+    return 'badge-green';
+}
+
+function riskLabel(score) {
+    if (score >= 61) return 'High';
+    if (score >= 31) return 'Moderate';
+    return 'Low';
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// FETCH ALL DATA
+// ─────────────────────────────────────────────────────────────────────────
+
+const [
+    { data: athletes,  error: errA },
+    { data: gpsSessions, error: errG },
+    { data: cmjTests,  error: errC },
+    { data: nordbord,  error: errN },
+    { data: flags,     error: errF },
+] = await Promise.all([
+    supabase.from('athletes').select('*'),
+    supabase.from('gps_sessions').select('*').order('session_date', { ascending: false }),
+    supabase.from('cmj_tests').select('*').order('test_date', { ascending: false }),
+    supabase.from('nordbord_tests').select('*').order('test_date', { ascending: false }),
+    supabase.from('flags').select('*, athletes(name, position)').eq('resolved', false).order('flag_date', { ascending: false }),
+]);
+
+if (errA || errG || errC || errN || errF) {
+    document.querySelector('.page-wrap').innerHTML =
+        `<div style="padding:2rem;color:#991b1b;background:#fef2f2;border-radius:8px;margin-top:1rem;">
+            ⚠️ Failed to load data. Check your Supabase credentials and RLS policies.<br>
+            <small>${(errA||errG||errC||errN||errF)?.message}</small>
+         </div>`;
+    throw new Error('Data fetch failed');
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// PER-ATHLETE COMPUTED METRICS
+// ─────────────────────────────────────────────────────────────────────────
+
+const athleteMetrics = {};
+
+for (const ath of athletes) {
+    const gpsRows  = gpsSessions.filter(r => r.athlete_id === ath.id);
+    const cmjRows  = cmjTests.filter(r => r.athlete_id === ath.id);
+    const nbRows   = nordbord.filter(r => r.athlete_id === ath.id);
+
+    const acwr     = computeACWR(gpsRows);
+    const cmjPct   = computeCMJChange(cmjRows);
+
+    // Latest NordBord LSI
+    const latestNB = nbRows[0];
+    const lsi      = latestNB ? Number(latestNB.lsi_pct) : null;
+
+    // Monotony: mean / SD of last 7 days player_load
+    const last7    = gpsRows.slice(0, 7).map(r => Number(r.player_load));
+    let monotony   = null;
+    if (last7.length >= 3) {
+        const mean = last7.reduce((s,v) => s+v, 0) / last7.length;
+        const sd   = Math.sqrt(last7.reduce((s,v) => s + (v-mean)**2, 0) / last7.length);
+        monotony   = sd > 0 ? mean / sd : null;
+    }
+
+    // Days since rest: consecutive days with player_load > 60% of base
+    const daysSinceRest = (() => {
+        let d = 0;
+        for (const row of gpsRows) {
+            if (Number(row.player_load) > 100) d++;
+            else break;
+        }
+        return d;
+    })();
+
+    const risk = computeRisk(acwr, cmjPct, lsi, monotony, daysSinceRest);
+
+    athleteMetrics[ath.id] = { acwr, cmjPct, lsi, monotony, daysSinceRest, risk };
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// KPI STRIP
+// ─────────────────────────────────────────────────────────────────────────
+
+const totalAthletes   = athletes.length;
+const activeAthletes  = athletes.filter(a => a.status === 'Active' || a.status === 'Limited').length;
+const availPct        = Math.round((activeAthletes / totalAthletes) * 100);
+const highRiskCount   = Object.values(athleteMetrics).filter(m => m.risk >= 61).length;
+const validACWRs      = Object.values(athleteMetrics).filter(m => m.acwr !== null).map(m => m.acwr);
+const squadACWR       = validACWRs.length
+    ? (validACWRs.reduce((s,v) => s+v, 0) / validACWRs.length).toFixed(2)
+    : '—';
+const cmjNormal       = Object.values(athleteMetrics).filter(m => m.cmjPct === null || m.cmjPct > -10).length;
+const cmjReadinessPct = Math.round((cmjNormal / totalAthletes) * 100);
+
+// Training load status
+const avgAcwr = parseFloat(squadACWR);
+const loadStatus = avgAcwr > 1.5 ? ['Very High', 'badge-red']
+                 : avgAcwr > 1.3 ? ['High',      'badge-amber']
+                 :                  ['Normal',    'badge-green'];
+
+const availBadge = availPct >= 90 ? 'badge-green' : availPct >= 80 ? 'badge-amber' : 'badge-red';
+const acwrBadge  = (avgAcwr > 1.5 || avgAcwr < 0.8) ? 'badge-red' : 'badge-green';
+
+document.getElementById('kpi-strip').innerHTML = `
+    <div class="kpi-card">
+        <div class="kpi-label">Roster Availability</div>
+        <div class="kpi-value">${availPct}<span style="font-size:1rem;font-weight:500">%</span></div>
+        <div class="kpi-sub"><span class="badge ${availBadge}">${activeAthletes}/${totalAthletes} available</span></div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">High-Risk Athletes</div>
+        <div class="kpi-value" style="color:${highRiskCount > 3 ? 'var(--red)' : 'var(--uf-navy)'}">${highRiskCount}</div>
+        <div class="kpi-sub"><span class="badge ${highRiskCount > 3 ? 'badge-red' : 'badge-green'}">
+            ${highRiskCount > 3 ? 'Attention needed' : 'Within threshold'}
+        </span></div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label"><span data-tip="Acute:Chronic Workload Ratio">ACWR</span> Squad Avg</div>
+        <div class="kpi-value">${squadACWR}</div>
+        <div class="kpi-sub"><span class="badge ${acwrBadge}">Safe zone 0.8–1.5</span></div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">CMJ Readiness Index</div>
+        <div class="kpi-value">${cmjReadinessPct}<span style="font-size:1rem;font-weight:500">%</span></div>
+        <div class="kpi-sub"><span class="badge badge-green">Within normal range</span></div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">Training Load Status</div>
+        <div class="kpi-value" style="font-size:1.4rem">${loadStatus[0]}</div>
+        <div class="kpi-sub"><span class="badge ${loadStatus[1]}">${loadStatus[0]}</span></div>
+    </div>
+`;
+
+// ─────────────────────────────────────────────────────────────────────────
+// FLAG PANEL
+// ─────────────────────────────────────────────────────────────────────────
+
+document.getElementById('flag-count').textContent = flags.length;
+
+if (flags.length === 0) {
+    document.getElementById('flag-table-wrap').innerHTML =
+        `<div style="padding:1.5rem;color:var(--green);font-size:0.85rem;font-weight:600;">
+            ✓ No unresolved flags today
+         </div>`;
+} else {
+    document.getElementById('flag-table-wrap').innerHTML = `
+        <table>
+            <thead>
+                <tr>
+                    <th>Athlete</th>
+                    <th>Position</th>
+                    <th>Flag Type</th>
+                    <th>Severity</th>
+                    <th>Triggered By</th>
+                    <th>Recommended Action</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                ${flags.map(f => `
+                    <tr class="${f.severity === 'HIGH' ? 'row-red' : 'row-amber'}">
+                        <td style="font-weight:600">${f.athletes?.name ?? '—'}</td>
+                        <td>${f.athletes?.position ?? '—'}</td>
+                        <td>${f.flag_type}</td>
+                        <td><span class="severity-pill ${f.severity === 'HIGH' ? 'pill-high' : 'pill-moderate'}">${f.severity}</span></td>
+                        <td style="font-size:0.78rem;color:var(--muted);max-width:200px">${f.triggered_by}</td>
+                        <td style="font-size:0.78rem;max-width:220px">${f.recommended_action}</td>
+                        <td><button class="btn-view" data-id="${f.athlete_id}">View Athlete</button></td>
+                    </tr>`).join('')}
+            </tbody>
+        </table>`;
+
+    // Wire "View Athlete" buttons
+    document.querySelectorAll('.btn-view').forEach(btn => {
+        btn.addEventListener('click', () => openAthleteModal(btn.dataset.id));
+    });
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// SQUAD HEATMAP
+// ─────────────────────────────────────────────────────────────────────────
+
+const POS_ORDER = ['QB','RB','WR','TE','OL','DL','LB','DB','K','P','ST'];
+const byPos = {};
+for (const pos of POS_ORDER) byPos[pos] = [];
+for (const ath of athletes) {
+    const p = ath.position;
+    if (!byPos[p]) byPos[p] = [];
+    byPos[p].push(ath);
+}
+
+const heatmapEl  = document.getElementById('heatmap-groups');
+const tooltip    = document.getElementById('hm-tooltip');
+let ttTimeout;
+
+heatmapEl.innerHTML = POS_ORDER.map(pos => {
+    const group = byPos[pos];
+    if (!group || group.length === 0) return '';
+    return `
+        <div class="heatmap-row">
+            <div class="heatmap-pos-label">${pos}</div>
+            <div class="heatmap-cells">
+                ${group.map(ath => {
+                    const m = athleteMetrics[ath.id];
+                    const cls = riskClass(m.risk);
+                    return `<div class="heatmap-cell ${cls}"
+                        data-id="${ath.id}"
+                        data-name="${ath.name}"
+                        data-pos="${ath.position}"
+                        data-acwr="${m.acwr?.toFixed(2) ?? 'N/A'}"
+                        data-cmj="${m.cmjPct?.toFixed(1) ?? 'N/A'}"
+                        data-risk="${m.risk}"
+                        title="">
+                        ${ath.jersey_number}
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+}).join('');
+
+// Heatmap tooltip
+document.querySelectorAll('.heatmap-cell').forEach(cell => {
+    cell.addEventListener('mouseenter', (e) => {
+        const d = cell.dataset;
+        tooltip.innerHTML = `
+            <div class="hm-tooltip-name">#${cell.textContent.trim()} ${d.name}</div>
+            <div>${d.pos} · Risk: <strong>${d.risk}/100</strong></div>
+            <div>ACWR: ${d.acwr} · CMJ Δ: ${d.cmj !== 'N/A' ? d.cmj + '%' : 'N/A'}</div>`;
+        tooltip.classList.add('visible');
+    });
+
+    cell.addEventListener('mousemove', (e) => {
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top  = (e.clientY - 10) + 'px';
+    });
+
+    cell.addEventListener('mouseleave', () => {
+        tooltip.classList.remove('visible');
+    });
+
+    cell.addEventListener('click', () => openAthleteModal(cell.dataset.id));
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// ACWR TREND CHART — 28-day squad average
+// ─────────────────────────────────────────────────────────────────────────
+
+const today    = new Date();
+const dateLabels = Array.from({length: 28}, (_, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (27 - i));
+    return d.toISOString().slice(0, 10);
+});
+
+// For each of the 28 days, compute squad avg ACWR using data up to that point
+const acwrTrend = dateLabels.map((dateStr, dayIdx) => {
+    const allForDay = athletes.map(ath => {
+        const rows = gpsSessions
+            .filter(r => r.athlete_id === ath.id && r.session_date <= dateStr)
+            .slice(0, 28);
+        return computeACWR(rows);
+    }).filter(v => v !== null);
+    return allForDay.length ? allForDay.reduce((s,v) => s+v, 0) / allForDay.length : null;
+});
+
+const acwrCtx = document.getElementById('acwr-chart').getContext('2d');
+new Chart(acwrCtx, {
+    type: 'line',
+    data: {
+        labels: dateLabels.map(d => d.slice(5)),
+        datasets: [
+            {
+                label: 'Squad Avg ACWR',
+                data: acwrTrend,
+                borderColor: '#003087',
+                backgroundColor: 'rgba(0,48,135,0.07)',
+                borderWidth: 2,
+                pointRadius: 2,
+                tension: 0.35,
+                fill: true,
+            },
+            {
+                label: 'Upper limit (1.5)',
+                data: Array(28).fill(1.5),
+                borderColor: '#DC2626',
+                borderDash: [6, 3],
+                borderWidth: 1.5,
+                pointRadius: 0,
+            },
+            {
+                label: 'Lower limit (0.8)',
+                data: Array(28).fill(0.8),
+                borderColor: '#D97706',
+                borderDash: [6, 3],
+                borderWidth: 1.5,
+                pointRadius: 0,
+            },
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+            y: {
+                min: 0.4,
+                max: 2.0,
+                ticks: { font: { size: 10 } },
+                title: { display: true, text: 'ACWR', font: { size: 10 } }
+            },
+            x: { ticks: { maxTicksLimit: 8, font: { size: 10 } } }
+        }
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// WEEKLY LOAD BAR CHART
+// ─────────────────────────────────────────────────────────────────────────
+
+const posGroupColors = {
+    skill:  '#FA4616',
+    big:    '#003087',
+    hybrid: '#16A34A',
+};
+
+function buildLoadChart(filter) {
+    const cutoff = new Date(today);
+    cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffStr = cutoff.toISOString().slice(0,10);
+
+    const filtered = athletes.filter(a => {
+        if (filter === 'all')    return true;
+        if (filter === 'skill')  return posGroup(a.position) === 'skill';
+        if (filter === 'big')    return posGroup(a.position) === 'big';
+        if (filter === 'hybrid') return posGroup(a.position) === 'hybrid';
+        return true;
+    });
+
+    // Sum last 7 days per athlete
+    const data = filtered.map(ath => {
+        const load = gpsSessions
+            .filter(r => r.athlete_id === ath.id && r.session_date >= cutoffStr)
+            .reduce((s,r) => s + Number(r.player_load), 0);
+        return { name: ath.name.split(' ')[1] || ath.name, load: Math.round(load), pos: ath.position };
+    }).sort((a,b) => b.load - a.load).slice(0, 20);
+
+    return {
+        labels: data.map(d => d.name),
+        datasets: [{
+            label: '7-day Player Load',
+            data: data.map(d => d.load),
+            backgroundColor: data.map(d => posGroupColors[posGroup(d.pos)] + 'CC'),
+            borderRadius: 4,
+        }]
+    };
+}
+
+const loadCtx = document.getElementById('load-chart').getContext('2d');
+let loadChart = new Chart(loadCtx, {
+    type: 'bar',
+    data: buildLoadChart('all'),
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => `Player Load: ${ctx.raw}` } }
+        },
+        scales: {
+            y: { ticks: { font: { size: 10 } }, title: { display: true, text: 'Player Load', font: { size: 10 } } },
+            x: { ticks: { font: { size: 9 }, maxRotation: 45 } }
+        }
+    }
+});
+
+document.getElementById('load-pos-filter').addEventListener('change', function() {
+    loadChart.data = buildLoadChart(this.value);
+    loadChart.update();
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// ATHLETE DETAIL MODAL
+// ─────────────────────────────────────────────────────────────────────────
+
+async function openAthleteModal(athleteId) {
+    const modal   = document.getElementById('athlete-modal');
+    const content = document.getElementById('modal-content');
+    modal.classList.add('open');
+    content.innerHTML = '<div style="padding:1rem;color:var(--muted)">Loading…</div>';
+
+    const ath     = athletes.find(a => a.id === athleteId);
+    const m       = athleteMetrics[athleteId];
+    const athFlags = flags.filter(f => f.athlete_id === athleteId);
+
+    if (!ath) { content.innerHTML = 'Athlete not found.'; return; }
+
+    const htFt = Math.floor(ath.height_in / 12);
+    const htIn = ath.height_in % 12;
+
+    content.innerHTML = `
+        <div class="modal-name">${ath.name}</div>
+        <div class="modal-meta">
+            #${ath.jersey_number} · ${ath.position} · ${ath.class_year} ·
+            ${htFt}'${htIn}" · ${ath.weight_lbs} lbs ·
+            <span class="badge ${ath.status === 'Active' ? 'badge-green' : ath.status === 'Injured' ? 'badge-red' : 'badge-amber'}">${ath.status}</span>
+        </div>
+
+        <div class="modal-grid">
+            <div class="modal-stat">
+                <div class="modal-stat-label">Composite Risk</div>
+                <div class="modal-stat-value" style="color:${m.risk >= 61 ? 'var(--red)' : m.risk >= 31 ? 'var(--amber)' : 'var(--green)'}">${m.risk}/100</div>
+                <div style="font-size:0.75rem;color:var(--muted)">${riskLabel(m.risk)} risk</div>
+            </div>
+            <div class="modal-stat">
+                <div class="modal-stat-label">ACWR</div>
+                <div class="modal-stat-value">${m.acwr?.toFixed(2) ?? '—'}</div>
+                <div style="font-size:0.75rem;color:var(--muted)">Safe zone: 0.8–1.5</div>
+            </div>
+            <div class="modal-stat">
+                <div class="modal-stat-label">CMJ Δ vs Baseline</div>
+                <div class="modal-stat-value" style="color:${m.cmjPct === null ? 'inherit' : m.cmjPct < -20 ? 'var(--red)' : m.cmjPct < -10 ? 'var(--amber)' : 'var(--green)'}">
+                    ${m.cmjPct !== null ? (m.cmjPct > 0 ? '+' : '') + m.cmjPct.toFixed(1) + '%' : '—'}
+                </div>
+                <div style="font-size:0.75rem;color:var(--muted)">Flag threshold: &lt; -10%</div>
+            </div>
+            <div class="modal-stat">
+                <div class="modal-stat-label">NordBord LSI</div>
+                <div class="modal-stat-value" style="color:${m.lsi === null ? 'inherit' : m.lsi < 90 ? 'var(--red)' : m.lsi < 95 ? 'var(--amber)' : 'var(--green)'}">
+                    ${m.lsi !== null ? m.lsi.toFixed(1) + '%' : '—'}
+                </div>
+                <div style="font-size:0.75rem;color:var(--muted)">Target: ≥ 95%</div>
+            </div>
+        </div>
+
+        ${athFlags.length > 0 ? `
+        <div class="modal-flags-title">Active Flags (${athFlags.length})</div>
+        ${athFlags.map(f => `
+            <div class="modal-flag-item">
+                <span class="severity-pill ${f.severity === 'HIGH' ? 'pill-high' : 'pill-moderate'}">${f.severity}</span>
+                <div>
+                    <div style="font-weight:600;font-size:0.82rem">${f.flag_type}</div>
+                    <div style="color:var(--muted);font-size:0.75rem">${f.triggered_by}</div>
+                    <div style="font-size:0.78rem;margin-top:0.2rem">${f.recommended_action}</div>
+                </div>
+            </div>`).join('')}
+        ` : '<div style="color:var(--green);font-size:0.85rem;font-weight:600;">✓ No active flags</div>'}
+    `;
+}
+
+document.getElementById('modal-close-btn').addEventListener('click', () => {
+    document.getElementById('athlete-modal').classList.remove('open');
+});
+
+document.getElementById('athlete-modal').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) e.currentTarget.classList.remove('open');
+});
+</script>
+
+</body>
+</html>
