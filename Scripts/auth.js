@@ -10,7 +10,11 @@
 //   </script>
 // ═══════════════════════════════════════════════════════════════════════════
 
-import { supabase } from './supabase_client.js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+const supabase = createClient(
+    'https://fyhgvxfrwbwuqxllodip.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5aGd2eGZyd2J3dXF4bGxvZGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMzk5ODIsImV4cCI6MjA5NDcxNTk4Mn0.665OZwCsBvnHCVZ-ApiF2xM1CBgTIYZe2EEbuW7IW3U'
+);
 
 // ── Role → allowed pages map ─────────────────────────────────────────────
 // Keys match the `pageKey` argument passed to initAuth()
@@ -26,7 +30,7 @@ const PAGE_ACCESS = {
 // ── Nav links per role ────────────────────────────────────────────────────
 const NAV_LINKS = {
     head_coach: [
-        { href: '/pages/index.html',   label: 'Dashboard',    key: 'index' },
+        { href: './index.html',   label: 'Dashboard',    key: 'index' },
     ],
     sc_staff: [
         { href: './index.html',           label: 'Dashboard',    key: 'index' },
@@ -37,9 +41,9 @@ const NAV_LINKS = {
         { href: './roster.html',          label: 'Roster',       key: 'roster' },
     ],
     athletic_trainer: [
-        { href: '/pages/nordbord.html',    label: 'NordBord',    key: 'nordbord' },
-        { href: '/pages/injury_risk.html', label: 'Injury Risk', key: 'injury_risk' },
-        { href: '/pages/roster.html',      label: 'Roster',      key: 'roster' },
+        { href: './nordbord.html',    label: 'NordBord',    key: 'nordbord' },
+        { href: './injury_risk.html', label: 'Injury Risk', key: 'injury_risk' },
+        { href: './roster.html',      label: 'Roster',      key: 'roster' },
     ],
 };
 
@@ -105,7 +109,7 @@ function renderNavbar(role, fullName, activeKey) {
     const navHTML = `
     <nav id="uf-navbar">
         <div class="nav-inner">
-            <a href="/pages/index.html" class="nav-logo">UF S&amp;C</a>
+            <a href="./index.html" class="nav-logo">UF S&amp;C</a>
 
             <div class="nav-links">
                 ${links.map(link => `

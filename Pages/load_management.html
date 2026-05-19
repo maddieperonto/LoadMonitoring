@@ -326,8 +326,9 @@
 <div class="toast" id="toast"></div>
 
 <script type="module">
-import { supabase } from '../scripts/supabase_client.js';
-import { initAuth } from '../scripts/auth.js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { initAuth, showSpinner, hideSpinner, showError } from 'https://cdn.jsdelivr.net/gh/maddieperonto/LoadMonitoring@main/scripts/auth.js';
+const supabase = createClient('https://fyhgvxfrwbwuqxllodip.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5aGd2eGZyd2J3dXF4bGxvZGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMzk5ODIsImV4cCI6MjA5NDcxNTk4Mn0.665OZwCsBvnHCVZ-ApiF2xM1CBgTIYZe2EEbuW7IW3U');
 
 await initAuth('load_management');
 
