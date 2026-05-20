@@ -675,7 +675,7 @@ function acwrStatus(v){
 // Latest CMJ per athlete
 function latestCMJ(id){return cmj.filter(r=>r.athlete_id===id).sort((a,b)=>new Date(b.test_date)-new Date(a.test_date))[0]??null;}
 // Latest NordBord per athlete
-function latestNord(id){return nord.filter(r=>r.athlete_id===id).sort((a,b)=>new Date(b.test_date)-new new Date(a.test_date))[0]??null;}
+function latestNord(id){return nord.filter(r=>r.athlete_id===id).sort((a,b)=>new Date(b.test_date)-new Date(a.test_date))[0]??null;}
 // Latest body comp
 function latestBC(id){return bodycomp.filter(r=>r.athlete_id===id)[0]??null;}
 // Lifting maxes (one row per athlete)
