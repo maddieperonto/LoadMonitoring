@@ -19,12 +19,13 @@ const supabase = createClient(
 // ── Role → allowed pages map ─────────────────────────────────────────────
 // Keys match the `pageKey` argument passed to initAuth()
 const PAGE_ACCESS = {
-    'index':          ['head_coach', 'sc_staff'],
-    'load_management':['sc_staff'],
-    'cmj':            ['sc_staff'],
-    'nordbord':       ['sc_staff', 'athletic_trainer'],
-    'injury_risk':    ['sc_staff', 'athletic_trainer'],
-    'roster':         ['sc_staff', 'athletic_trainer'],
+    'index':           ['head_coach', 'sc_staff'],
+    'dashboard':       ['head_coach', 'sc_staff', 'athletic_trainer'],
+    'load_management': ['sc_staff'],
+    'cmj':             ['sc_staff'],
+    'nordbord':        ['sc_staff', 'athletic_trainer'],
+    'injury_risk':     ['sc_staff', 'athletic_trainer'],
+    'roster':          ['sc_staff', 'athletic_trainer'],
 };
 
 // ── Nav links per role ────────────────────────────────────────────────────
