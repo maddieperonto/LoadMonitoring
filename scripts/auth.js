@@ -30,22 +30,9 @@ const PAGE_ACCESS = {
 
 // ── Nav links per role ────────────────────────────────────────────────────
 const NAV_LINKS = {
-    head_coach: [
-        { href: './index.html',   label: 'Dashboard',    key: 'index' },
-    ],
-    sc_staff: [
-        { href: './index.html',           label: 'Dashboard',    key: 'index' },
-        { href: './load_management.html', label: 'Load Mgmt',    key: 'load_management' },
-        { href: './cmj.html',             label: 'CMJ',          key: 'cmj' },
-        { href: './nordbord.html',        label: 'NordBord',     key: 'nordbord' },
-        { href: './injury_risk.html',     label: 'Injury Risk',  key: 'injury_risk' },
-        { href: './roster.html',          label: 'Roster',       key: 'roster' },
-    ],
-    athletic_trainer: [
-        { href: './nordbord.html',    label: 'NordBord',    key: 'nordbord' },
-        { href: './injury_risk.html', label: 'Injury Risk', key: 'injury_risk' },
-        { href: './roster.html',      label: 'Roster',      key: 'roster' },
-    ],
+    head_coach:       [],
+    sc_staff:         [],
+    athletic_trainer: [],
 };
 
 // ── Page titles for nav active-state detection ────────────────────────────
