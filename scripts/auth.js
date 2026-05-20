@@ -46,7 +46,7 @@ function getCurrentPageKey() {
 }
 
 // ── Main entry point ──────────────────────────────────────────────────────
-export async function initAuth(pageKey) {
+export async function initAuth(pageKey, options = {}) {
     // 1. Check for a valid Supabase session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
@@ -78,8 +78,10 @@ export async function initAuth(pageKey) {
         return null;
     }
 
-    // 4. Inject the navbar
-    renderNavbar(role, full_name, pageKey || getCurrentPageKey());
+    // 4. Inject the navbar (skip if page has its own nav)
+    if (!options.skipNavbar) {
+        renderNavbar(role, full_name, pageKey || getCurrentPageKey());
+    }
 
     // 5. Listen for auth state changes (e.g. token expiry)
     supabase.auth.onAuthStateChange((event) => {

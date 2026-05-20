@@ -598,7 +598,7 @@ const supabase = createClient(
 );
 
 // ── Auth ──────────────────────────────────────────────────────────────────
-const authResult = await initAuth('index');
+const authResult = await initAuth('dashboard', { skipNavbar: true });
 if (!authResult) throw new Error('Auth failed');
 const { full_name } = authResult;
 document.getElementById('sidebar-username').textContent = full_name;
