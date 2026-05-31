@@ -552,9 +552,6 @@ while(!done){
 const eR=null;
 const {data:aths}=await SB.from('athletes').select('name,position');
 if(eR){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ ${eR.message}</div>`;throw 0;}
-console.log('[DEBUG] raw sessions fetched:', raw?.length, '| athletes fetched:', aths?.length);
-console.log('[DEBUG] sample raw row:', raw?.[0]);
-console.log('[DEBUG] sample ath row:', aths?.[0]);
  
 // ── POSITION LOOKUP ───────────────────────────────────────────────
 const OFF=['QB','WR','RB','TE','OL'],DEF=['DL','LB','ILB','EDGE','CB','S'],STS=['K','P','ST'];
@@ -950,7 +947,6 @@ window.closePM=function(e,force=false){if(force||e?.target===e?.currentTarget)do
 window.navToGPS=function(name){navTo('gps');setTimeout(()=>{setGPSView('player');setTimeout(()=>{const s=document.getElementById('gps-sel');if(s){s.value=name;renderGPS();}},80);},80);};
  
 // ── INIT ──────────────────────────────────────────────────────────
-console.log('[DEBUG] PLAYERS built:', PLAYERS.length);
 if(PLAYERS.length===0){
   document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data found. Raw rows fetched: ${raw?.length||0}. Check catapult_sessions RLS policy allows authenticated reads.</div>`;
   throw 0;
