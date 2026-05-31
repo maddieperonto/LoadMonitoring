@@ -269,7 +269,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   </div>
 </div>
 <div class="content-area" id="content-area">
-
+ 
 <!-- DASHBOARD -->
 <div class="page active" id="pg-dashboard">
   <div class="stat-row" id="dash-stats"></div>
@@ -291,13 +291,13 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     </div>
   </div>
 </div>
-
+ 
 <!-- ROSTER -->
 <div class="page" id="pg-roster">
   <input class="roster-search" id="roster-search" type="text" placeholder="Search name, position, unit…">
   <div class="roster-grid" id="roster-grid"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></div>
 </div>
-
+ 
 <!-- GPS -->
 <div class="page" id="pg-gps">
   <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
@@ -371,7 +371,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     </div>
   </div>
 </div>
-
+ 
 <!-- LOAD MONITOR -->
 <div class="page" id="pg-loadmonitor">
   <div class="lm-metric-grid" id="lm-metrics"></div>
@@ -412,22 +412,22 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   </div>
   <div class="lm-detail-section" id="lm-detail-section"><div class="lm-detail-card" id="lm-detail-card"></div></div>
 </div>
-
+ 
 <!-- VALD -->
 <div class="page" id="pg-vald">
   <div class="placeholder-state"><div class="placeholder-icon">⚡</div><div class="placeholder-title">VALD Testing</div><div class="placeholder-sub">ForceDeck CMJ and NordBord data will appear here once the automated VALD import pipeline is connected. Real data from your most recent testing sessions will populate automatically.</div><div class="placeholder-badge">Automation In Progress</div></div>
 </div>
-
+ 
 <!-- LIFTING -->
 <div class="page" id="pg-lifting">
   <div class="placeholder-state"><div class="placeholder-icon">🏋️</div><div class="placeholder-title">Lifting Maxes</div><div class="placeholder-sub">Clean, squat, bench, deadlift, and front squat data will appear here once the automated lifting data pipeline is connected.</div><div class="placeholder-badge">Automation In Progress</div></div>
 </div>
-
+ 
 <!-- STANDARDS -->
 <div class="page" id="pg-standards">
   <div class="placeholder-state"><div class="placeholder-icon">🏆</div><div class="placeholder-title">Strength Standards</div><div class="placeholder-sub">Position-specific strength standards comparison will appear here once lifting data is connected.</div><div class="placeholder-badge">Automation In Progress</div></div>
 </div>
-
+ 
 <!-- LEADERBOARDS -->
 <div class="page" id="pg-leaderboards">
   <div class="lb-tabs" id="lb-tabs"></div>
@@ -436,7 +436,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel" id="lb-panel-right"></div>
   </div>
 </div>
-
+ 
 <!-- INJURY RISK -->
 <div class="page" id="pg-injury">
   <div class="stat-row" id="injury-stats"></div>
@@ -453,12 +453,12 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     </tr></thead><tbody id="injury-table"></tbody></table></div>
   </div>
 </div>
-
+ 
 <!-- BODY COMP -->
 <div class="page" id="pg-bodycomp">
   <div class="placeholder-state"><div class="placeholder-icon">⚖️</div><div class="placeholder-title">Body Composition</div><div class="placeholder-sub">Body weight tracking, goal weight variance, lean mass, and body fat % will appear here once the body composition data pipeline is connected.</div><div class="placeholder-badge">Automation In Progress</div></div>
 </div>
-
+ 
 <!-- COMPARE -->
 <div class="page" id="pg-compare">
   <div class="sel-row" style="margin-bottom:16px">
@@ -473,9 +473,9 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   </div>
   <div class="panel"><div class="panel-title"><i class="ti ti-chart-radar"></i>GPS Performance Radar</div><div class="chart-wrap h280"><canvas id="cmp-radar"></canvas></div></div>
 </div>
-
+ 
 </div></div></div>
-
+ 
 <!-- PLAYER MODAL -->
 <div class="pm-overlay" id="pm-overlay" onclick="closePM(event)">
   <div class="pm-box">
@@ -490,14 +490,14 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     </div>
   </div>
 </div>
-
+ 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 const SB = createClient(
   'https://fyhgvxfrwbwuqxllodip.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5aGd2eGZyd2J3dXF4bGxvZGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMzk5ODIsImV4cCI6MjA5NDcxNTk4Mn0.665OZwCsBvnHCVZ-ApiF2xM1CBgTIYZe2EEbuW7IW3U'
 );
-
+ 
 // ── AUTH ──────────────────────────────────────────────────────────
 async function doAuth(){
   const {data:{session}}=await SB.auth.getSession();
@@ -510,7 +510,7 @@ async function doAuth(){
 const me=await doAuth();if(!me)throw 0;
 document.getElementById('sidebar-username').textContent=me.full_name;
 document.getElementById('logout-btn').onclick=async()=>{await SB.auth.signOut();location.href='./login.html';};
-
+ 
 // ── PHASE ─────────────────────────────────────────────────────────
 const PH={ss:'2025-01-23',se:'2025-04-11',us:'2025-05-13',ue:'2025-07-29',fs:'2025-08-05'};
 function phase(d){if(d>=PH.ss&&d<=PH.se)return'Sp';if(d>=PH.us&&d<=PH.ue)return'Su';if(d>=PH.fs)return'Fa';return null;}
@@ -520,7 +520,7 @@ function phWk(d){
   const days=Math.floor((new Date(d+'T00:00:00')-base)/86400000);
   return`${ph} W${Math.floor(days/7)+1}`;
 }
-
+ 
 // ── FETCH ─────────────────────────────────────────────────────────
 const [{data:raw,error:eR},{data:aths}]=await Promise.all([
   SB.from('catapult_sessions')
@@ -529,7 +529,10 @@ const [{data:raw,error:eR},{data:aths}]=await Promise.all([
   SB.from('athletes').select('name,position')
 ]);
 if(eR){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ ${eR.message}</div>`;throw 0;}
-
+console.log('[DEBUG] raw sessions fetched:', raw?.length, '| athletes fetched:', aths?.length);
+console.log('[DEBUG] sample raw row:', raw?.[0]);
+console.log('[DEBUG] sample ath row:', aths?.[0]);
+ 
 // ── POSITION LOOKUP ───────────────────────────────────────────────
 const OFF=['QB','WR','RB','TE','OL'],DEF=['DL','LB','ILB','EDGE','CB','S'],STS=['K','P','ST'];
 const PM={},UM={};
@@ -544,7 +547,7 @@ function lkPos(n){
   return'UNK';
 }
 function lkUnit(n){const p=lkPos(n);return OFF.includes(p)?'Offense':DEF.includes(p)?'Defense':STS.includes(p)?'Special Teams':'Other';}
-
+ 
 // ── BUILD SESSION DATA ─────────────────────────────────────────────
 const byP={};
 raw.forEach(r=>{
@@ -558,7 +561,7 @@ raw.forEach(r=>{
     maxV:+r.max_velocity||0,accel:+r.accel_b2_3_efforts||0,decel:+r.decel_b2_3_efforts||0
   });
 });
-
+ 
 // ── ORDERED PHASE WEEKS ───────────────────────────────────────────
 const phWkOrd={'Sp':0,'Su':1,'Fa':2};
 const allPhWks=[...new Set(raw.map(r=>phWk(r.session_date)).filter(Boolean))].sort((a,b)=>{
@@ -573,11 +576,11 @@ const lastSuN=suWks.length?parseInt(suWks[suWks.length-1].slice(3)):0;
 const suProjWks=Array.from({length:Math.max(0,10-lastSuN)},(_,i)=>`Su W${lastSuN+i+1}`);
 const faProjWks=['Fa W1','Fa W2','Fa W3','Fa W4'];
 const allLMWks=[...spWks,...suWks,...suProjWks];
-
+ 
 // ── ACWR HELPER ───────────────────────────────────────────────────
 function calcACWR(arr){return arr.map((_,i)=>{const w=arr.slice(Math.max(0,i-3),i+1).filter(v=>v!=null&&v>0);const ch=w.reduce((a,b)=>a+b,0)/Math.max(1,w.length);return ch>0?+(arr[i]/ch).toFixed(3):0;});}
 function wkTot(sessions,field,wk){return sessions.filter(s=>s.wk===wk).reduce((t,s)=>t+s[field],0);}
-
+ 
 // ── BUILD PLAYERS ─────────────────────────────────────────────────
 const PLAYERS=Object.values(byP).map(p=>{
   const pos=lkPos(p.name),unit=lkUnit(p.name);
@@ -617,13 +620,13 @@ const PLAYERS=Object.values(byP).map(p=>{
   const fW1Pct=spAvg>0?Math.round(fp[0]/spAvg*100):0;
   return{name:p.name,pos,unit,sessions:p.sessions,dA,aA,lA,hA,dACWR,aACWR,latD,latA,latMaxV,totalHSR,latest,flags,risk,spAvg,curLoad:cl,spPct,acwr4,allLMLoad,allLMDist,allLMHSR,allLMAccel,allLMDecel,allLMVel,cl,cd,ch2,ca,cde,cv,endSumPct:esP,fallProj:fp,fallW1Pct:fW1Pct};
 }).filter(p=>p.sessions.length>0).sort((a,b)=>a.name.localeCompare(b.name));
-
+ 
 // ── TOPBAR ────────────────────────────────────────────────────────
 const today=new Date().toISOString().slice(0,10);
 const curPh=phase(today);
 const phLbl=curPh==='Sp'?'Spring Ball':curPh==='Su'?'Summer':curPh==='Fa'?'Fall Camp':'Off Season';
 document.getElementById('tb-season').textContent=`${PLAYERS.length} Athletes · ${phLbl}`;
-
+ 
 // ── CHART/RENDER HELPERS ──────────────────────────────────────────
 const C={acc:'#FA4616',blue:'#003087',green:'#16A34A',yellow:'#D97706',red:'#DC2626',grid:'rgba(0,48,135,0.06)',tick:'#94A3B8'};
 const CD={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'}},grid:{color:C.grid}},y:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'}},grid:{color:C.grid}}}};
@@ -647,22 +650,24 @@ function lmZone(v){
 }
 function acChart(id,ac,ch,wks,la,lb){mk(id,{type:'line',data:{labels:wks,datasets:[{label:la,data:ac,borderColor:C.acc,fill:false,tension:.35,pointRadius:4,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},{label:lb,data:ch.map(v=>Math.round(v)),borderColor:C.blue,fill:false,tension:.35,pointRadius:4,pointBackgroundColor:C.blue,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2,borderDash:[5,4]}]},options:{...CD,plugins:{legend:{display:true,labels:{color:'#475569',font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}}}}});}
 function acwrChart(id,acwrs,wks){const ptC=acwrs.map(v=>v?acwrColor(v):C.grid);mk(id,{type:'line',data:{labels:wks,datasets:[{data:Array(wks.length).fill(1.3),borderColor:'rgba(22,163,74,.5)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},{data:Array(wks.length).fill(1.5),borderColor:'rgba(217,119,6,.5)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},{data:Array(wks.length).fill(0.8),borderColor:'rgba(22,163,74,.5)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},{label:'ACWR',data:acwrs,borderColor:C.acc,backgroundColor:'rgba(250,70,22,0.05)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:ptC,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5}]},options:{...CD,scales:{x:{ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}},y:{min:0.3,max:2.2,ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}}}}});}
-
+ 
 // ── TEAM ACWR COMPUTATION ─────────────────────────────────────────
 function teamWkTot(field){const m={};raw.forEach(r=>{const wk=phWk(r.session_date);if(!wk)return;m[wk]=(m[wk]||0)+(+r[field]||0);});return allPhWks.map(wk=>m[wk]?m[wk]/PLAYERS.length:null);}
 const tDA=teamWkTot('total_distance'),tAA=teamWkTot('accel_b2_3_efforts');
 const validWks=allPhWks.filter((_,i)=>tDA[i]!=null);
 const tDACWR=calcACWR(tDA.filter(v=>v!=null)),tAACWR=calcACWR(tAA.filter(v=>v!=null));
 const latTD=tDACWR[tDACWR.length-1]??0,latTA=tAACWR[tAACWR.length-1]??0;
-
+ 
 // ── NAV ───────────────────────────────────────────────────────────
 const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison'};
 window.navTo=pg=>document.querySelector(`[data-page="${pg}"]`)?.click();
 let gpsView='team';
 window.setGPSView=function(v){
   gpsView=v;
+  const viewMap={team:'gps-team-view',player:'gps-individual-view',group:'gps-group-view'};
   ['team','player','group'].forEach(x=>{
-    document.getElementById(`gps-${x}-view`).style.display=x===v?'':'none';
+    const el=document.getElementById(viewMap[x]);
+    if(el)el.style.display=x===v?'':'none';
     const b=document.getElementById(`gps-btn-${x}`);
     if(b){b.style.background=x===v?'var(--uf-orange)':'transparent';b.style.color=x===v?'#fff':'var(--text3)';}
   });
@@ -685,7 +690,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
 });
 function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.options.length>1)return;PLAYERS.forEach(p=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;s.appendChild(o);});}
 ['cmp-a','cmp-b'].forEach((id,i)=>{const s=document.getElementById(id);PLAYERS.forEach((p,j)=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;if(i===1&&j===1)o.selected=true;s.appendChild(o);});});
-
+ 
 // ── DASHBOARD ─────────────────────────────────────────────────────
 (function renderDashboard(){
   const high=PLAYERS.filter(p=>p.risk==='high').length,mod=PLAYERS.filter(p=>p.risk==='mod').length;
@@ -705,7 +710,7 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
   const topH=[...PLAYERS].filter(p=>p.totalHSR>0).sort((a,b)=>b.totalHSR-a.totalHSR).slice(0,5);
   document.getElementById('dash-hsr').innerHTML=topH.map((p,i)=>`<div class="risk-row"><div style="font-family:var(--font-d);font-size:16px;font-weight:800;width:22px;text-align:center;color:${i===0?'#B45309':i===1?'#94a3b8':i===2?'#cd7c3e':'var(--text3)'}">${i+1}</div><div class="avatar" style="background:rgba(0,48,135,.1);color:var(--uf-blue)">${ini(p.name)}</div><div class="rnb"><div class="rname" onclick="navToGPS('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer" onmouseover="this.style.color='var(--uf-orange)'" onmouseout="this.style.color='var(--uf-blue)'">${p.name}</div><div class="rpos">${p.pos} · all sessions</div></div>${pill('ok',Math.round(p.totalHSR).toLocaleString()+' m')}</div>`).join('');
 })();
-
+ 
 // ── ROSTER ────────────────────────────────────────────────────────
 function filterRoster(q=''){
   const filtered=PLAYERS.filter(p=>p.name.toLowerCase().includes(q)||p.pos.toLowerCase().includes(q)||p.unit.toLowerCase().includes(q));
@@ -716,7 +721,7 @@ function filterRoster(q=''){
 }
 document.getElementById('roster-search').addEventListener('input',function(){filterRoster(this.value.toLowerCase());});
 filterRoster();
-
+ 
 // ── GPS TEAM ──────────────────────────────────────────────────────
 function renderGPSTeam(){
   const ds=acwrSt(latTD),as2=acwrSt(latTA);
@@ -736,7 +741,7 @@ function renderGPSTeam(){
   }).join('');
   document.getElementById('gps-team-roster').innerHTML=[...PLAYERS].sort((a,b)=>b.latD-a.latD).map(p=>{const st=acwrSt(p.latD);const s=p.latest;return`<tr><td style="font-weight:600;cursor:pointer;color:var(--uf-blue)" onclick="openPM('${p.name.replace(/'/g,"\\'")}');">${p.name}</td><td>${pill('info',p.pos)}</td><td style="font-size:10px;color:var(--text3)">${p.unit}</td><td class="mono">${s?Math.round(s.dist).toLocaleString():'—'}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</td><td class="mono">${s?(s.accel+s.decel):'—'}</td><td class="mono">${s?Math.round(s.hsr):'—'}</td><td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td><td class="mono ${acwrSt(p.latA).cls==='ok'?'ok':acwrSt(p.latA).cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
 }
-
+ 
 // ── GPS INDIVIDUAL ────────────────────────────────────────────────
 window.renderGPS=function(){
   const name=document.getElementById('gps-sel').value;
@@ -756,7 +761,7 @@ window.renderGPS=function(){
   document.getElementById('gps-table').innerHTML=validWks.map((wk,i)=>{const d=p.dACWR[i]??0,a=p.aACWR[i]??0,st=acwrSt(d);const ws=p.sessions.filter(s=>s.wk===wk);const wMV=ws.length?Math.max(...ws.map(s=>s.maxV)):0;return`<tr><td class="mono">${wk}</td><td class="mono">${Math.round(dF[i]||0).toLocaleString()}</td><td class="mono acc">${wMV>0?wMV.toFixed(2):'—'}</td><td class="mono">${Math.round(aF[i]||0)}</td><td class="mono">${Math.round(ws.reduce((t,s)=>t+s.hsr,0)).toLocaleString()}</td><td class="mono">${Math.round(dF[i]||0).toLocaleString()}</td><td class="mono">${Math.round(dCh[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(aF[i]||0)}</td><td class="mono">${Math.round(aCh[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
   document.getElementById('gps-roster-table').innerHTML=[...PLAYERS].sort((a,b)=>b.latD-a.latD).map(pl=>{const st=acwrSt(pl.latD);const ls=pl.latest;return`<tr><td style="font-weight:600;cursor:pointer;color:var(--uf-blue)" onclick="openPM('${pl.name.replace(/'/g,"\\'")}');">${pl.name}</td><td>${pill('info',pl.pos)}</td><td class="mono">${ls?Math.round(ls.dist).toLocaleString():'—'}</td><td class="mono acc">${pl.latMaxV>0?pl.latMaxV.toFixed(2):'—'}</td><td class="mono">${ls?(ls.accel+ls.decel):'—'}</td><td class="mono">${ls?Math.round(ls.hsr):'—'}</td><td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${pl.latD>0?pl.latD.toFixed(2):'—'}</td><td class="mono ${acwrSt(pl.latA).cls==='ok'?'ok':acwrSt(pl.latA).cls==='warn'?'warn':'danger'}">${pl.latA>0?pl.latA.toFixed(2):'—'}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
 };
-
+ 
 // ── GPS GROUP ─────────────────────────────────────────────────────
 window.renderGPSGroup=function(){
   const pos=document.getElementById('gps-group-sel').value;
@@ -780,7 +785,7 @@ window.renderGPSGroup=function(){
   document.getElementById('gps-grp-roster').innerHTML=grp.map(p=>{const st=acwrSt(p.latD);const s=p.latest;return`<tr><td style="font-weight:600">${p.name}</td><td class="mono">${s?Math.round(s.dist).toLocaleString():'—'}</td><td class="mono acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</td><td class="mono">${s?(s.accel+s.decel):'—'}</td><td class="mono">${s?Math.round(s.hsr):'—'}</td><td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td><td class="mono ${acwrSt(p.latA).cls==='ok'?'ok':acwrSt(p.latA).cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
   document.getElementById('gps-group-table').innerHTML=vWks.map((wk,i)=>{const d=gDACWR[i]??0,a=gAACWR[i]??0,st=acwrSt(d);const amv=(()=>{const v=grp.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();return`<tr><td class="mono">${wk}</td><td class="mono acc">${amv}</td><td class="mono">${Math.round(gDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(gAf[i]||0)}</td><td class="mono">${Math.round((gDf[i]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(gDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(gDch[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(gAf[i]||0)}</td><td class="mono">${Math.round(gAch[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
 };
-
+ 
 // ── LOAD MONITOR ──────────────────────────────────────────────────
 let lmUnit='All',lmPos='All',lmAcwr='all',lmMetric='load',lmSelIdx=null,lmTC=null,lmAC=null,lmPC=null;
 const LMP=PLAYERS.map(p=>({...p,allLoads:p.allLMLoad,allDist:p.allLMDist,allHSR:p.allLMHSR,allAccel:p.allLMAccel,allDecel:p.allLMDecel,allVel:p.allLMVel,acwr:p.acwr4}));
@@ -857,7 +862,7 @@ window.selLMPlayer=function(i){
   lmPC=new Chart(el2,{type:'bar',data:{labels:allL2,datasets:[{label:'Load',data:lb2,backgroundColor:bc2,borderRadius:3,order:3},{label:'Spring baseline',data:allL2.map(()=>p.spAvg),type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},{label:'Fall projection',data:fl2,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,fill:false,order:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10}}}}}});
   setTimeout(()=>sec.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 };
-
+ 
 // ── LEADERBOARDS ──────────────────────────────────────────────────
 const LB_CATS=[{id:'maxvel',lbl:'Max Velocity',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},{id:'hsr',lbl:'Total HSR (m)',fn:p=>p.totalHSR>0?p.totalHSR:null,fmt:v=>Math.round(v).toLocaleString()+' m'},{id:'sessions',lbl:'Session Count',fn:p=>p.sessions.length,fmt:v=>v+' sessions'},{id:'acwr',lbl:'ACWR Distance',fn:p=>p.latD>0?p.latD:null,fmt:v=>v.toFixed(2)}];
 let lbActive=LB_CATS[0];
@@ -872,7 +877,7 @@ window.renderLeaderboards=function(){
   document.getElementById('lb-panel-right').innerHTML=`<div class="panel-title"><i class="ti ti-chart-bar"></i>${lbActive.lbl} — By Position</div>`+posAvg.map(({pos,avg,n})=>`<div class="lb-row"><span class="lb-rank" style="font-size:11px;color:var(--uf-orange)">${pos}</span><div style="flex:1"><div style="font-weight:600;font-size:12px">${pos}</div><div style="font-size:10px;color:var(--text3)">${n} athletes</div></div><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.round(avg/maxAvg*100)}%"></div></div><span class="lb-val">${lbActive.fmt(avg)}</span></div>`).join('');
 };
 window.setLBCat=function(id){lbActive=LB_CATS.find(c=>c.id===id)||LB_CATS[0];renderLeaderboards();};
-
+ 
 // ── INJURY RISK ───────────────────────────────────────────────────
 let injSort={col:'risk',dir:'desc'};
 window.sortInjury=function(col){if(injSort.col===col)injSort.dir=injSort.dir==='asc'?'desc':'asc';else{injSort.col=col;injSort.dir='desc';}renderInjury();};
@@ -886,7 +891,7 @@ window.renderInjury=function(){
   const sorted=[...PLAYERS].sort((a,b)=>{if(injSort.col==='risk')return injSort.dir==='desc'?(rv[b.risk]||0)-(rv[a.risk]||0):(rv[a.risk]||0)-(rv[b.risk]||0);if(injSort.col==='name')return injSort.dir==='asc'?a.name.localeCompare(b.name):b.name.localeCompare(a.name);if(injSort.col==='acwr')return injSort.dir==='desc'?b.latD-a.latD:a.latD-b.latD;return 0;});
   document.getElementById('injury-table').innerHTML=sorted.map(p=>{const ds=acwrSt(p.latD),as2=acwrSt(p.latA);return`<tr onclick="openPM('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer"><td style="font-weight:600;color:var(--uf-blue)">${p.name}</td><td>${pill('info',p.pos)}</td><td style="font-size:10px;color:var(--text3)">${p.unit}</td><td class="mono ${ds.cls==='ok'?'ok':ds.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td><td class="mono ${as2.cls==='ok'?'ok':as2.cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td><td class="mono acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</td><td class="mono">${p.totalHSR>0?Math.round(p.totalHSR).toLocaleString():'—'}</td><td>${pill(p.risk==='high'?'danger':p.risk==='mod'?'warn':'ok',p.risk.toUpperCase())}</td><td><div class="flags">${p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')||'—'}</div></td></tr>`;}).join('');
 };
-
+ 
 // ── COMPARE ───────────────────────────────────────────────────────
 window.renderCompare=function(){
   const a=PLAYERS.find(p=>p.name===document.getElementById('cmp-a').value)||PLAYERS[0];
@@ -900,7 +905,7 @@ window.renderCompare=function(){
   const rd=p=>[p.latD||0,p.latA||0,p.latMaxV||0,p.totalHSR||0,p.sessions.length].map((v,i)=>parseFloat((Math.min(v/maxes[i]*100,100)).toFixed(1)));
   mk('cmp-radar',{type:'radar',data:{labels,datasets:[{label:a.name,data:rd(a),borderColor:C.acc,backgroundColor:'rgba(250,70,22,.10)',pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,pointRadius:4},{label:b.name,data:rd(b),borderColor:C.blue,backgroundColor:'rgba(0,48,135,.08)',pointBackgroundColor:C.blue,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#475569',font:{size:11,family:'DM Mono'},boxWidth:10,padding:14}}},scales:{r:{ticks:{color:'#94A3B8',backdropColor:'rgba(244,245,247,0.8)',font:{size:9}},grid:{color:'rgba(0,48,135,.1)'},pointLabels:{color:'#1e3a5f',font:{size:10,weight:'600'}},min:0,max:100}}}});
 };
-
+ 
 // ── PLAYER MODAL ──────────────────────────────────────────────────
 window.openPM=function(name){
   const p=PLAYERS.find(x=>x.name===name);if(!p)return;
@@ -919,9 +924,15 @@ window.openPM=function(name){
 };
 window.closePM=function(e,force=false){if(force||e?.target===e?.currentTarget)document.getElementById('pm-overlay').classList.remove('open');};
 window.navToGPS=function(name){navTo('gps');setTimeout(()=>{setGPSView('player');setTimeout(()=>{const s=document.getElementById('gps-sel');if(s){s.value=name;renderGPS();}},80);},80);};
-
+ 
 // ── INIT ──────────────────────────────────────────────────────────
+console.log('[DEBUG] PLAYERS built:', PLAYERS.length);
+if(PLAYERS.length===0){
+  document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data found. Raw rows fetched: ${raw?.length||0}. Check catapult_sessions RLS policy allows authenticated reads.</div>`;
+  throw 0;
+}
 setGPSView('team');
 </script>
 </body>
 </html>
+ 
