@@ -512,7 +512,7 @@ document.getElementById('sidebar-username').textContent=me.full_name;
 document.getElementById('logout-btn').onclick=async()=>{await SB.auth.signOut();location.href='./login.html';};
  
 // ── PHASE ─────────────────────────────────────────────────────────
-const PH={ss:'2025-01-23',se:'2025-04-11',us:'2025-05-13',ue:'2025-07-29',fs:'2025-08-05'};
+const PH={ss:'2026-01-23',se:'2026-04-11',us:'2026-05-13',ue:'2026-07-29',fs:'2026-08-05'};
 function phase(d){if(d>=PH.ss&&d<=PH.se)return'Sp';if(d>=PH.us&&d<=PH.ue)return'Su';if(d>=PH.fs)return'Fa';return null;}
 function phWk(d){
   const ph=phase(d);if(!ph)return null;
