@@ -522,12 +522,18 @@ function phWk(d){
 }
  
 // ── FETCH ─────────────────────────────────────────────────────────
-const [{data:raw,error:eR},{data:aths}]=await Promise.all([
-  SB.from('catapult_sessions')
+let raw=[], page=0, done=false;
+while(!done){
+  const {data:chunk,error:eR2}=await SB.from('catapult_sessions')
     .select('athlete_name,session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_b2_3_efforts,decel_b2_3_efforts')
-    .order('session_date',{ascending:true}),
-  SB.from('athletes').select('name,position')
-]);
+    .order('session_date',{ascending:true})
+    .range(page*1000,(page+1)*1000-1);
+  if(eR2){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ ${eR2.message}</div>`;throw 0;}
+  if(!chunk||chunk.length===0)done=true;
+  else{raw=[...raw,...chunk];if(chunk.length<1000)done=true;page++;}
+}
+const eR=null;
+const {data:aths}=await SB.from('athletes').select('name,position');
 if(eR){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ ${eR.message}</div>`;throw 0;}
 console.log('[DEBUG] raw sessions fetched:', raw?.length, '| athletes fetched:', aths?.length);
 console.log('[DEBUG] sample raw row:', raw?.[0]);
