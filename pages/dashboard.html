@@ -1,54 +1,44 @@
 <!-- ═══════════════════════════════════════════════════════════════════════
-     DATA SOURCE: Supabase (live fetch)
-     To swap real data: import your CSV exports using the Python scripts
-     in /scripts/ then run seed_data.sql replacements.
-     Table/column documentation: see /DATA_SOURCES.md
+     UF GATORS AMS DASHBOARD — Real Data from catapult_sessions
+     Phase: Spring 1/23–4/11 | Summer 5/13–7/29 | Fall 8/5+
+     VALD / Lifting / Body Comp: placeholders until automation
      ═══════════════════════════════════════════════════════════════════════ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Florida Gators AMS — Football</title>
+<title>Florida Gators AMS — Football 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
 :root{
-  --uf-orange:#FA4616; --uf-blue:#003087;
-  --uf-orange-light:#FF7043; --uf-blue-light:#1565C0;
-  --uf-orange-pale:#FFF0EC; --uf-blue-pale:#E8EEF8;
-  --bg:#F4F5F7; --surface:#FFFFFF; --surface2:#F8F9FB;
-  --surface3:#EEF0F4; --surface4:#E4E7ED;
-  --sidebar-bg:#001F5B; --sidebar-surface:#002470;
-  --sidebar-text:#C8D6F0; --sidebar-text-dim:#7A95C4;
+  --uf-orange:#FA4616;--uf-blue:#003087;
+  --uf-orange-pale:#FFF0EC;--uf-blue-pale:#E8EEF8;
+  --bg:#F4F5F7;--surface:#FFFFFF;--surface2:#F8F9FB;--surface3:#EEF0F4;
+  --sidebar-bg:#001F5B;--sidebar-text:#C8D6F0;--sidebar-text-dim:#7A95C4;
   --sidebar-border:rgba(255,255,255,0.08);
-  --border:rgba(0,48,135,0.10); --border2:rgba(0,48,135,0.20);
-  --text:#0F1923; --text2:#475569; --text3:#94A3B8;
-  --acc:var(--uf-orange); --acc-pale:var(--uf-orange-pale);
-  --blue:var(--uf-blue); --blue-pale:var(--uf-blue-pale);
-  --acc3:#16A34A; --acc4:#D97706; --acc5:#DC2626;
+  --border:rgba(0,48,135,0.10);--border2:rgba(0,48,135,0.20);
+  --text:#0F1923;--text2:#475569;--text3:#94A3B8;
+  --acc2:#E65100;--acc3:#16A34A;--acc4:#D97706;--acc5:#DC2626;
   --font-d:'Barlow Condensed',sans-serif;
-  --font-b:'Barlow',sans-serif; --font-m:'DM Mono',monospace;
-  --r:8px; --r2:12px;
+  --font-b:'Barlow',sans-serif;--font-m:'DM Mono',monospace;
+  --r:8px;--r2:12px;
   --shadow:0 1px 4px rgba(0,0,0,0.08),0 0 0 1px rgba(0,48,135,0.06);
   --shadow-md:0 4px 12px rgba(0,0,0,0.10),0 1px 3px rgba(0,0,0,0.06);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;font-family:var(--font-b);background:var(--bg);color:var(--text);font-size:13px;overflow:hidden}
-a{color:inherit;text-decoration:none} button{cursor:pointer;font-family:var(--font-b)}
-
-/* ── LAYOUT ── */
+a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:var(--font-b)}
 .app{display:flex;height:100vh;overflow:hidden}
 .sidebar{width:220px;background:var(--sidebar-bg);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;box-shadow:2px 0 12px rgba(0,0,0,0.15)}
 .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .topbar{height:52px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
 .content-area{flex:1;overflow-y:auto;padding:20px 22px;background:var(--bg)}
-
-/* ── SIDEBAR ── */
 .sidebar-logo{padding:0;border-bottom:1px solid var(--sidebar-border);background:linear-gradient(160deg,rgba(250,70,22,0.18) 0%,transparent 60%)}
 .sidebar-logo-top{display:flex;align-items:center;gap:10px;padding:16px 16px 12px}
-.sidebar-logo-gator{width:34px;height:34px;background:var(--uf-orange);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:18px;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 2px 6px rgba(250,70,22,.4)}
+.sidebar-gator{width:34px;height:34px;background:var(--uf-orange);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:18px;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 2px 6px rgba(250,70,22,.4)}
 .logo-text{font-family:var(--font-d);font-size:19px;font-weight:900;letter-spacing:1px;color:#fff;text-transform:uppercase;line-height:1}
 .logo-sub{font-family:var(--font-m);font-size:9px;color:var(--sidebar-text-dim);letter-spacing:1.2px;text-transform:uppercase;margin-top:2px}
 .sidebar-stripe{height:3px;background:linear-gradient(90deg,var(--uf-orange) 0%,#FF8C42 50%,var(--uf-orange) 100%)}
@@ -63,72 +53,58 @@ a{color:inherit;text-decoration:none} button{cursor:pointer;font-family:var(--fo
 .nav-user-name{font-size:11px;font-weight:600;color:var(--sidebar-text);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .btn-logout-side{width:100%;padding:6px;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(255,255,255,0.07);color:var(--sidebar-text);border:1px solid var(--sidebar-border);border-radius:6px;cursor:pointer;transition:all .13s}
 .btn-logout-side:hover{background:rgba(250,70,22,0.2);color:var(--uf-orange);border-color:rgba(250,70,22,0.3)}
-
-/* ── TOPBAR ── */
 .topbar-left{display:flex;align-items:center;gap:14px}
 .topbar-crest{width:28px;height:28px;background:var(--uf-blue);border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:13px;font-weight:900;color:#fff}
 .topbar-title{font-family:var(--font-d);font-size:26px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text)}
 .topbar-right{display:flex;align-items:center;gap:8px}
-.tb-badge{font-family:var(--font-m);font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600}
-.tb-badge.danger{background:rgba(220,38,38,.08);color:#B91C1C;border:1px solid rgba(220,38,38,.2)}
-.tb-badge.warn{background:rgba(217,119,6,.08);color:#92400E;border:1px solid rgba(217,119,6,.2)}
-.tb-badge.info{background:var(--uf-orange-pale);color:var(--uf-orange);border:1px solid rgba(250,70,22,.2)}
-.tb-badge.ok{background:rgba(22,163,74,.08);color:#15803D;border:1px solid rgba(22,163,74,.2)}
-
-/* ── PAGES ── */
+.tbb{font-family:var(--font-m);font-size:10px;padding:3px 10px;border-radius:20px;font-weight:600}
+.tbb.danger{background:rgba(220,38,38,.08);color:#B91C1C;border:1px solid rgba(220,38,38,.2)}
+.tbb.warn{background:rgba(217,119,6,.08);color:#92400E;border:1px solid rgba(217,119,6,.2)}
+.tbb.info{background:var(--uf-orange-pale);color:var(--uf-orange);border:1px solid rgba(250,70,22,.2)}
+.tbb.ok{background:rgba(22,163,74,.08);color:#15803D;border:1px solid rgba(22,163,74,.2)}
 .page{display:none}.page.active{display:block}
-
-/* ── STAT CARDS ── */
 .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .stat-card{background:var(--surface);border-radius:var(--r2);padding:16px 18px;position:relative;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)}
 .stat-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
 .stat-card.acc::before{background:var(--uf-orange)}.stat-card.ok::before{background:var(--acc3)}
 .stat-card.warn::before{background:var(--acc4)}.stat-card.danger::before{background:var(--acc5)}
-.stat-card.blue::before{background:var(--uf-blue)}
-.sc-label{font-family:var(--font-m);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.stat-card.orange::before{background:var(--acc2)}.stat-card.blue::before{background:var(--uf-blue)}
+.sc-label{font-family:var(--font-m);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--text);margin-bottom:6px}
 .sc-val{font-family:var(--font-d);font-size:32px;font-weight:800;line-height:1;margin-bottom:4px}
-.sc-val.acc{color:var(--uf-orange)}.sc-val.ok{color:var(--acc3)}.sc-val.warn{color:var(--acc4)}.sc-val.danger{color:var(--acc5)}.sc-val.blue{color:var(--uf-blue)}
-.sc-sub{font-size:11px;color:var(--text3)}
-
-/* ── PANELS ── */
+.sc-val.acc{color:var(--uf-orange)}.sc-val.ok{color:var(--acc3)}.sc-val.warn{color:var(--acc4)}.sc-val.danger{color:var(--acc5)}.sc-val.orange{color:var(--acc2)}.sc-val.blue{color:var(--uf-blue)}
+.sc-sub{font-size:11px;color:var(--text);font-weight:500}
 .panel{background:var(--surface);border-radius:var(--r2);padding:18px 20px;margin-bottom:14px;box-shadow:var(--shadow);border:1px solid var(--border)}
 .panel-title{font-family:var(--font-d);font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:7px;padding-bottom:10px;border-bottom:2px solid var(--bg)}
 .panel-title i{font-size:15px;color:var(--uf-orange)}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-
-/* ── CHARTS ── */
 .chart-wrap{position:relative;width:100%}
-.h160{height:160px}.h180{height:180px}.h200{height:200px}.h220{height:220px}.h240{height:240px}.h260{height:260px}
-
-/* ── PILLS ── */
+.h160{height:160px}.h180{height:180px}.h200{height:200px}.h220{height:220px}.h240{height:240px}.h260{height:260px}.h280{height:280px}
 .pill{font-family:var(--font-d);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.3px;white-space:nowrap}
 .pill.ok{background:rgba(22,163,74,.08);color:#15803D;border:1px solid rgba(22,163,74,.2)}
 .pill.warn{background:rgba(217,119,6,.08);color:#92400E;border:1px solid rgba(217,119,6,.2)}
 .pill.danger{background:rgba(220,38,38,.08);color:#B91C1C;border:1px solid rgba(220,38,38,.2)}
 .pill.acc{background:var(--uf-orange-pale);color:var(--uf-orange);border:1px solid rgba(250,70,22,.25)}
 .pill.info{background:var(--uf-blue-pale);color:var(--uf-blue);border:1px solid rgba(0,48,135,.2)}
-
-/* ── TABLE ── */
 .tbl-wrap{overflow-x:auto;border-radius:var(--r)}
 table{width:100%;border-collapse:collapse}
 thead th{padding:9px 12px;text-align:left;font-family:var(--font-m);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);background:var(--surface2);border-bottom:2px solid var(--border);white-space:nowrap}
+thead th.sortable{cursor:pointer;user-select:none}
+thead th.sortable:hover{color:var(--uf-orange)}
+thead th.sort-asc::after{content:' ▲';color:var(--uf-orange);font-size:8px}
+thead th.sort-desc::after{content:' ▼';color:var(--uf-orange);font-size:8px}
 tbody td{padding:9px 12px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);white-space:nowrap}
 tbody tr:hover td{background:var(--uf-orange-pale)}
 tbody tr:last-child td{border-bottom:none}
 td.mono{font-family:var(--font-m);font-size:11px}
-td.ok{color:#15803D;font-weight:600} td.warn{color:#92400E;font-weight:600} td.danger{color:#B91C1C;font-weight:600}
-th.sortable{cursor:pointer;user-select:none;transition:all .12s}
-th.sortable:hover{color:var(--uf-orange);background:var(--uf-orange-pale)}
-th.sort-asc::after{content:' ▲';color:var(--uf-orange);font-size:8px}
-th.sort-desc::after{content:' ▼';color:var(--uf-orange);font-size:8px}
-
-/* ── ROSTER GRID ── */
+td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.danger{color:#B91C1C;font-weight:600}td.acc{color:var(--uf-orange);font-weight:600}
 .roster-search{width:100%;background:var(--surface);border:1.5px solid var(--border2);color:var(--text);padding:9px 14px;border-radius:var(--r);font-family:var(--font-b);font-size:13px;margin-bottom:14px;outline:none;box-shadow:var(--shadow)}
 .roster-search:focus{border-color:var(--uf-orange);box-shadow:0 0 0 3px rgba(250,70,22,.1)}
+.roster-search::placeholder{color:var(--text3)}
 .roster-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .roster-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
 .roster-card:hover{border-color:var(--uf-orange);box-shadow:0 4px 12px rgba(250,70,22,.12);transform:translateY(-1px)}
+.rc-high{border-color:rgba(220,38,38,.4)!important;border-left:3px solid var(--acc5)!important}
+.rc-warn-card{border-color:rgba(217,119,6,.35)!important;border-left:3px solid var(--acc4)!important}
 .rc-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .rc-name{font-weight:700;font-size:14px;color:var(--text)}
 .rc-pos{font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.5px;color:var(--uf-orange);margin-top:2px;text-transform:uppercase}
@@ -137,41 +113,21 @@ th.sort-desc::after{content:' ▼';color:var(--uf-orange);font-size:8px}
 .rc-stat-val{font-family:var(--font-d);font-size:18px;font-weight:800;color:var(--text)}
 .rc-stat-lbl{font-family:var(--font-m);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
 .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:800;font-size:12px;flex-shrink:0}
-
-/* ── RISK ROWS ── */
 .risk-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
 .risk-row:last-child{border-bottom:none}
-.risk-name{font-weight:600;font-size:12px;color:var(--uf-blue)}
-.risk-pos{font-size:10px;color:var(--text3)}
+.rnb{flex:1;min-width:0}
+.rname{font-weight:600;font-size:12px;color:var(--uf-blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rpos{font-size:10px;color:var(--text3)}
 .flags{display:flex;gap:3px;flex-wrap:wrap;margin-top:2px}
 .flag{font-family:var(--font-m);font-size:9px;padding:1px 5px;border-radius:3px;font-weight:500}
 .flag.r{background:rgba(220,38,38,.08);color:#B91C1C;border:1px solid rgba(220,38,38,.15)}
 .flag.y{background:rgba(217,119,6,.08);color:#92400E;border:1px solid rgba(217,119,6,.15)}
-
-/* ── GPS ZONES ── */
 .zone-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
 .zl{display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:9px;color:var(--text2)}
 .zl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-
-/* ── VALD CARDS ── */
-.vald-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
-.vald-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
-.vald-metric{font-family:var(--font-m);font-size:9px;color:var(--text);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;font-weight:600}
-.vald-val{font-family:var(--font-d);font-size:28px;font-weight:800;color:var(--uf-orange);margin-bottom:2px}
-.vald-unit{font-size:10px;color:var(--text2)}
-.vald-bar-bg{height:5px;background:var(--surface3);border-radius:3px;margin-top:10px;overflow:hidden}
-.vald-bar{height:100%;border-radius:3px;background:var(--uf-orange)}
-
-/* ── BODY COMP ── */
-.bc-bar-bg{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;border:1px solid var(--border)}
-.bc-bar{height:100%;border-radius:3px}
-
-/* ── PLAYER SELECT ── */
 .sel-row{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
 .data-sel{background:var(--surface);color:var(--text);border:1.5px solid var(--border2);padding:8px 12px;border-radius:var(--r);font-family:var(--font-b);font-size:12px;outline:none;cursor:pointer;min-width:200px;box-shadow:var(--shadow)}
 .data-sel:focus{border-color:var(--uf-orange);box-shadow:0 0 0 3px rgba(250,70,22,.1)}
-
-/* ── LEADERBOARD ── */
 .lb-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .lb-tab{font-family:var(--font-d);font-size:13px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border-radius:6px;background:var(--surface);border:1.5px solid var(--border);color:var(--text3);cursor:pointer;transition:all .13s;box-shadow:var(--shadow)}
 .lb-tab.active{background:var(--uf-orange);color:#fff;border-color:var(--uf-orange)}
@@ -182,75 +138,98 @@ th.sort-desc::after{content:' ▼';color:var(--uf-orange);font-size:8px}
 .lb-bar-bg{flex:1;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
 .lb-bar-fill{height:100%;border-radius:3px;background:var(--uf-orange);transition:width .4s}
 .lb-val{font-family:var(--font-m);font-size:12px;color:var(--text);min-width:70px;text-align:right;font-weight:500}
-
-/* ── COMPARE ── */
 .cmp-grid{display:grid;grid-template-columns:1fr 52px 1fr;gap:12px;align-items:start;margin-bottom:14px}
 .vs-btn{background:var(--uf-blue);color:#fff;font-family:var(--font-d);font-size:14px;font-weight:800;border:none;border-radius:8px;padding:10px 6px;text-align:center;box-shadow:var(--shadow-md)}
 .cmp-stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
 .cmp-stat-row:last-child{border-bottom:none}
 .cmp-label{font-size:11px;color:var(--text);font-family:var(--font-m);font-weight:700}
 .cmp-val{font-family:var(--font-d);font-size:15px;font-weight:700}
-.cmp-val.w{color:var(--acc3)} .cmp-val.l{color:var(--text3)}
-
-/* ── LOADING / ERROR ── */
+.cmp-val.w{color:var(--acc3)}.cmp-val.l{color:var(--text3)}
+.lm-metric-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px}
+.lm-mcard{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.lm-mcard::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--lm-c,var(--uf-orange));opacity:.7}
+.lm-ml{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);font-family:var(--font-m);margin-bottom:8px}
+.lm-mv{font-family:var(--font-d);font-size:26px;font-weight:800;margin-bottom:4px}
+.lm-ms{font-size:11px;color:var(--text2)}.lm-ms .up{color:var(--acc3)}.lm-ms .dn{color:var(--acc5)}
+.lm-charts-row{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:20px}
+.lm-donut-wrap{position:relative;height:180px}
+.lm-donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none}
+.lm-dc-val{font-family:var(--font-d);font-size:30px;font-weight:800}
+.lm-dc-label{font-size:10px;color:var(--text3);font-family:var(--font-m)}
+.lm-zone-bars{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.lm-zone-row{display:flex;align-items:center;gap:8px;font-size:12px}
+.lm-zone-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.lm-zone-name{color:var(--text2);width:80px;flex-shrink:0;font-size:11px}
+.lm-zone-bar-wrap{flex:1;background:var(--surface3);border-radius:3px;height:4px;overflow:hidden}
+.lm-zone-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.lm-zone-count{font-family:var(--font-m);font-size:11px;color:var(--text2);width:20px;text-align:right}
+.lm-filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.lm-fl{font-size:10px;color:var(--text3);font-family:var(--font-m);margin-right:4px}
+.pos-chip{padding:4px 11px;border-radius:4px;font-size:11px;cursor:pointer;border:1px solid var(--border);color:var(--text2);background:transparent;font-family:var(--font-m);transition:all .15s}
+.pos-chip:hover{border-color:var(--border2);color:var(--text)}
+.pos-chip.active{background:var(--uf-blue);color:#fff;border-color:var(--uf-blue)}
+.lm-detail-section{margin-top:16px;display:none}
+.lm-detail-section.visible{display:block}
+.lm-detail-card{background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:20px;box-shadow:var(--shadow)}
+.lm-dh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.lm-dn{font-family:var(--font-d);font-size:22px;font-weight:900}
+.lm-dm{font-size:11px;color:var(--text2);font-family:var(--font-m);margin-top:3px}
+.lm-detail-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.lm-ds{background:var(--surface2);border-radius:8px;padding:12px 14px}
+.lm-ds .dl{font-size:10px;color:var(--text3);font-family:var(--font-m);margin-bottom:5px;letter-spacing:.04em}
+.lm-ds .dv{font-family:var(--font-d);font-size:20px;font-weight:800}
+.lm-toggle{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.lm-chip{padding:5px 13px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--border2);color:var(--text2);background:transparent;font-family:var(--font-b);transition:all .15s}
+.lm-chip:hover{border-color:var(--uf-orange);color:var(--text)}
+.lm-chip.active{background:var(--uf-orange);color:#fff;border-color:var(--uf-orange)}
+.lm-leg{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--text2)}
+.lm-leg span{display:flex;align-items:center;gap:5px}
+.lm-leg-sq{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.lm-leg-dash{width:16px;height:2px;border-top:2px dashed;flex-shrink:0}
+.lm-phase-tags{display:flex;gap:24px;margin-bottom:8px;font-size:11px;font-family:var(--font-m);color:var(--text3)}
+.lm-phase-tags span::before{content:'— '}
+.pm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:1rem}
+.pm-overlay.open{opacity:1;pointer-events:all}
+.pm-box{background:var(--surface);border-radius:16px;width:100%;max-width:700px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);transform:translateY(16px) scale(.98);transition:transform .2s;border:1px solid var(--border2)}
+.pm-overlay.open .pm-box{transform:translateY(0) scale(1)}
+.pm-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 14px;border-bottom:2px solid var(--bg);background:var(--uf-blue);border-radius:16px 16px 0 0}
+.pm-name{font-family:var(--font-d);font-size:24px;font-weight:900;color:#fff;letter-spacing:.5px}
+.pm-pos-line{font-family:var(--font-d);font-size:13px;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;margin-top:2px}
+.pm-close{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.12);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:rgba(255,255,255,.8);flex-shrink:0}
+.pm-close:hover{background:rgba(255,255,255,.2);color:#fff}
+.pm-body{padding:20px 24px 24px}
+.pm-risk-banner{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:8px;margin-bottom:16px}
+.pm-risk-label{font-family:var(--font-d);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.pm-flags-row{display:flex;gap:4px;flex-wrap:wrap}
+.pm-section-title{font-family:var(--font-m);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
+.pm-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+.pm-stat{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.pm-stat-lbl{font-family:var(--font-m);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;font-weight:600}
+.pm-stat-val{font-family:var(--font-d);font-size:24px;font-weight:800;line-height:1;color:var(--text)}
+.pm-stat-val.ok{color:#15803D}.pm-stat-val.warn{color:#92400E}.pm-stat-val.danger{color:#B91C1C}.pm-stat-val.acc{color:var(--uf-orange)}
+.placeholder-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:320px;text-align:center;padding:2rem;background:var(--surface);border-radius:var(--r2);border:2px dashed var(--border2);box-shadow:var(--shadow)}
+.placeholder-icon{font-size:3rem;margin-bottom:1rem;opacity:.3}
+.placeholder-title{font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--text);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.5px}
+.placeholder-sub{font-size:12px;color:var(--text3);max-width:360px;line-height:1.6;font-family:var(--font-m)}
+.placeholder-badge{margin-top:1rem;padding:6px 18px;border-radius:20px;background:var(--uf-blue-pale);color:var(--uf-blue);font-family:var(--font-m);font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;border:1px solid rgba(0,48,135,.2)}
 .uf-spinner-wrap{display:flex;justify-content:center;align-items:center;min-height:200px}
 .uf-spinner{width:36px;height:36px;border:3px solid #e5e7eb;border-top-color:var(--uf-orange);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.uf-error{padding:1rem 1.25rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:12px;margin:1rem 0}
-
-/* ── MODAL ── */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
-.modal-overlay.open{opacity:1;pointer-events:all}
-.modal-box{background:var(--surface);border-radius:16px;width:700px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.25);transform:translateY(16px) scale(.98);transition:transform .2s;border:1px solid var(--border2)}
-.modal-overlay.open .modal-box{transform:translateY(0) scale(1)}
-.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:2px solid var(--bg)}
-.modal-name{font-family:var(--font-d);font-size:26px;font-weight:900;color:var(--text);letter-spacing:.5px}
-.modal-pos{font-family:var(--font-d);font-size:14px;font-weight:700;color:var(--uf-orange);text-transform:uppercase;margin-top:2px}
-.modal-close{width:34px;height:34px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text3);transition:all .13s;flex-shrink:0}
-.modal-close:hover{background:var(--uf-orange);color:#fff;border-color:var(--uf-orange)}
-.modal-body{padding:20px 24px 24px}
-.modal-section{font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text3);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--border)}
-.modal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.modal-stat{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
-.modal-stat-lbl{font-family:var(--font-m);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600}
-.modal-stat-val{font-family:var(--font-d);font-size:26px;font-weight:800;line-height:1;color:var(--text)}
-.modal-stat-val.ok{color:#15803D} .modal-stat-val.warn{color:#92400E} .modal-stat-val.danger{color:#B91C1C} .modal-stat-val.acc{color:var(--uf-orange)}
-
-/* ── PRINT ── */
-@media print{
-  .sidebar,.topbar{display:none!important}
-  .content-area{overflow:visible!important;padding:0!important}
-  .page{display:none!important}.page.active{display:block!important}
-  body,html{overflow:visible!important;height:auto!important}
-  .app{display:block!important;height:auto!important}
-  .main-area{overflow:visible!important;height:auto!important}
-  .panel{box-shadow:none!important;break-inside:avoid}
-  canvas{max-width:100%!important}
-}
-
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar{width:5px;height:5px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:rgba(0,48,135,.2);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:var(--uf-orange)}
+.uf-error{padding:1rem 1.25rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:12px;margin:.5rem 0}
+@media print{.sidebar,.topbar,.pm-overlay{display:none!important}.content-area{overflow:visible!important;padding:0!important}.page{display:none!important}.page.active{display:block!important}body,html{overflow:visible!important;height:auto!important}.app{display:block!important;height:auto!important}.main-area{overflow:visible!important;height:auto!important}.panel,.stat-card{box-shadow:none!important;break-inside:avoid}canvas{max-width:100%!important}}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(0,48,135,.2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--uf-orange)}
 </style>
 </head>
 <body>
 <div class="app">
-
-<!-- ── SIDEBAR ── -->
 <div class="sidebar">
   <div class="sidebar-logo">
     <div class="sidebar-logo-top">
-      <div class="sidebar-logo-gator">F</div>
-      <div>
-        <div class="logo-text">GATORS AMS</div>
-        <div class="logo-sub">Football · S&amp;C</div>
-      </div>
+      <div class="sidebar-gator">F</div>
+      <div><div class="logo-text">GATORS AMS</div><div class="logo-sub">Football · 2026</div></div>
     </div>
     <div class="sidebar-stripe"></div>
   </div>
-
   <div class="nav-section">
     <div class="nav-label">Overview</div>
     <div class="nav-item active" data-page="dashboard"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
@@ -259,6 +238,7 @@ th.sort-desc::after{content:' ▼';color:var(--uf-orange);font-size:8px}
   <div class="nav-section">
     <div class="nav-label">Performance</div>
     <div class="nav-item" data-page="gps"><i class="ti ti-satellite"></i>GPS &amp; ACWR</div>
+    <div class="nav-item" data-page="loadmonitor"><i class="ti ti-chart-line"></i>Load Monitor</div>
     <div class="nav-item" data-page="vald"><i class="ti ti-bolt"></i>VALD Testing</div>
     <div class="nav-item" data-page="lifting"><i class="ti ti-barbell"></i>Lifting Maxes</div>
     <div class="nav-item" data-page="standards"><i class="ti ti-award"></i>Strength Standards</div>
@@ -270,1386 +250,678 @@ th.sort-desc::after{content:' ▼';color:var(--uf-orange);font-size:8px}
     <div class="nav-item" data-page="bodycomp"><i class="ti ti-scale"></i>Body Comp</div>
     <div class="nav-item" data-page="compare"><i class="ti ti-arrows-diff"></i>Compare</div>
   </div>
-
   <div class="nav-user">
     <div class="nav-user-name" id="sidebar-username">Loading…</div>
     <button class="btn-logout-side" id="logout-btn">Sign Out</button>
   </div>
 </div>
-
-<!-- ── MAIN ── -->
 <div class="main-area">
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="topbar-crest">UF</div>
-      <div class="topbar-title" id="page-title">Team Dashboard</div>
-    </div>
-    <div class="topbar-right">
-      <span class="tb-badge danger" id="tb-high" style="cursor:pointer" onclick="navTo('injury')">— High Risk</span>
-      <span class="tb-badge warn"   id="tb-mod"  style="cursor:pointer" onclick="navTo('injury')">— Moderate</span>
-      <span class="tb-badge info"   id="tb-season">Loading…</span>
-      <button onclick="window.print()" style="font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:5px 13px;border-radius:6px;background:var(--uf-blue);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:5px">
-        <i class="ti ti-printer" style="font-size:13px"></i>Print
-      </button>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-crest">UF</div>
+    <div class="topbar-title" id="page-title">Team Dashboard</div>
+  </div>
+  <div class="topbar-right">
+    <span class="tbb danger" id="tb-high" onclick="navTo('injury')" style="cursor:pointer">— High Risk</span>
+    <span class="tbb warn" id="tb-mod" onclick="navTo('injury')" style="cursor:pointer">— Moderate</span>
+    <span class="tbb info" id="tb-season">Loading…</span>
+    <button onclick="window.print()" style="font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:5px 13px;border-radius:6px;background:var(--uf-blue);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-printer" style="font-size:13px"></i>Print</button>
+  </div>
+</div>
+<div class="content-area" id="content-area">
+
+<!-- DASHBOARD -->
+<div class="page active" id="pg-dashboard">
+  <div class="stat-row" id="dash-stats"></div>
+  <div class="two-col">
+    <div class="panel"><div class="panel-title"><i class="ti ti-bolt"></i>Top Max Velocity (mph)</div><div id="dash-maxvel"></div></div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-alert-triangle" style="color:var(--acc5)"></i>High Risk Athletes</div><div id="dash-high-risk"></div></div>
+  </div>
+  <div class="two-col">
+    <div class="panel"><div class="panel-title"><i class="ti ti-run" style="color:var(--uf-orange)"></i>Top High Speed Distance (m)</div><div id="dash-hsr"></div></div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-arrows-horizontal" style="color:var(--acc5)"></i>Highest Nord Asymmetry</div><div class="placeholder-state" style="min-height:100px;border:1px dashed var(--border2)"><div class="placeholder-sub" style="font-size:11px">VALD data pending automation</div></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR Trend — Distance</div>
+    <div class="chart-wrap h200"><canvas id="dash-acwr-chart"></canvas></div>
+    <div class="zone-legend">
+      <div class="zl"><div class="zl-dot" style="background:var(--acc3)"></div>Sweet spot 0.80–1.30</div>
+      <div class="zl"><div class="zl-dot" style="background:var(--acc4)"></div>Caution 1.30–1.50</div>
+      <div class="zl"><div class="zl-dot" style="background:var(--acc5)"></div>Danger &gt;1.50 / &lt;0.80</div>
     </div>
   </div>
+</div>
 
-  <div class="content-area" id="content-area">
+<!-- ROSTER -->
+<div class="page" id="pg-roster">
+  <input class="roster-search" id="roster-search" type="text" placeholder="Search name, position, unit…">
+  <div class="roster-grid" id="roster-grid"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></div>
+</div>
 
-    <!-- ════ DASHBOARD ════ -->
-    <div class="page active" id="pg-dashboard">
-      <div class="stat-row" id="dash-stats">
-        <div class="stat-card acc"><div class="sc-label">Loading</div><div class="uf-spinner-wrap" style="min-height:60px"><div class="uf-spinner"></div></div></div>
-        <div class="stat-card ok"><div class="sc-label">Loading</div></div>
-        <div class="stat-card warn"><div class="sc-label">Loading</div></div>
-        <div class="stat-card blue"><div class="sc-label">Loading</div></div>
-      </div>
-      <div class="two-col">
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-bolt"></i>Top Max Velocity (mph)</div>
-          <div id="dash-maxvel"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-barbell"></i>NordBord Asymmetry Flags</div>
-          <div id="dash-nord-asymm"></div>
-        </div>
-      </div>
-      <div class="two-col">
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-run" style="color:var(--acc)"></i>Top High Speed Distance (m)</div>
-          <div id="dash-hsr"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-scale" style="color:var(--acc4)"></i>Furthest From Weight Goal</div>
-          <div id="dash-weight-off"></div>
-        </div>
-      </div>
-      <div class="panel" style="grid-column:1/-1">
-        <div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR Trend — Player Load (Last 28 Days)</div>
-        <div class="chart-wrap h200"><canvas id="dash-acwr-chart"></canvas></div>
-        <div class="zone-legend">
-          <div class="zl"><div class="zl-dot" style="background:var(--acc3)"></div>Sweet spot 0.80–1.30</div>
-          <div class="zl"><div class="zl-dot" style="background:var(--acc4)"></div>Caution 1.30–1.50</div>
-          <div class="zl"><div class="zl-dot" style="background:var(--acc5)"></div>Danger &gt;1.50 / &lt;0.80</div>
-        </div>
-      </div>
+<!-- GPS -->
+<div class="page" id="pg-gps">
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+    <div style="display:flex;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;overflow:hidden">
+      <button id="gps-btn-team" onclick="setGPSView('team')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:var(--uf-orange);color:#fff;cursor:pointer">Team</button>
+      <button id="gps-btn-player" onclick="setGPSView('player')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Individual</button>
+      <button id="gps-btn-group" onclick="setGPSView('group')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Position Group</button>
     </div>
-
-    <!-- ════ ROSTER ════ -->
-    <div class="page" id="pg-roster">
-      <input class="roster-search" id="roster-search" type="text" placeholder="Search name, position, or #…" oninput="filterRoster()">
-      <div class="roster-grid" id="roster-grid"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></div>
+  </div>
+  <div id="gps-team-view">
+    <div class="stat-row" id="gps-team-stats"></div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Team Acute vs Chronic — Distance</div><div class="chart-wrap h200"><canvas id="gps-team-ac-dist"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR — Distance</div><div class="chart-wrap h200"><canvas id="gps-team-acwr-dist"></canvas></div></div>
     </div>
-
-    <!-- ════ GPS / ACWR ════ -->
-    <div class="page" id="pg-gps">
-      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-        <div style="display:flex;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;overflow:hidden">
-          <button id="gps-view-player" onclick="setGPSView('player')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:var(--uf-orange);color:#fff;cursor:pointer">Individual</button>
-          <button id="gps-view-group" onclick="setGPSView('group')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Position Group</button>
-        </div>
-      </div>
-      <div id="gps-individual-view">
-        <div class="sel-row">
-          <select class="data-sel" id="gps-sel" onchange="renderGPS()"></select>
-          <span class="tb-badge info" id="gps-status-badge">—</span>
-        </div>
-        <div class="stat-row" id="gps-stats"></div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-chart-area"></i>Acute vs Chronic Player Load</div>
-          <div class="chart-wrap h220"><canvas id="gps-ac-chart"></canvas></div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-chart-line"></i>ACWR Trend — Player Load</div>
-          <div class="chart-wrap h200"><canvas id="gps-acwr-chart"></canvas></div>
-          <div class="zone-legend">
-            <div class="zl"><div class="zl-dot" style="background:var(--acc3)"></div>Sweet spot 0.80–1.30</div>
-            <div class="zl"><div class="zl-dot" style="background:var(--acc4)"></div>Caution 1.30–1.50</div>
-            <div class="zl"><div class="zl-dot" style="background:var(--acc5)"></div>Danger &gt;1.50 / &lt;0.80</div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-table"></i>Weekly GPS Summary</div>
-          <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Player Load</th><th>Total Distance (m)</th><th>HSD (m)</th><th>Sprint Dist (m)</th><th>Max Vel (mph)</th><th>Accel/Decel</th><th>Acute</th><th>Chronic</th><th>ACWR</th><th>Status</th></tr></thead><tbody id="gps-table"></tbody></table></div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-users"></i>Full Team GPS Roster</div>
-          <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Pos</th><th>Latest Load</th><th>Dist (m)</th><th>HSD (m)</th><th>Max Vel (mph)</th><th>Accel/Decel</th><th>Acute</th><th>Chronic</th><th>ACWR</th><th>Status</th></tr></thead><tbody id="gps-roster-table"></tbody></table></div>
-        </div>
-      </div>
-      <div id="gps-group-view" style="display:none">
-        <div class="sel-row">
-          <select class="data-sel" id="gps-group-sel" onchange="renderGPSGroup()">
-            <option value="QB">Quarterbacks</option><option value="RB">Running Backs</option>
-            <option value="WR">Wide Receivers</option><option value="TE">Tight Ends</option>
-            <option value="OL">Offensive Linemen</option><option value="DL">Defensive Linemen</option>
-            <option value="LB">Linebackers</option><option value="DB">Defensive Backs</option>
-            <option value="ST">Special Teams</option>
-          </select>
-          <span class="tb-badge info" id="gps-group-badge">—</span>
-        </div>
-        <div class="stat-row" id="gps-group-stats"></div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-chart-area"></i>Group Avg Acute vs Chronic — Player Load</div>
-          <div class="chart-wrap h220"><canvas id="grp-ac-chart"></canvas></div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-chart-line"></i>Group ACWR Trend</div>
-          <div class="chart-wrap h200"><canvas id="grp-acwr-chart"></canvas></div>
-          <div class="zone-legend">
-            <div class="zl"><div class="zl-dot" style="background:var(--acc3)"></div>Sweet spot 0.80–1.30</div>
-            <div class="zl"><div class="zl-dot" style="background:var(--acc4)"></div>Caution 1.30–1.50</div>
-            <div class="zl"><div class="zl-dot" style="background:var(--acc5)"></div>Danger &gt;1.50 / &lt;0.80</div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-users"></i>Position Group — Individual Roster</div>
-          <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Latest Load</th><th>Max Vel (mph)</th><th>Accel/Decel</th><th>Acute</th><th>Chronic</th><th>ACWR</th><th>Status</th></tr></thead><tbody id="gps-grp-roster-table"></tbody></table></div>
-        </div>
-      </div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-title"><i class="ti ti-run"></i>Team Acute vs Chronic — Accel &amp; Decel</div><div class="chart-wrap h200"><canvas id="gps-team-ac-accel"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR — Accel &amp; Decel</div><div class="chart-wrap h200"><canvas id="gps-team-acwr-accel"></canvas></div></div>
     </div>
-
-    <!-- ════ VALD TESTING ════ -->
-    <div class="page" id="pg-vald">
-      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-        <div style="display:flex;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;overflow:hidden">
-          <button id="vald-view-player" onclick="setVALDView('player')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:var(--uf-orange);color:#fff;cursor:pointer">Individual</button>
-          <button id="vald-view-group" onclick="setVALDView('group')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Position Group</button>
-        </div>
-      </div>
-      <div id="vald-individual-view">
-        <div class="sel-row"><select class="data-sel" id="vald-sel" onchange="renderVALD()"></select></div>
-        <div class="vald-grid" id="vald-cards"></div>
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-title"><i class="ti ti-chart-bar"></i>NordBord — L vs R Max Force (N) History</div>
-            <div class="chart-wrap h200"><canvas id="vald-nord-chart"></canvas></div>
-          </div>
-          <div class="panel">
-            <div class="panel-title"><i class="ti ti-chart-line"></i>Force Plate — Jump Height (cm) History</div>
-            <div class="chart-wrap h200"><canvas id="vald-jump-chart"></canvas></div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-table"></i>VALD Testing Log</div>
-          <div class="tbl-wrap"><table><thead><tr><th>Test Date</th><th>Jump Ht (cm)</th><th>Peak Force (N)</th><th>Peak Power (W)</th><th>RSI-Mod</th><th>Asymmetry %</th><th>Nord L (N)</th><th>Nord R (N)</th><th>LSI %</th><th>Status</th></tr></thead><tbody id="vald-table"></tbody></table></div>
-        </div>
-      </div>
-      <div id="vald-group-view" style="display:none">
-        <div class="sel-row">
-          <select class="data-sel" id="vald-group-sel" onchange="renderVALDGroup()">
-            <option value="QB">Quarterbacks</option><option value="RB">Running Backs</option>
-            <option value="WR">Wide Receivers</option><option value="TE">Tight Ends</option>
-            <option value="OL">Offensive Linemen</option><option value="DL">Defensive Linemen</option>
-            <option value="LB">Linebackers</option><option value="DB">Defensive Backs</option>
-            <option value="ST">Special Teams</option>
-          </select>
-          <span class="tb-badge info" id="vald-group-badge">—</span>
-        </div>
-        <div class="vald-grid" id="vald-group-cards"></div>
-        <div class="two-col">
-          <div class="panel">
-            <div class="panel-title"><i class="ti ti-chart-bar"></i>Group Avg — L vs R Nord Force (N)</div>
-            <div class="chart-wrap h200"><canvas id="vald-grp-nord-chart"></canvas></div>
-          </div>
-          <div class="panel">
-            <div class="panel-title"><i class="ti ti-chart-line"></i>Group — Jump Height Distribution (cm)</div>
-            <div class="chart-wrap h200"><canvas id="vald-grp-jump-chart"></canvas></div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-table"></i>VALD Log — Position Group</div>
-          <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Jump Ht (cm)</th><th>RSI-Mod</th><th>Asym %</th><th>Nord L (N)</th><th>Nord R (N)</th><th>LSI %</th><th>Status</th></tr></thead><tbody id="vald-group-table"></tbody></table></div>
-        </div>
-      </div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Team Weekly GPS Summary</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel (mph)</th><th>Avg Dist (m)</th><th>Avg A&amp;D</th><th>Avg HSR (m)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-weekly"></tbody></table></div>
     </div>
-
-    <!-- ════ LIFTING MAXES ════ -->
-    <div class="page" id="pg-lifting">
-      <div class="sel-row">
-        <select class="data-sel" id="lifting-pos-sel" onchange="renderLifting()" style="min-width:220px">
-          <option value="ALL">All Positions</option>
-          <option value="QB">Quarterbacks</option><option value="RB">Running Backs</option>
-          <option value="WR">Wide Receivers</option><option value="TE">Tight Ends</option>
-          <option value="OL">Offensive Linemen</option><option value="DL">Defensive Linemen</option>
-          <option value="LB">Linebackers</option><option value="DB">Defensive Backs</option>
-          <option value="ST">Special Teams</option>
-        </select>
-      </div>
-      <div class="stat-row" id="lifting-stats"></div>
-      <div class="panel">
-        <div class="panel-title"><i class="ti ti-table"></i>Lifting Maxes</div>
-        <div class="tbl-wrap">
-          <table><thead><tr>
-            <th class="sortable" onclick="sortLifting('name')">Athlete</th>
-            <th class="sortable" onclick="sortLifting('pos')">Pos</th>
-            <th class="sortable" onclick="sortLifting('clean')">Clean (lbs)</th>
-            <th class="sortable" onclick="sortLifting('squat')">Squat (lbs)</th>
-            <th class="sortable" onclick="sortLifting('bench')">Bench (lbs)</th>
-            <th class="sortable" onclick="sortLifting('deadlift')">Deadlift (lbs)</th>
-            <th class="sortable" onclick="sortLifting('fsq')">Front Squat (lbs)</th>
-          </tr></thead><tbody id="lifting-table"></tbody></table>
-        </div>
-      </div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-users"></i>Full Team GPS Roster</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Pos</th><th>Unit</th><th>Latest Dist (m)</th><th>Max Vel (mph)</th><th>Accel/Decel</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-roster"></tbody></table></div>
     </div>
-
-    <!-- ════ STRENGTH STANDARDS ════ -->
-    <div class="page" id="pg-standards">
-      <div class="sel-row">
-        <select class="data-sel" id="standards-pos-sel" onchange="renderStandards()" style="min-width:220px">
-          <option value="OL">Offensive Linemen</option><option value="DL">Defensive Linemen</option>
-          <option value="LB">Linebackers</option><option value="TE">Tight Ends</option>
-          <option value="DB">Defensive Backs</option><option value="QB">Quarterbacks</option>
-          <option value="RB">Running Backs</option><option value="WR">Wide Receivers</option>
-          <option value="ST">Special Teams</option>
-        </select>
-      </div>
-      <div id="standards-content"></div>
+  </div>
+  <div id="gps-individual-view" style="display:none">
+    <div class="sel-row"><select class="data-sel" id="gps-sel" onchange="renderGPS()"></select><span class="tbb info" id="gps-status-badge">—</span></div>
+    <div class="stat-row" id="gps-stats"></div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-chart-area"></i>Acute vs Chronic — Distance</div><div class="chart-wrap h220"><canvas id="gps-ac-dist"></canvas></div></div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>ACWR — Distance</div><div class="chart-wrap h200"><canvas id="gps-acwr-dist"></canvas></div>
+      <div class="zone-legend"><div class="zl"><div class="zl-dot" style="background:var(--acc3)"></div>0.80–1.30</div><div class="zl"><div class="zl-dot" style="background:var(--acc4)"></div>1.30–1.50</div><div class="zl"><div class="zl-dot" style="background:var(--acc5)"></div>&gt;1.50/&lt;0.80</div></div>
     </div>
-
-    <!-- ════ LEADERBOARDS ════ -->
-    <div class="page" id="pg-leaderboards">
-      <div class="lb-tabs" id="lb-tabs"></div>
-      <div class="two-col">
-        <div class="panel" id="lb-panel-left"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></div>
-        <div class="panel" id="lb-panel-right"></div>
-      </div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-title"><i class="ti ti-run"></i>Acute vs Chronic — Accel &amp; Decel</div><div class="chart-wrap h180"><canvas id="gps-ac-accel"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>ACWR — Accel &amp; Decel</div><div class="chart-wrap h180"><canvas id="gps-acwr-accel"></canvas></div></div>
     </div>
-
-    <!-- ════ INJURY RISK ════ -->
-    <div class="page" id="pg-injury">
-      <div class="stat-row" id="injury-stats"></div>
-      <div class="two-col">
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-alert-triangle" style="color:var(--acc5)"></i>High Risk Athletes</div>
-          <div id="injury-high-list"></div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-alert-circle" style="color:var(--acc4)"></i>Moderate Risk Athletes</div>
-          <div id="injury-mod-list"></div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="panel-title"><i class="ti ti-table"></i>Full Risk Table</div>
-        <div class="tbl-wrap">
-          <table><thead><tr>
-            <th class="sortable" onclick="sortInjury('name')">Athlete</th>
-            <th>Pos</th><th>ACWR</th><th>Jump Ht (cm)</th>
-            <th>Nord LSI %</th><th>Max Vel (mph)</th><th>mRSI</th><th>Risk</th><th>Flags</th>
-          </tr></thead><tbody id="injury-table"></tbody></table>
-        </div>
-      </div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Weekly GPS Summary</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Dist (m)</th><th>Max Vel (mph)</th><th>A&amp;D</th><th>HSR (m)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-table"></tbody></table></div>
     </div>
-
-    <!-- ════ BODY COMP ════ -->
-    <div class="page" id="pg-bodycomp">
-      <div class="stat-row" id="bc-stats"></div>
-      <div class="panel">
-        <div class="panel-title"><i class="ti ti-table"></i>Body Composition Roster</div>
-        <div class="tbl-wrap">
-          <table><thead><tr id="bc-thead"></tr></thead><tbody id="bc-table"></tbody></table>
-        </div>
-      </div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-users"></i>Full Team Roster</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Pos</th><th>Latest Dist (m)</th><th>Max Vel (mph)</th><th>A&amp;D</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-roster-table"></tbody></table></div>
     </div>
-
-    <!-- ════ COMPARE ════ -->
-    <div class="page" id="pg-compare">
-      <div class="sel-row" style="margin-bottom:16px">
-        <select class="data-sel" id="cmp-a" onchange="renderCompare()" style="min-width:220px"></select>
-        <span class="vs-btn" style="padding:8px 14px;font-size:13px">VS</span>
-        <select class="data-sel" id="cmp-b" onchange="renderCompare()" style="min-width:220px"></select>
-      </div>
-      <div class="cmp-grid">
-        <div class="panel" id="cmp-left"></div>
-        <div></div>
-        <div class="panel" id="cmp-right"></div>
-      </div>
-      <div class="panel">
-        <div class="panel-title"><i class="ti ti-chart-radar"></i>Performance Radar</div>
-        <div class="chart-wrap h260"><canvas id="cmp-radar"></canvas></div>
-      </div>
+  </div>
+  <div id="gps-group-view" style="display:none">
+    <div class="sel-row">
+      <select class="data-sel" id="gps-group-sel" onchange="renderGPSGroup()">
+        <option value="CB">Cornerbacks (CB)</option><option value="EDGE">Edge Rushers (EDGE)</option>
+        <option value="ILB">Linebackers — Inside (ILB)</option><option value="LB">Linebackers (LB)</option>
+        <option value="OL">Linemen — Offensive (OL)</option><option value="DL">Linemen — Defensive (DL)</option>
+        <option value="QB">Quarterbacks (QB)</option><option value="RB">Running Backs (RB)</option>
+        <option value="S">Safeties (S)</option><option value="TE">Tight Ends (TE)</option>
+        <option value="WR">Wide Receivers (WR)</option><option value="ST">Special Teams (ST)</option>
+      </select>
+      <span class="tbb info" id="gps-group-badge">—</span>
     </div>
-
-  </div><!-- /content-area -->
-</div><!-- /main-area -->
-</div><!-- /app -->
-
-<!-- ── PLAYER MODAL ── -->
-<div class="modal-overlay" id="player-modal">
-  <div class="modal-box">
-    <div class="modal-header">
-      <div>
-        <div class="modal-name" id="pm-name">—</div>
-        <div class="modal-pos" id="pm-pos">—</div>
-      </div>
-      <div class="modal-close" onclick="closeModal()">✕</div>
+    <div class="stat-row" id="gps-group-stats"></div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-title"><i class="ti ti-chart-area"></i>Group Avg Acute vs Chronic — Distance</div><div class="chart-wrap h220"><canvas id="grp-ac-dist"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Group ACWR — Distance</div><div class="chart-wrap h220"><canvas id="grp-acwr-dist"></canvas></div></div>
     </div>
-    <div class="modal-body" id="pm-body"></div>
+    <div class="two-col">
+      <div class="panel"><div class="panel-title"><i class="ti ti-run"></i>Group Avg Acute vs Chronic — Accel &amp; Decel</div><div class="chart-wrap h180"><canvas id="grp-ac-accel"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Group ACWR — Accel &amp; Decel</div><div class="chart-wrap h180"><canvas id="grp-acwr-accel"></canvas></div></div>
+    </div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-users"></i>Position Group Roster</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Latest Dist (m)</th><th>Max Vel (mph)</th><th>A&amp;D</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-grp-roster"></tbody></table></div>
+    </div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Group Weekly GPS Summary</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel</th><th>Avg Dist (m)</th><th>Avg A&amp;D</th><th>Avg HSR (m)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-group-table"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<!-- LOAD MONITOR -->
+<div class="page" id="pg-loadmonitor">
+  <div class="lm-metric-grid" id="lm-metrics"></div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+    <span style="font-family:var(--font-m);font-size:10px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase">Metric</span>
+    <div class="lm-toggle">
+      <button class="lm-chip active" onclick="setLMMetric('load',this)">Player Load</button>
+      <button class="lm-chip" onclick="setLMMetric('dist',this)">Distance</button>
+      <button class="lm-chip" onclick="setLMMetric('hsrd',this)">HSRD</button>
+      <button class="lm-chip" onclick="setLMMetric('accel',this)">Accel</button>
+      <button class="lm-chip" onclick="setLMMetric('decel',this)">Decel</button>
+      <button class="lm-chip" onclick="setLMMetric('acwr',this)">ACWR</button>
+    </div>
+  </div>
+  <div class="lm-charts-row">
+    <div class="panel" style="margin-bottom:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div><div style="font-size:13px;font-weight:600" id="lm-chart-title">Team weekly average</div><div style="font-size:11px;color:var(--text3);font-family:var(--font-m)">spring → summer → fall projection</div></div>
+        <div class="lm-leg" id="lm-legend"></div>
+      </div>
+      <div class="lm-phase-tags"><span>Spring (Jan–Apr)</span><span>Summer (May–Jul)</span><span style="color:var(--uf-orange)">Fall Camp (Aug+)</span></div>
+      <div class="chart-wrap h220"><canvas id="lm-team-chart"></canvas></div>
+    </div>
+    <div class="panel" style="margin-bottom:0">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">ACWR Distribution</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-bottom:12px">team snapshot · current period</div>
+      <div class="lm-donut-wrap"><canvas id="lm-acwr-donut"></canvas><div class="lm-donut-center"><div class="lm-dc-val" id="lm-acwr-avg">—</div><div class="lm-dc-label">team avg</div></div></div>
+      <div class="lm-zone-bars" id="lm-zone-bars"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+      <div style="font-size:13px;font-weight:600">Roster — Current Period</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--font-m)" id="lm-roster-count">— players</div>
+    </div>
+    <div class="lm-filter-row" id="lm-pos-filters"></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Player</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Spring Avg</th><th>% Spring</th><th>HSRD (m)</th><th>Total Dist (m)</th><th>Accel</th><th>Decel</th><th>Max Velo (mph)</th><th>ACWR</th><th>Zone</th></tr></thead><tbody id="lm-roster-body"></tbody></table></div>
+  </div>
+  <div class="lm-detail-section" id="lm-detail-section"><div class="lm-detail-card" id="lm-detail-card"></div></div>
+</div>
+
+<!-- VALD -->
+<div class="page" id="pg-vald">
+  <div class="placeholder-state"><div class="placeholder-icon">⚡</div><div class="placeholder-title">VALD Testing</div><div class="placeholder-sub">ForceDeck CMJ and NordBord data will appear here once the automated VALD import pipeline is connected. Real data from your most recent testing sessions will populate automatically.</div><div class="placeholder-badge">Automation In Progress</div></div>
+</div>
+
+<!-- LIFTING -->
+<div class="page" id="pg-lifting">
+  <div class="placeholder-state"><div class="placeholder-icon">🏋️</div><div class="placeholder-title">Lifting Maxes</div><div class="placeholder-sub">Clean, squat, bench, deadlift, and front squat data will appear here once the automated lifting data pipeline is connected.</div><div class="placeholder-badge">Automation In Progress</div></div>
+</div>
+
+<!-- STANDARDS -->
+<div class="page" id="pg-standards">
+  <div class="placeholder-state"><div class="placeholder-icon">🏆</div><div class="placeholder-title">Strength Standards</div><div class="placeholder-sub">Position-specific strength standards comparison will appear here once lifting data is connected.</div><div class="placeholder-badge">Automation In Progress</div></div>
+</div>
+
+<!-- LEADERBOARDS -->
+<div class="page" id="pg-leaderboards">
+  <div class="lb-tabs" id="lb-tabs"></div>
+  <div class="two-col">
+    <div class="panel" id="lb-panel-left"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></div>
+    <div class="panel" id="lb-panel-right"></div>
+  </div>
+</div>
+
+<!-- INJURY RISK -->
+<div class="page" id="pg-injury">
+  <div class="stat-row" id="injury-stats"></div>
+  <div class="two-col">
+    <div class="panel"><div class="panel-title"><i class="ti ti-alert-triangle" style="color:var(--acc5)"></i>High Risk Athletes</div><div id="injury-high-list"></div></div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-alert-circle" style="color:var(--acc4)"></i>Moderate Risk Athletes</div><div id="injury-mod-list"></div></div>
+  </div>
+  <div class="panel"><div class="panel-title"><i class="ti ti-shield-exclamation" style="color:var(--acc5)"></i>Full Risk Register</div>
+    <div class="tbl-wrap"><table><thead><tr>
+      <th class="sortable" onclick="sortInjury('name')">Athlete</th><th>Pos</th><th>Unit</th>
+      <th class="sortable" onclick="sortInjury('acwr')">ACWR Dist</th><th>ACWR A&amp;D</th>
+      <th>Max Vel (mph)</th><th>Total HSR (m)</th>
+      <th class="sortable" onclick="sortInjury('risk')">Risk</th><th>Flags</th>
+    </tr></thead><tbody id="injury-table"></tbody></table></div>
+  </div>
+</div>
+
+<!-- BODY COMP -->
+<div class="page" id="pg-bodycomp">
+  <div class="placeholder-state"><div class="placeholder-icon">⚖️</div><div class="placeholder-title">Body Composition</div><div class="placeholder-sub">Body weight tracking, goal weight variance, lean mass, and body fat % will appear here once the body composition data pipeline is connected.</div><div class="placeholder-badge">Automation In Progress</div></div>
+</div>
+
+<!-- COMPARE -->
+<div class="page" id="pg-compare">
+  <div class="sel-row" style="margin-bottom:16px">
+    <select class="data-sel" id="cmp-a" onchange="renderCompare()" style="flex:1"></select>
+    <div class="vs-btn">VS</div>
+    <select class="data-sel" id="cmp-b" onchange="renderCompare()" style="flex:1"></select>
+  </div>
+  <div class="cmp-grid">
+    <div class="panel" id="cmp-left"></div>
+    <div></div>
+    <div class="panel" id="cmp-right"></div>
+  </div>
+  <div class="panel"><div class="panel-title"><i class="ti ti-chart-radar"></i>GPS Performance Radar</div><div class="chart-wrap h280"><canvas id="cmp-radar"></canvas></div></div>
+</div>
+
+</div></div></div>
+
+<!-- PLAYER MODAL -->
+<div class="pm-overlay" id="pm-overlay" onclick="closePM(event)">
+  <div class="pm-box">
+    <div class="pm-header">
+      <div><div class="pm-name" id="pm-name">—</div><div class="pm-pos-line" id="pm-pos">—</div></div>
+      <div class="pm-close" onclick="closePM(null,true)">✕</div>
+    </div>
+    <div class="pm-body">
+      <div class="pm-risk-banner" id="pm-risk-banner"><span class="pm-risk-label" id="pm-risk-label">—</span><div class="pm-flags-row" id="pm-flags"></div></div>
+      <div class="pm-section-title">Load Monitoring</div>
+      <div class="pm-grid" id="pm-grid"></div>
+    </div>
   </div>
 </div>
 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const supabase = createClient(
-    'https://fyhgvxfrwbwuqxllodip.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5aGd2eGZyd2J3dXF4bGxvZGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMzk5ODIsImV4cCI6MjA5NDcxNTk4Mn0.665OZwCsBvnHCVZ-ApiF2xM1CBgTIYZe2EEbuW7IW3U'
+const SB = createClient(
+  'https://fyhgvxfrwbwuqxllodip.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5aGd2eGZyd2J3dXF4bGxvZGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMzk5ODIsImV4cCI6MjA5NDcxNTk4Mn0.665OZwCsBvnHCVZ-ApiF2xM1CBgTIYZe2EEbuW7IW3U'
 );
 
-// ── Inline auth ───────────────────────────────────────────────────────────
-async function initAuth(pageKey) {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-        window.location.href = './login.html';
-        return null;
-    }
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('full_name, role')
-        .eq('id', session.user.id)
-        .single();
-    if (profileError || !profile) {
-        window.location.href = './login.html';
-        return null;
-    }
-    const allowed = {
-        'dashboard': ['head_coach', 'sc_staff', 'athletic_trainer'],
-    };
-    const allowedRoles = allowed[pageKey] ?? [];
-    if (!allowedRoles.includes(profile.role)) {
-        window.location.href = './login.html';
-        return null;
-    }
-    supabase.auth.onAuthStateChange((event) => {
-        if (event === 'SIGNED_OUT') window.location.href = './login.html';
-    });
-    return { session, role: profile.role, full_name: profile.full_name };
+// ── AUTH ──────────────────────────────────────────────────────────
+async function doAuth(){
+  const {data:{session}}=await SB.auth.getSession();
+  if(!session){location.href='./login.html';return null;}
+  const {data:p}=await SB.from('profiles').select('full_name,role').eq('id',session.user.id).single();
+  if(!p){location.href='./login.html';return null;}
+  SB.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT')location.href='./login.html';});
+  return p;
+}
+const me=await doAuth();if(!me)throw 0;
+document.getElementById('sidebar-username').textContent=me.full_name;
+document.getElementById('logout-btn').onclick=async()=>{await SB.auth.signOut();location.href='./login.html';};
+
+// ── PHASE ─────────────────────────────────────────────────────────
+const PH={ss:'2025-01-23',se:'2025-04-11',us:'2025-05-13',ue:'2025-07-29',fs:'2025-08-05'};
+function phase(d){if(d>=PH.ss&&d<=PH.se)return'Sp';if(d>=PH.us&&d<=PH.ue)return'Su';if(d>=PH.fs)return'Fa';return null;}
+function phWk(d){
+  const ph=phase(d);if(!ph)return null;
+  const base=new Date((ph==='Sp'?PH.ss:ph==='Su'?PH.us:PH.fs)+'T00:00:00');
+  const days=Math.floor((new Date(d+'T00:00:00')-base)/86400000);
+  return`${ph} W${Math.floor(days/7)+1}`;
 }
 
-// ── Auth ──────────────────────────────────────────────────────────────────
-const authResult = await initAuth('dashboard');
-if (!authResult) throw new Error('Auth failed');
-const { full_name } = authResult;
-document.getElementById('sidebar-username').textContent = full_name;
-document.getElementById('logout-btn').addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    window.location.href = './login.html';
-});
-
-// ─────────────────────────────────────────────────────────────────────────
-// FETCH ALL DATA
-// ─────────────────────────────────────────────────────────────────────────
-function spin(id){ const el=document.getElementById(id); if(el) el.innerHTML='<div class="uf-spinner-wrap"><div class="uf-spinner"></div></div>'; }
-function err(id,msg){ const el=document.getElementById(id); if(el) el.innerHTML=`<div class="uf-error">⚠ ${msg}</div>`; }
-
-const [
-    {data:athletes,  error:eA},
-    {data:gps,       error:eG},
-    {data:cmj,       error:eC},
-    {data:nord,      error:eN},
-    {data:flags,     error:eF},
-    {data:lifting,   error:eL},
-    {data:bodycomp,  error:eB},
-    {data:extras,    error:eX},
-] = await Promise.all([
-    supabase.from('athletes').select('*').order('name'),
-    supabase.from('gps_sessions').select('*').order('session_date',{ascending:false}),
-    supabase.from('cmj_tests').select('*').order('test_date',{ascending:true}),
-    supabase.from('nordbord_tests').select('*').order('test_date',{ascending:true}),
-    supabase.from('flags').select('*').order('flag_date',{ascending:false}),
-    supabase.from('lifting_maxes').select('*'),
-    supabase.from('body_comp').select('*').order('weigh_date',{ascending:false}),
-    supabase.from('athlete_extras').select('*'),
+// ── FETCH ─────────────────────────────────────────────────────────
+const [{data:raw,error:eR},{data:aths}]=await Promise.all([
+  SB.from('catapult_sessions')
+    .select('athlete_name,session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_b2_3_efforts,decel_b2_3_efforts')
+    .order('session_date',{ascending:true}),
+  SB.from('athletes').select('name,position')
 ]);
+if(eR){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ ${eR.message}</div>`;throw 0;}
 
-if(eA||eG||eC||eN||eF||eL||eB||eX){
-    document.getElementById('content-area').innerHTML =
-        `<div class="uf-error" style="margin:2rem">⚠ Failed to load data from Supabase. Check your credentials and RLS policies.<br><small>${(eA||eG||eC||eN||eF||eL||eB||eX)?.message}</small></div>`;
-    throw new Error('Data fetch failed');
+// ── POSITION LOOKUP ───────────────────────────────────────────────
+const OFF=['QB','WR','RB','TE','OL'],DEF=['DL','LB','ILB','EDGE','CB','S'],STS=['K','P','ST'];
+const PM={},UM={};
+(aths||[]).forEach(a=>{
+  PM[a.name.toLowerCase()]=a.position;
+  UM[a.name.toLowerCase()]=OFF.includes(a.position)?'Offense':DEF.includes(a.position)?'Defense':'Special Teams';
+});
+function lkPos(n){
+  const k=(n||'').toLowerCase();if(PM[k])return PM[k];
+  const last=k.split(/[\s,]+/).filter(Boolean).pop();
+  for(const[kk,v]of Object.entries(PM)){if(kk.split(/[\s,]+/).filter(Boolean).pop()===last)return v;}
+  return'UNK';
 }
+function lkUnit(n){const p=lkPos(n);return OFF.includes(p)?'Offense':DEF.includes(p)?'Defense':STS.includes(p)?'Special Teams':'Other';}
 
-// ─────────────────────────────────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────────────────────────────────
+// ── BUILD SESSION DATA ─────────────────────────────────────────────
+const byP={};
+raw.forEach(r=>{
+  const k=(r.athlete_name||'').trim();if(!k)return;
+  if(!byP[k])byP[k]={name:k,sessions:[]};
+  const wk=phWk(r.session_date);if(!wk)return;
+  byP[k].sessions.push({
+    date:r.session_date,ph:phase(r.session_date),wk,
+    load:+r.total_player_load||0,dist:+r.total_distance||0,
+    hsr:(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0),
+    maxV:+r.max_velocity||0,accel:+r.accel_b2_3_efforts||0,decel:+r.decel_b2_3_efforts||0
+  });
+});
+
+// ── ORDERED PHASE WEEKS ───────────────────────────────────────────
+const phWkOrd={'Sp':0,'Su':1,'Fa':2};
+const allPhWks=[...new Set(raw.map(r=>phWk(r.session_date)).filter(Boolean))].sort((a,b)=>{
+  const[ap,an]=[a.slice(0,2),parseInt(a.slice(3))];
+  const[bp,bn]=[b.slice(0,2),parseInt(b.slice(3))];
+  return phWkOrd[ap]-phWkOrd[bp]||an-bn;
+});
+const spWks=allPhWks.filter(w=>w.startsWith('Sp'));
+const suWks=allPhWks.filter(w=>w.startsWith('Su'));
+const faWks=allPhWks.filter(w=>w.startsWith('Fa'));
+const lastSuN=suWks.length?parseInt(suWks[suWks.length-1].slice(3)):0;
+const suProjWks=Array.from({length:Math.max(0,10-lastSuN)},(_,i)=>`Su W${lastSuN+i+1}`);
+const faProjWks=['Fa W1','Fa W2','Fa W3','Fa W4'];
+const allLMWks=[...spWks,...suWks,...suProjWks];
+
+// ── ACWR HELPER ───────────────────────────────────────────────────
+function calcACWR(arr){return arr.map((_,i)=>{const w=arr.slice(Math.max(0,i-3),i+1).filter(v=>v!=null&&v>0);const ch=w.reduce((a,b)=>a+b,0)/Math.max(1,w.length);return ch>0?+(arr[i]/ch).toFixed(3):0;});}
+function wkTot(sessions,field,wk){return sessions.filter(s=>s.wk===wk).reduce((t,s)=>t+s[field],0);}
+
+// ── BUILD PLAYERS ─────────────────────────────────────────────────
+const PLAYERS=Object.values(byP).map(p=>{
+  const pos=lkPos(p.name),unit=lkUnit(p.name);
+  function totArr(f){return allPhWks.map(wk=>wkTot(p.sessions,f,wk)||null);}
+  const dA=totArr('dist'),aA=totArr('accel'),lA=totArr('load'),hA=totArr('hsr');
+  const dACWR=calcACWR(dA.filter(v=>v!=null));
+  const aACWR=calcACWR(aA.filter(v=>v!=null));
+  const latD=dACWR[dACWR.length-1]??0,latA=aACWR[aACWR.length-1]??0;
+  const latMaxV=[...p.sessions].reverse().find(s=>s.maxV>0)?.maxV??0;
+  const totalHSR=p.sessions.reduce((t,s)=>t+s.hsr,0);
+  const latest=[...p.sessions].sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const spLoads=spWks.map(wk=>wkTot(p.sessions,'load',wk)).filter(v=>v>0);
+  const spAvg=spLoads.length?Math.round(spLoads.reduce((a,b)=>a+b)/spLoads.length):0;
+  const curLoad=latest?.load??0;
+  const spPct=spAvg>0?Math.round(curLoad/spAvg*100):0;
+  const rl=lA.filter(v=>v!=null).slice(-4);
+  const ch4=rl.length?rl.reduce((a,b)=>a+b)/rl.length:0;
+  const acwr4=ch4>0?+(curLoad/ch4).toFixed(2):0;
+  const flags=[];
+  if(latD>1.5)flags.push({t:'ACWR Dist High',c:'r'});
+  else if(latD>1.3)flags.push({t:'ACWR Dist Caution',c:'y'});
+  if(latD<0.8&&latD>0)flags.push({t:'Undertraining',c:'y'});
+  if(latA>1.5)flags.push({t:'ACWR A&D High',c:'r'});
+  else if(latA>1.3)flags.push({t:'ACWR A&D Caution',c:'y'});
+  const risk=flags.some(f=>f.c==='r')?'high':flags.length?'mod':'low';
+  const allLMLoad=allLMWks.map(wk=>wkTot(p.sessions,'load',wk)||null);
+  const allLMDist=allLMWks.map(wk=>wkTot(p.sessions,'dist',wk)||null);
+  const allLMHSR=allLMWks.map(wk=>wkTot(p.sessions,'hsr',wk)||null);
+  const allLMAccel=allLMWks.map(wk=>wkTot(p.sessions,'accel',wk)||null);
+  const allLMDecel=allLMWks.map(wk=>wkTot(p.sessions,'decel',wk)||null);
+  const velByWk={};p.sessions.forEach(s=>{if(!s.ph)return;if(!velByWk[s.wk]||s.maxV>velByWk[s.wk])velByWk[s.wk]=s.maxV;});
+  const allLMVel=allLMWks.map(wk=>velByWk[wk]??null);
+  const ci=[...allLMLoad].map((v,i)=>v!=null?i:-1).filter(i=>i>=0).pop()??-1;
+  const cl=ci>=0?allLMLoad[ci]??0:0,cd=ci>=0?allLMDist[ci]??0:0,ch2=ci>=0?allLMHSR[ci]??0:0,ca=ci>=0?allLMAccel[ci]??0:0,cde=ci>=0?allLMDecel[ci]??0:0,cv=ci>=0?allLMVel[ci]??0:0;
+  const esP=spAvg>0?Math.round((allLMLoad.filter(v=>v!=null).slice(-1)[0]??0)/spAvg*100):0;
+  const fp=[spAvg*(1.10),spAvg*(1.12),spAvg*(1.13),spAvg*(1.14)].map(v=>Math.round(v));
+  const fW1Pct=spAvg>0?Math.round(fp[0]/spAvg*100):0;
+  return{name:p.name,pos,unit,sessions:p.sessions,dA,aA,lA,hA,dACWR,aACWR,latD,latA,latMaxV,totalHSR,latest,flags,risk,spAvg,curLoad:cl,spPct,acwr4,allLMLoad,allLMDist,allLMHSR,allLMAccel,allLMDecel,allLMVel,cl,cd,ch2,ca,cde,cv,endSumPct:esP,fallProj:fp,fallW1Pct:fW1Pct};
+}).filter(p=>p.sessions.length>0).sort((a,b)=>a.name.localeCompare(b.name));
+
+// ── TOPBAR ────────────────────────────────────────────────────────
+const today=new Date().toISOString().slice(0,10);
+const curPh=phase(today);
+const phLbl=curPh==='Sp'?'Spring Ball':curPh==='Su'?'Summer':curPh==='Fa'?'Fall Camp':'Off Season';
+document.getElementById('tb-season').textContent=`${PLAYERS.length} Athletes · ${phLbl}`;
+
+// ── CHART/RENDER HELPERS ──────────────────────────────────────────
 const C={acc:'#FA4616',blue:'#003087',green:'#16A34A',yellow:'#D97706',red:'#DC2626',grid:'rgba(0,48,135,0.06)',tick:'#94A3B8'};
-const CHART_DEFAULTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'}},grid:{color:C.grid}},y:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'}},grid:{color:C.grid}}}};
-const chartInst={};
-function mk(id,cfg){if(chartInst[id]){chartInst[id].destroy();}const el=document.getElementById(id);if(!el)return;chartInst[id]=new Chart(el,cfg);}
-
-function pill(cls,lbl){return `<span class="pill ${cls}">${lbl}</span>`;}
-function ini(name){const p=name.split(' ');return((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase();}
-function fmt1(v){return v!=null?Number(v).toFixed(1):'—';}
-function fmt0(v){return v!=null?Math.round(Number(v)).toLocaleString():'—';}
-
-// GPS for athlete — sorted desc
-function athGPS(id){return gps.filter(r=>r.athlete_id===id).sort((a,b)=>new Date(b.session_date)-new Date(a.session_date));}
-// Last 28 rows = 28 days
-function computeACWR(rows){
-    if(!rows||rows.length<7)return null;
-    const s=rows.slice(0,28);
-    const acute=s.slice(0,7).reduce((t,r)=>t+Number(r.player_load),0);
-    const weeks=[0,1,2,3].map(w=>s.slice(w*7,w*7+7).reduce((t,r)=>t+Number(r.player_load),0));
-    const chronic=weeks.reduce((t,w)=>t+w,0)/4;
-    return chronic>0?acute/chronic:null;
+const CD={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'}},grid:{color:C.grid}},y:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'}},grid:{color:C.grid}}}};
+const CI={};
+function mk(id,cfg){if(CI[id])CI[id].destroy();const el=document.getElementById(id);if(!el)return;CI[id]=new Chart(el,cfg);}
+function pill(cls,lbl){return`<span class="pill ${cls}">${lbl}</span>`;}
+function ini(n){const p=(n||'').trim().split(/[\s,]+/);return((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase();}
+function acwrColor(v){return v>1.5||v<0.8?C.red:v>1.3?C.yellow:C.green;}
+function acwrSt(v){
+  if(!v||v===0)return{cls:'info',lbl:'NO DATA'};
+  if(v>1.5)return{cls:'danger',lbl:'HIGH RISK'};
+  if(v<0.8)return{cls:'warn',lbl:'UNDERTRAINING'};
+  if(v>1.3)return{cls:'warn',lbl:'CAUTION'};
+  return{cls:'ok',lbl:'OPTIMAL'};
 }
-function acwrColor(v){return v==null?C.grid:v>1.5||v<0.8?C.red:v>1.3?C.yellow:C.green;}
-function acwrStatus(v){
-    if(v==null||v===0)return{cls:'info',lbl:'NO DATA'};
-    if(v>1.5)return{cls:'danger',lbl:'HIGH RISK'};
-    if(v<0.8)return{cls:'warn',lbl:'UNDERTRAINING'};
-    if(v>1.3)return{cls:'warn',lbl:'CAUTION'};
-    return{cls:'ok',lbl:'OPTIMAL'};
+function lmZone(v){
+  if(v<0.8)return{key:'under',cls:'info',label:'Under',color:'#4a7fd4'};
+  if(v<=1.3)return{key:'optimal',cls:'ok',label:'Optimal',color:C.green};
+  if(v<=1.5)return{key:'caution',cls:'warn',label:'Caution',color:C.yellow};
+  return{key:'risk',cls:'danger',label:'High Risk',color:C.red};
 }
+function acChart(id,ac,ch,wks,la,lb){mk(id,{type:'line',data:{labels:wks,datasets:[{label:la,data:ac,borderColor:C.acc,fill:false,tension:.35,pointRadius:4,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},{label:lb,data:ch.map(v=>Math.round(v)),borderColor:C.blue,fill:false,tension:.35,pointRadius:4,pointBackgroundColor:C.blue,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2,borderDash:[5,4]}]},options:{...CD,plugins:{legend:{display:true,labels:{color:'#475569',font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}}}}});}
+function acwrChart(id,acwrs,wks){const ptC=acwrs.map(v=>v?acwrColor(v):C.grid);mk(id,{type:'line',data:{labels:wks,datasets:[{data:Array(wks.length).fill(1.3),borderColor:'rgba(22,163,74,.5)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},{data:Array(wks.length).fill(1.5),borderColor:'rgba(217,119,6,.5)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},{data:Array(wks.length).fill(0.8),borderColor:'rgba(22,163,74,.5)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},{label:'ACWR',data:acwrs,borderColor:C.acc,backgroundColor:'rgba(250,70,22,0.05)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:ptC,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5}]},options:{...CD,scales:{x:{ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}},y:{min:0.3,max:2.2,ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}}}}});}
 
-// Latest CMJ per athlete
-function latestCMJ(id){return cmj.filter(r=>r.athlete_id===id).sort((a,b)=>new Date(b.test_date)-new Date(a.test_date))[0]??null;}
-// Latest NordBord per athlete
-function latestNord(id){return nord.filter(r=>r.athlete_id===id).sort((a,b)=>new Date(b.test_date)-new Date(a.test_date))[0]??null;}
-// Latest body comp
-function latestBC(id){return bodycomp.filter(r=>r.athlete_id===id)[0]??null;}
-// Lifting maxes (one row per athlete)
-function athLifting(id){return lifting.find(r=>r.athlete_id===id)??null;}
-// Extras
-function athExtras(id){return extras.find(r=>r.athlete_id===id)??null;}
+// ── TEAM ACWR COMPUTATION ─────────────────────────────────────────
+function teamWkTot(field){const m={};raw.forEach(r=>{const wk=phWk(r.session_date);if(!wk)return;m[wk]=(m[wk]||0)+(+r[field]||0);});return allPhWks.map(wk=>m[wk]?m[wk]/PLAYERS.length:null);}
+const tDA=teamWkTot('total_distance'),tAA=teamWkTot('accel_b2_3_efforts');
+const validWks=allPhWks.filter((_,i)=>tDA[i]!=null);
+const tDACWR=calcACWR(tDA.filter(v=>v!=null)),tAACWR=calcACWR(tAA.filter(v=>v!=null));
+const latTD=tDACWR[tDACWR.length-1]??0,latTA=tAACWR[tAACWR.length-1]??0;
 
-// ─────────────────────────────────────────────────────────────────────────
-// PER-ATHLETE COMPUTED METRICS
-// ─────────────────────────────────────────────────────────────────────────
-const PLAYERS = athletes.map(ath=>{
-    const rows   = athGPS(ath.id);
-    const acwr   = computeACWR(rows);
-    const latest = rows[0]??null;
-    const maxVel = rows.length ? Math.max(...rows.slice(0,28).map(r=>Number(r.max_velocity_mph)||0)) : 0;
-    const totalHSR = rows.slice(0,28).reduce((s,r)=>s+Number(r.high_speed_distance_m||0),0);
-
-    // Acute/chronic for 4 weekly buckets (week labels)
-    const weeklyLoad = [0,1,2,3].map(w=>{
-        const bucket = rows.slice(w*7,(w+1)*7);
-        return Math.round(bucket.reduce((s,r)=>s+Number(r.player_load),0));
-    }).reverse();
-
-    const acwrByWeek = weeklyLoad.map((_,i,arr)=>{
-        const acute = arr[i]??0;
-        const wks = arr.slice(Math.max(0,i-3),i+1);
-        const chronic = wks.length ? wks.reduce((s,v)=>s+v,0)/wks.length : 0;
-        return chronic>0?+(acute/chronic).toFixed(2):0;
-    });
-
-    const nc   = latestCMJ(ath.id);
-    const nn   = latestNord(ath.id);
-    const nb   = latestBC(ath.id);
-    const nl   = athLifting(ath.id);
-    const nx   = athExtras(ath.id);
-
-    // Flags
-    const flagList = [];
-    if(acwr!=null&&acwr>1.5) flagList.push({t:'ACWR High',c:'r'});
-    else if(acwr!=null&&acwr>1.3) flagList.push({t:'ACWR Caution',c:'y'});
-    if(acwr!=null&&acwr<0.8&&acwr>0) flagList.push({t:'Undertraining',c:'y'});
-    if(nn&&Number(nn.lsi_pct)<90) flagList.push({t:'Nord Asymm',c:'r'});
-    else if(nn&&Number(nn.lsi_pct)<95) flagList.push({t:'Nord Asymm',c:'y'});
-    if(nc&&Number(nc.rsi_modified)<0.4) flagList.push({t:'Low mRSI',c:'r'});
-    else if(nc&&Number(nc.rsi_modified)<0.51) flagList.push({t:'Low mRSI',c:'y'});
-    if(nb&&nb.body_weight_lbs>0&&nb.goal_weight_lbs>0){
-        const diff=Number(nb.body_weight_lbs)-Number(nb.goal_weight_lbs);
-        if(diff>5) flagList.push({t:'Over Weight',c:'y'});
-        else if(diff<-5) flagList.push({t:'Under Weight',c:'y'});
-    }
-
-    let risk='low';
-    if(flagList.some(f=>f.c==='r')) risk='high';
-    else if(flagList.length>0) risk='mod';
-
-    return {
-        ...ath,
-        acwr, latest, maxVel, totalHSR, weeklyLoad, acwrByWeek,
-        gpsRows: rows,
-        nc, nn, nb, nl, nx,
-        flagList, risk,
-        // Shortcuts
-        jumpHt:    nc?Number(nc.jump_height_cm):0,
-        mRSI:      nc?Number(nc.rsi_modified):0,
-        lsi:       nn?Number(nn.lsi_pct):0,
-        nordLF:    nn?Number(nn.left_peak_force_n):0,
-        nordRF:    nn?Number(nn.right_peak_force_n):0,
-        bw:        nb?Number(nb.body_weight_lbs):0,
-        goalWt:    nb?Number(nb.goal_weight_lbs):0,
-        wtVar:     nb&&nb.body_weight_lbs>0?Number(nb.body_weight_lbs)-Number(nb.goal_weight_lbs):0,
-        clean:     nl?nl.clean_lbs:0,
-        squat:     nl?nl.squat_lbs:0,
-        bench:     nl?nl.bench_lbs:0,
-        deadlift:  nl?nl.deadlift_lbs:0,
-        fsq:       nl?nl.front_squat_lbs:0,
-        keiserPow: nx?nx.keiser_power_w:0,
-        gauntletW: nx?nx.gauntlet_wins:0,
-        sprintW:   nx?nx.sprint_wins:0,
-        infractions:nx?nx.infractions:0,
-    };
-});
-
-const WEEK_LABELS = ['Wk −3','Wk −2','Wk −1','This Wk'];
-
-// ─────────────────────────────────────────────────────────────────────────
-// TOPBAR BADGES
-// ─────────────────────────────────────────────────────────────────────────
-const highCount = PLAYERS.filter(p=>p.risk==='high').length;
-const modCount  = PLAYERS.filter(p=>p.risk==='mod').length;
-document.getElementById('tb-high').textContent = `${highCount} High Risk`;
-document.getElementById('tb-mod').textContent  = `${modCount} Moderate`;
-document.getElementById('tb-season').textContent = `${athletes.length} Athletes`;
-
-// ─────────────────────────────────────────────────────────────────────────
-// NAV
-// ─────────────────────────────────────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',
-    vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',
-    leaderboards:'Leaderboards',injury:'Injury Risk Monitor',
-    bodycomp:'Body Composition',compare:'Player Comparison'};
-
-window.navTo = function(pg){
-    document.querySelector(`[data-page="${pg}"]`)?.click();
-};
-
-document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
-    el.addEventListener('click',()=>{
-        document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
-        el.classList.add('active');
-        const pg=el.dataset.page;
-        document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
-        document.getElementById('pg-'+pg).classList.add('active');
-        document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
-        document.getElementById('content-area').scrollTop=0;
-        const map={gps:renderGPS,vald:renderVALD,lifting:renderLifting,
-            leaderboards:renderLeaderboards,injury:renderInjury,
-            bodycomp:renderBodyComp,compare:renderCompare,
-            standards:renderStandards,roster:renderRoster};
-        if(map[pg]) setTimeout(map[pg],50);
-    });
-});
-
-// ─────────────────────────────────────────────────────────────────────────
-// POPULATE SELECTORS
-// ─────────────────────────────────────────────────────────────────────────
-['gps-sel','vald-sel','cmp-a','cmp-b'].forEach(id=>{
-    const sel=document.getElementById(id);
-    if(!sel)return;
-    PLAYERS.forEach((p,i)=>{
-        const o=document.createElement('option');
-        o.value=p.id; o.textContent=`${p.name} (${p.position})`;
-        if(id==='cmp-b'&&i===1) o.selected=true;
-        sel.appendChild(o);
-    });
-});
-
-// ─────────────────────────────────────────────────────────────────────────
-// DASHBOARD
-// ─────────────────────────────────────────────────────────────────────────
-function renderDashboard(){
-    const avgACWR = PLAYERS.filter(p=>p.acwr!=null).reduce((s,p)=>s+(p.acwr??0),0)/PLAYERS.filter(p=>p.acwr!=null).length;
-    const available = PLAYERS.filter(p=>p.status==='Active'||p.status==='Limited').length;
-
-    document.getElementById('dash-stats').innerHTML=`
-        <div class="stat-card acc"><div class="sc-label">Avg Team ACWR</div><div class="sc-val acc">${avgACWR.toFixed(2)}</div><div class="sc-sub">Player load based</div></div>
-        <div class="stat-card ${highCount>3?'danger':'ok'}"><div class="sc-label">High Risk Athletes</div><div class="sc-val ${highCount>3?'danger':'ok'}">${highCount}</div><div class="sc-sub">${modCount} moderate</div></div>
-        <div class="stat-card ok"><div class="sc-label">Roster Available</div><div class="sc-val ok">${available}/${PLAYERS.length}</div><div class="sc-sub">${Math.round(available/PLAYERS.length*100)}% availability</div></div>
-        <div class="stat-card blue"><div class="sc-label">Athletes w/ GPS Data</div><div class="sc-val blue">${PLAYERS.filter(p=>p.gpsRows.length>0).length}</div><div class="sc-sub">of ${PLAYERS.length} on roster</div></div>
-    `;
-
-    // Top max velocity
-    const topVel=[...PLAYERS].filter(p=>p.maxVel>0).sort((a,b)=>b.maxVel-a.maxVel).slice(0,8);
-    document.getElementById('dash-maxvel').innerHTML=topVel.map((p,i)=>`
-        <div class="lb-row" onclick="openModal('${p.id}')">
-            <span class="lb-rank">${i+1}</span>
-            <div class="avatar" style="background:rgba(250,70,22,.1);color:var(--uf-orange)">${ini(p.name)}</div>
-            <div style="flex:1"><div style="font-weight:600;font-size:12px">${p.name}</div><div style="font-size:10px;color:var(--text3)">${p.position}</div></div>
-            <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.round(p.maxVel/25*100)}%"></div></div>
-            <span class="lb-val">${p.maxVel.toFixed(2)} mph</span>
-        </div>`).join('');
-
-    // NordBord asymmetry flags
-    const nordFlags=[...PLAYERS].filter(p=>p.lsi>0&&p.lsi<95).sort((a,b)=>a.lsi-b.lsi).slice(0,8);
-    document.getElementById('dash-nord-asymm').innerHTML=nordFlags.length?nordFlags.map(p=>`
-        <div class="risk-row">
-            <div class="avatar" style="background:${p.lsi<90?'rgba(220,38,38,.1)':'rgba(217,119,6,.1)'};color:${p.lsi<90?C.red:C.yellow}">${ini(p.name)}</div>
-            <div class="risk-name-block"><div class="risk-name">${p.name}</div><div class="risk-pos">${p.position}</div></div>
-            <span class="flag ${p.lsi<90?'r':'y'}">LSI ${p.lsi.toFixed(1)}%</span>
-        </div>`).join(''):'<div style="color:var(--acc3);font-size:12px;font-weight:600;padding:1rem 0">✓ No asymmetry flags</div>';
-
-    // Top HSR
-    const topHSR=[...PLAYERS].filter(p=>p.totalHSR>0).sort((a,b)=>b.totalHSR-a.totalHSR).slice(0,8);
-    document.getElementById('dash-hsr').innerHTML=topHSR.map((p,i)=>`
-        <div class="lb-row">
-            <span class="lb-rank">${i+1}</span>
-            <div style="flex:1"><div style="font-weight:600;font-size:12px">${p.name}</div><div style="font-size:10px;color:var(--text3)">${p.position}</div></div>
-            <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.round(p.totalHSR/topHSR[0].totalHSR*100)}%"></div></div>
-            <span class="lb-val">${fmt0(p.totalHSR)} m</span>
-        </div>`).join('');
-
-    // Furthest from weight goal
-    const weightOff=[...PLAYERS].filter(p=>p.bw>0&&p.goalWt>0).sort((a,b)=>Math.abs(b.wtVar)-Math.abs(a.wtVar)).slice(0,8);
-    document.getElementById('dash-weight-off').innerHTML=weightOff.map(p=>{
-        const sign=p.wtVar>0?'+':'';
-        const cls=Math.abs(p.wtVar)>5?(p.wtVar>0?'warn':'danger'):'ok';
-        return`<div class="risk-row">
-            <div class="avatar" style="background:rgba(0,48,135,.08);color:var(--uf-blue)">${ini(p.name)}</div>
-            <div style="flex:1"><div style="font-weight:600;font-size:12px">${p.name}</div><div style="font-size:10px;color:var(--text3)">${p.position} · Goal: ${p.goalWt} lbs</div></div>
-            <span class="pill ${cls}">${sign}${p.wtVar.toFixed(1)} lbs</span>
-        </div>`;
-    }).join('');
-
-    // ACWR trend chart — squad avg last 28 days
-    const today=new Date();
-    const dayLabels=Array.from({length:28},(_,i)=>{
-        const d=new Date(today); d.setDate(d.getDate()-(27-i));
-        return d.toISOString().slice(5,10);
-    });
-    const acwrTrend=dayLabels.map((dateStr,di)=>{
-        const vals=athletes.map(ath=>{
-            const rows=gps.filter(r=>r.athlete_id===ath.id&&r.session_date<=dateStr).slice(0,28);
-            return computeACWR(rows);
-        }).filter(v=>v!=null);
-        return vals.length?+(vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(3):null;
-    });
-    mk('dash-acwr-chart',{type:'line',data:{labels:dayLabels,datasets:[
-        {data:Array(28).fill(1.3),borderColor:'rgba(22,163,74,.4)',borderDash:[5,4],pointRadius:0,fill:false,borderWidth:1.5},
-        {data:Array(28).fill(1.5),borderColor:'rgba(217,119,6,.4)',borderDash:[5,4],pointRadius:0,fill:false,borderWidth:1.5},
-        {data:Array(28).fill(0.8),borderColor:'rgba(22,163,74,.4)',borderDash:[5,4],pointRadius:0,fill:false,borderWidth:1.5},
-        {label:'Squad ACWR',data:acwrTrend,borderColor:C.acc,backgroundColor:'rgba(250,70,22,0.05)',fill:true,tension:.35,pointRadius:2,borderWidth:2.5},
-    ]},options:{...CHART_DEFAULTS,scales:{x:{ticks:{color:C.tick,font:{size:9,family:'DM Mono'},maxTicksLimit:8},grid:{color:C.grid}},y:{min:.3,max:2.1,ticks:{color:C.tick,font:{size:10,family:'DM Mono'}},grid:{color:C.grid}}}}});
-}
-renderDashboard();
-
-// ─────────────────────────────────────────────────────────────────────────
-// ROSTER
-// ─────────────────────────────────────────────────────────────────────────
-window.filterRoster=function(){
-    const q=document.getElementById('roster-search').value.toLowerCase();
-    renderRoster(q);
-};
-
-function renderRoster(q=''){
-    const filtered=PLAYERS.filter(p=>
-        p.name.toLowerCase().includes(q)||
-        p.position.toLowerCase().includes(q)||
-        String(p.jersey_number).includes(q)
-    );
-    document.getElementById('roster-grid').innerHTML=filtered.map(p=>{
-        const st=acwrStatus(p.acwr);
-        const borderCls=p.risk==='high'?'border-color:rgba(220,38,38,.4);border-left:3px solid var(--acc5)':
-                        p.risk==='mod' ?'border-color:rgba(217,119,6,.35);border-left:3px solid var(--acc4)':'';
-        return`<div class="roster-card" style="${borderCls}" onclick="openModal('${p.id}')">
-            <div class="rc-top">
-                <div>
-                    <div class="rc-name">${p.name}</div>
-                    <div class="rc-pos">#${p.jersey_number} · ${p.position} · ${p.class_year}</div>
-                </div>
-                ${pill(st.cls,st.lbl)}
-            </div>
-            ${p.flagList.length?`<div class="flags">${p.flagList.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div>`:''}
-            <div class="rc-stats">
-                <div class="rc-stat"><div class="rc-stat-val">${p.acwr!=null?p.acwr.toFixed(2):'—'}</div><div class="rc-stat-lbl">ACWR</div></div>
-                <div class="rc-stat"><div class="rc-stat-val">${p.jumpHt>0?p.jumpHt.toFixed(1):'—'}</div><div class="rc-stat-lbl">Jump Ht (cm)</div></div>
-                <div class="rc-stat"><div class="rc-stat-val">${p.lsi>0?p.lsi.toFixed(1)+'%':'—'}</div><div class="rc-stat-lbl">Nord LSI</div></div>
-                <div class="rc-stat"><div class="rc-stat-val">${p.maxVel>0?p.maxVel.toFixed(1):'—'}</div><div class="rc-stat-lbl">Max Vel (mph)</div></div>
-            </div>
-        </div>`;
-    }).join('');
-}
-renderRoster();
-
-// ─────────────────────────────────────────────────────────────────────────
-// GPS
-// ─────────────────────────────────────────────────────────────────────────
+// ── NAV ───────────────────────────────────────────────────────────
+const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison'};
+window.navTo=pg=>document.querySelector(`[data-page="${pg}"]`)?.click();
+let gpsView='team';
 window.setGPSView=function(v){
-    document.getElementById('gps-individual-view').style.display=v==='player'?'':'none';
-    document.getElementById('gps-group-view').style.display=v==='group'?'':'none';
-    document.getElementById('gps-view-player').style.background=v==='player'?'var(--uf-orange)':'transparent';
-    document.getElementById('gps-view-player').style.color=v==='player'?'#fff':'var(--text3)';
-    document.getElementById('gps-view-group').style.background=v==='group'?'var(--uf-orange)':'transparent';
-    document.getElementById('gps-view-group').style.color=v==='group'?'#fff':'var(--text3)';
-    if(v==='player')renderGPS(); else renderGPSGroup();
+  gpsView=v;
+  ['team','player','group'].forEach(x=>{
+    document.getElementById(`gps-${x}-view`).style.display=x===v?'':'none';
+    const b=document.getElementById(`gps-btn-${x}`);
+    if(b){b.style.background=x===v?'var(--uf-orange)':'transparent';b.style.color=x===v?'#fff':'var(--text3)';}
+  });
+  if(v==='team')renderGPSTeam();
+  if(v==='player'){populateGPSSel();renderGPS();}
+  if(v==='group')renderGPSGroup();
 };
-
-window.renderGPS=function(){
-    const id=document.getElementById('gps-sel').value;
-    const p=PLAYERS.find(x=>x.id===id); if(!p)return;
-    const rows=p.gpsRows.slice(0,28);
-    const st=acwrStatus(p.acwr);
-    document.getElementById('gps-status-badge').textContent=st.lbl;
-    document.getElementById('gps-status-badge').className=`tb-badge ${st.cls}`;
-
-    const acute7=rows.slice(0,7).reduce((s,r)=>s+Number(r.player_load),0);
-    const chronic28=rows.slice(0,28).reduce((s,r)=>s+Number(r.player_load),0)/4;
-
-    document.getElementById('gps-stats').innerHTML=`
-        <div class="stat-card acc"><div class="sc-label">ACWR</div><div class="sc-val ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.acwr!=null?p.acwr.toFixed(2):'—'}</div><div class="sc-sub">7d acute ÷ 28d chronic</div></div>
-        <div class="stat-card blue"><div class="sc-label">Acute 7d Load</div><div class="sc-val blue">${Math.round(acute7).toLocaleString()}</div><div class="sc-sub">Player load units</div></div>
-        <div class="stat-card ok"><div class="sc-label">Chronic 28d</div><div class="sc-val ok">${Math.round(chronic28).toLocaleString()}</div><div class="sc-sub">Rolling avg weekly</div></div>
-        <div class="stat-card acc"><div class="sc-label">Max Velocity</div><div class="sc-val acc">${p.maxVel>0?p.maxVel.toFixed(2):'—'}</div><div class="sc-sub">mph · last 28 sessions</div></div>
-    `;
-
-    // Acute vs Chronic chart — weekly buckets
-    mk('gps-ac-chart',{type:'line',data:{labels:WEEK_LABELS,datasets:[
-        {label:'Acute Load',data:p.weeklyLoad,borderColor:C.acc,backgroundColor:'rgba(250,70,22,0.06)',fill:false,tension:.35,pointRadius:4,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},
-        {label:'Chronic (avg)',data:Array(4).fill(Math.round(chronic28)),borderColor:C.blue,borderDash:[5,4],fill:false,tension:.35,pointRadius:3,borderWidth:2},
-    ]},options:{...CHART_DEFAULTS,plugins:{legend:{display:true,labels:{color:'#475569',font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}}}}});
-
-    // ACWR trend
-    mk('gps-acwr-chart',{type:'line',data:{labels:WEEK_LABELS,datasets:[
-        {data:Array(4).fill(1.3),borderColor:'rgba(22,163,74,.4)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},
-        {data:Array(4).fill(1.5),borderColor:'rgba(217,119,6,.4)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},
-        {data:Array(4).fill(0.8),borderColor:'rgba(22,163,74,.4)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},
-        {label:'ACWR',data:p.acwrByWeek,borderColor:C.acc,backgroundColor:'rgba(250,70,22,0.05)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:p.acwrByWeek.map(v=>acwrColor(v)),pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},
-    ]},options:{...CHART_DEFAULTS,scales:{x:{ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}},y:{min:.3,max:2.1,ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}}}}});
-
-    // Weekly summary table
-    document.getElementById('gps-table').innerHTML=rows.slice(0,28).map((r,i)=>{
-        const wACWR=computeACWR(rows.slice(i));
-        const st2=acwrStatus(wACWR);
-        return`<tr>
-            <td class="mono">${r.session_date}</td>
-            <td class="mono">${Number(r.player_load).toFixed(1)}</td>
-            <td class="mono">${fmt0(r.total_distance_m)}</td>
-            <td class="mono">${fmt0(r.high_speed_distance_m)}</td>
-            <td class="mono">${fmt0(r.sprint_distance_m)}</td>
-            <td class="mono">${Number(r.max_velocity_mph||0).toFixed(2)}</td>
-            <td class="mono">${r.accel_decel_count||'—'}</td>
-            <td class="mono">${i===0?Math.round(acute7).toLocaleString():'—'}</td>
-            <td class="mono">${i===0?Math.round(chronic28).toLocaleString():'—'}</td>
-            <td class="mono ${st2.cls}">${wACWR!=null?wACWR.toFixed(2):'—'}</td>
-            <td>${pill(st2.cls,st2.lbl)}</td>
-        </tr>`;
-    }).join('');
-
-    // Full team roster table
-    document.getElementById('gps-roster-table').innerHTML=[...PLAYERS].sort((a,b)=>(b.acwr??0)-(a.acwr??0)).map(pl=>{
-        const st2=acwrStatus(pl.acwr);
-        return`<tr>
-            <td style="font-weight:600">${pl.name}</td>
-            <td><span class="pill info">${pl.position}</span></td>
-            <td class="mono">${pl.latest?Number(pl.latest.player_load).toFixed(1):'—'}</td>
-            <td class="mono">${pl.latest?fmt0(pl.latest.total_distance_m):'—'}</td>
-            <td class="mono">${pl.latest?fmt0(pl.latest.high_speed_distance_m):'—'}</td>
-            <td class="mono">${pl.maxVel>0?pl.maxVel.toFixed(2):'—'}</td>
-            <td class="mono">${pl.latest?pl.latest.accel_decel_count||'—':'—'}</td>
-            <td class="mono">${pl.acwr!=null?Math.round(pl.gpsRows.slice(0,7).reduce((s,r)=>s+Number(r.player_load),0)).toLocaleString():'—'}</td>
-            <td class="mono">${pl.acwr!=null?Math.round(pl.gpsRows.slice(0,28).reduce((s,r)=>s+Number(r.player_load),0)/4).toLocaleString():'—'}</td>
-            <td class="mono ${st2.cls==='ok'?'ok':st2.cls==='warn'?'warn':'danger'}">${pl.acwr!=null?pl.acwr.toFixed(2):'—'}</td>
-            <td>${pill(st2.cls,st2.lbl)}</td>
-        </tr>`;
-    }).join('');
-};
-
-window.renderGPSGroup=function(){
-    const pos=document.getElementById('gps-group-sel').value;
-    const grp=PLAYERS.filter(p=>p.position===pos);
-    if(!grp.length)return;
-
-    const avgACWR=grp.filter(p=>p.acwr!=null).reduce((s,p)=>s+(p.acwr??0),0)/grp.filter(p=>p.acwr!=null).length;
-    const st=acwrStatus(avgACWR);
-    document.getElementById('gps-group-badge').textContent=`${grp.length} athletes · ${st.lbl}`;
-
-    const avgWeekly=WEEK_LABELS.map((_,i)=>Math.round(grp.reduce((s,p)=>s+(p.weeklyLoad[i]??0),0)/grp.length));
-    const avgChronic=Math.round(avgWeekly.reduce((s,v)=>s+v,0)/4);
-    const avgAcwrByWeek=avgWeekly.map((v,i)=>{
-        const wks=avgWeekly.slice(Math.max(0,i-3),i+1);
-        const ch=wks.reduce((s,v2)=>s+v2,0)/wks.length;
-        return ch>0?+(v/ch).toFixed(2):0;
-    });
-
-    document.getElementById('gps-group-stats').innerHTML=`
-        <div class="stat-card acc"><div class="sc-label">Group Avg ACWR</div><div class="sc-val ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${avgACWR.toFixed(2)}</div><div class="sc-sub">${pos} · ${grp.length} athletes</div></div>
-        <div class="stat-card blue"><div class="sc-label">Avg Max Vel (mph)</div><div class="sc-val blue">${(grp.filter(p=>p.maxVel>0).reduce((s,p)=>s+p.maxVel,0)/Math.max(1,grp.filter(p=>p.maxVel>0).length)).toFixed(2)}</div><div class="sc-sub">Group average</div></div>
-        <div class="stat-card ok"><div class="sc-label">Avg Jump Ht (cm)</div><div class="sc-val ok">${(grp.filter(p=>p.jumpHt>0).reduce((s,p)=>s+p.jumpHt,0)/Math.max(1,grp.filter(p=>p.jumpHt>0).length)).toFixed(1)}</div><div class="sc-sub">CMJ · group avg</div></div>
-        <div class="stat-card warn"><div class="sc-label">Athletes Flagged</div><div class="sc-val warn">${grp.filter(p=>p.flagList.length>0).length}</div><div class="sc-sub">of ${grp.length} in group</div></div>
-    `;
-
-    mk('grp-ac-chart',{type:'line',data:{labels:WEEK_LABELS,datasets:[
-        {label:'Avg Acute',data:avgWeekly,borderColor:C.acc,backgroundColor:'rgba(250,70,22,0.06)',fill:false,tension:.35,pointRadius:4,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},
-        {label:'Chronic (avg)',data:Array(4).fill(avgChronic),borderColor:C.blue,borderDash:[5,4],fill:false,borderWidth:2,pointRadius:0},
-    ]},options:{...CHART_DEFAULTS,plugins:{legend:{display:true,labels:{color:'#475569',font:{size:10,family:'DM Mono'},boxWidth:10}}}}});
-
-    mk('grp-acwr-chart',{type:'line',data:{labels:WEEK_LABELS,datasets:[
-        {data:Array(4).fill(1.3),borderColor:'rgba(22,163,74,.4)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},
-        {data:Array(4).fill(1.5),borderColor:'rgba(217,119,6,.4)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},
-        {data:Array(4).fill(0.8),borderColor:'rgba(22,163,74,.4)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},
-        {label:'Group ACWR',data:avgAcwrByWeek,borderColor:C.acc,backgroundColor:'rgba(250,70,22,0.05)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:avgAcwrByWeek.map(v=>acwrColor(v)),pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},
-    ]},options:{...CHART_DEFAULTS,scales:{x:{ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}},y:{min:.3,max:2.1,ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}}}}});
-
-    document.getElementById('gps-grp-roster-table').innerHTML=grp.map(p=>{
-        const st2=acwrStatus(p.acwr);
-        return`<tr>
-            <td style="font-weight:600">${p.name}</td>
-            <td class="mono">${p.latest?Number(p.latest.player_load).toFixed(1):'—'}</td>
-            <td class="mono">${p.maxVel>0?p.maxVel.toFixed(2):'—'}</td>
-            <td class="mono">${p.latest?p.latest.accel_decel_count||'—':'—'}</td>
-            <td class="mono">${p.acwr!=null?Math.round(p.gpsRows.slice(0,7).reduce((s,r)=>s+Number(r.player_load),0)).toLocaleString():'—'}</td>
-            <td class="mono">${p.acwr!=null?Math.round(p.gpsRows.slice(0,28).reduce((s,r)=>s+Number(r.player_load),0)/4).toLocaleString():'—'}</td>
-            <td class="mono ${st2.cls==='ok'?'ok':st2.cls==='warn'?'warn':'danger'}">${p.acwr!=null?p.acwr.toFixed(2):'—'}</td>
-            <td>${pill(st2.cls,st2.lbl)}</td>
-        </tr>`;
-    }).join('');
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-// VALD TESTING
-// ─────────────────────────────────────────────────────────────────────────
-window.setVALDView=function(v){
-    document.getElementById('vald-individual-view').style.display=v==='player'?'':'none';
-    document.getElementById('vald-group-view').style.display=v==='group'?'':'none';
-    document.getElementById('vald-view-player').style.background=v==='player'?'var(--uf-orange)':'transparent';
-    document.getElementById('vald-view-player').style.color=v==='player'?'#fff':'var(--text3)';
-    document.getElementById('vald-view-group').style.background=v==='group'?'var(--uf-orange)':'transparent';
-    document.getElementById('vald-view-group').style.color=v==='group'?'#fff':'var(--text3)';
-    if(v==='player')renderVALD(); else renderVALDGroup();
-};
-
-window.renderVALD=function(){
-    const id=document.getElementById('vald-sel').value;
-    const p=PLAYERS.find(x=>x.id===id); if(!p)return;
-    const athCMJ=cmj.filter(r=>r.athlete_id===id).sort((a,b)=>new Date(a.test_date)-new Date(b.test_date));
-    const athNord=nord.filter(r=>r.athlete_id===id).sort((a,b)=>new Date(a.test_date)-new Date(b.test_date));
-
-    const lsiCls=p.lsi>0?(p.lsi<90?'danger':p.lsi<95?'warn':'ok'):'info';
-    const mRSICls=p.mRSI>0?(p.mRSI<0.40?'danger':p.mRSI<0.51?'warn':'ok'):'info';
-
-    document.getElementById('vald-cards').innerHTML=`
-        <div class="vald-card"><div class="vald-metric">Jump Height</div><div class="vald-val">${p.jumpHt>0?p.jumpHt.toFixed(1):'—'}</div><div class="vald-unit">cm</div><div class="vald-bar-bg"><div class="vald-bar" style="width:${Math.min(100,p.jumpHt/70*100)}%"></div></div></div>
-        <div class="vald-card"><div class="vald-metric">RSI-Modified</div><div class="vald-val ${mRSICls}">${p.mRSI>0?p.mRSI.toFixed(3):'—'}</div><div class="vald-unit">reactive strength</div><div class="vald-bar-bg"><div class="vald-bar" style="width:${Math.min(100,p.mRSI/1.2*100)}%"></div></div></div>
-        <div class="vald-card"><div class="vald-metric">Nord LSI</div><div class="vald-val ${lsiCls}">${p.lsi>0?p.lsi.toFixed(1)+'%':'—'}</div><div class="vald-unit">limb symmetry index</div><div class="vald-bar-bg"><div class="vald-bar" style="width:${Math.min(100,p.lsi)}%;background:${p.lsi>0&&p.lsi<90?C.red:p.lsi>0&&p.lsi<95?C.yellow:C.green}"></div></div></div>
-        <div class="vald-card"><div class="vald-metric">Nord Left (N)</div><div class="vald-val">${p.nordLF>0?Math.round(p.nordLF):'—'}</div><div class="vald-unit">peak force</div><div class="vald-bar-bg"><div class="vald-bar" style="width:${Math.min(100,p.nordLF/500*100)}%"></div></div></div>
-        <div class="vald-card"><div class="vald-metric">Nord Right (N)</div><div class="vald-val">${p.nordRF>0?Math.round(p.nordRF):'—'}</div><div class="vald-unit">peak force</div><div class="vald-bar-bg"><div class="vald-bar" style="width:${Math.min(100,p.nordRF/500*100)}%"></div></div></div>
-        <div class="vald-card"><div class="vald-metric">CMJ Asymmetry</div><div class="vald-val ${p.nc&&Number(p.nc.asymmetry_index_pct)>15?'danger':p.nc&&Number(p.nc.asymmetry_index_pct)>10?'warn':'ok'}">${p.nc?Number(p.nc.asymmetry_index_pct).toFixed(1)+'%':'—'}</div><div class="vald-unit">left/right</div><div class="vald-bar-bg"><div class="vald-bar" style="width:${p.nc?Math.min(100,Number(p.nc.asymmetry_index_pct)/20*100):0}%;background:${p.nc&&Number(p.nc.asymmetry_index_pct)>15?C.red:C.yellow}"></div></div></div>
-    `;
-
-    // Nord history chart
-    if(athNord.length){
-        const labels=athNord.map(t=>t.test_date);
-        mk('vald-nord-chart',{type:'bar',data:{labels,datasets:[
-            {label:'Left (N)',data:athNord.map(t=>Number(t.left_peak_force_n).toFixed(0)),backgroundColor:C.blue+'BB',borderRadius:4},
-            {label:'Right (N)',data:athNord.map(t=>Number(t.right_peak_force_n).toFixed(0)),backgroundColor:C.acc+'BB',borderRadius:4},
-        ]},options:{...CHART_DEFAULTS,plugins:{legend:{display:true,labels:{color:'#475569',font:{size:10},boxWidth:10}}}}});
-    }
-
-    // CMJ jump height history
-    if(athCMJ.length){
-        mk('vald-jump-chart',{type:'line',data:{labels:athCMJ.map(t=>t.test_date),datasets:[
-            {label:'Jump Height (cm)',data:athCMJ.map(t=>Number(t.jump_height_cm).toFixed(1)),borderColor:C.acc,backgroundColor:'rgba(250,70,22,0.07)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5},
-        ]},options:{...CHART_DEFAULTS,plugins:{legend:{display:false}}}});
-    }
-
-    // Testing log
-    const allDates=[...new Set([...athCMJ.map(t=>t.test_date),...athNord.map(t=>t.test_date)])].sort().reverse();
-    document.getElementById('vald-table').innerHTML=allDates.map(date=>{
-        const c=athCMJ.find(t=>t.test_date===date);
-        const n=athNord.find(t=>t.test_date===date);
-        const lsiCls2=n&&Number(n.lsi_pct)<90?'danger':n&&Number(n.lsi_pct)<95?'warn':'ok';
-        return`<tr>
-            <td class="mono">${date}</td>
-            <td class="mono">${c?Number(c.jump_height_cm).toFixed(1):'—'}</td>
-            <td class="mono">${c?Number(c.peak_force_n).toFixed(0):'—'}</td>
-            <td class="mono">${c?Number(c.peak_power_w).toFixed(0):'—'}</td>
-            <td class="mono">${c?Number(c.rsi_modified).toFixed(3):'—'}</td>
-            <td class="mono ${c&&Number(c.asymmetry_index_pct)>15?'danger':c&&Number(c.asymmetry_index_pct)>10?'warn':''}">${c?Number(c.asymmetry_index_pct).toFixed(1)+'%':'—'}</td>
-            <td class="mono">${n?Math.round(Number(n.left_peak_force_n)):'—'}</td>
-            <td class="mono">${n?Math.round(Number(n.right_peak_force_n)):'—'}</td>
-            <td class="mono ${lsiCls2}">${n?Number(n.lsi_pct).toFixed(1)+'%':'—'}</td>
-            <td>${n?pill(lsiCls2,lsiCls2==='danger'?'FLAG':lsiCls2==='warn'?'MONITOR':'OK'):pill('info','—')}</td>
-        </tr>`;
-    }).join('');
-};
-
-window.renderVALDGroup=function(){
-    const pos=document.getElementById('vald-group-sel').value;
-    const grp=PLAYERS.filter(p=>p.position===pos);
-    const withCMJ=grp.filter(p=>p.jumpHt>0);
-    const withNord=grp.filter(p=>p.nordLF>0);
-    const avgJump=withCMJ.length?withCMJ.reduce((s,p)=>s+p.jumpHt,0)/withCMJ.length:0;
-    const avgLSI=withNord.length?withNord.reduce((s,p)=>s+p.lsi,0)/withNord.length:0;
-    const avgLF=withNord.length?withNord.reduce((s,p)=>s+p.nordLF,0)/withNord.length:0;
-    const avgRF=withNord.length?withNord.reduce((s,p)=>s+p.nordRF,0)/withNord.length:0;
-    const avgMRSI=grp.filter(p=>p.mRSI>0).reduce((s,p)=>s+p.mRSI,0)/Math.max(1,grp.filter(p=>p.mRSI>0).length);
-
-    document.getElementById('vald-group-badge').textContent=`${grp.length} athletes`;
-    document.getElementById('vald-group-cards').innerHTML=`
-        <div class="vald-card"><div class="vald-metric">Avg Jump Height</div><div class="vald-val">${avgJump.toFixed(1)}</div><div class="vald-unit">cm · ${withCMJ.length} athletes</div><div class="vald-bar-bg"><div class="vald-bar" style="width:${Math.min(100,avgJump/70*100)}%"></div></div></div>
-        <div class="vald-card"><div class="vald-metric">Avg mRSI</div><div class="vald-val">${avgMRSI.toFixed(3)}</div><div class="vald-unit">reactive strength index</div><div class="vald-bar-bg"><div class="vald-bar" style="width:${Math.min(100,avgMRSI/1.2*100)}%"></div></div></div>
-        <div class="vald-card"><div class="vald-metric">Avg Nord LSI</div><div class="vald-val ${avgLSI<90?'danger':avgLSI<95?'warn':'ok'}">${avgLSI.toFixed(1)}%</div><div class="vald-unit">group average</div><div class="vald-bar-bg"><div class="vald-bar" style="width:${Math.min(100,avgLSI)}%;background:${avgLSI<90?C.red:avgLSI<95?C.yellow:C.green}"></div></div></div>
-    `;
-
-    mk('vald-grp-nord-chart',{type:'bar',data:{labels:withNord.map(p=>p.name.split(' ')[1]||p.name),datasets:[
-        {label:'Left (N)',data:withNord.map(p=>Math.round(p.nordLF)),backgroundColor:C.blue+'BB',borderRadius:3},
-        {label:'Right (N)',data:withNord.map(p=>Math.round(p.nordRF)),backgroundColor:C.acc+'BB',borderRadius:3},
-    ]},options:{...CHART_DEFAULTS,plugins:{legend:{display:true,labels:{color:'#475569',font:{size:10},boxWidth:10}}}}});
-
-    mk('vald-grp-jump-chart',{type:'bar',data:{labels:withCMJ.sort((a,b)=>b.jumpHt-a.jumpHt).map(p=>p.name.split(' ')[1]||p.name),datasets:[
-        {label:'Jump Ht (cm)',data:withCMJ.sort((a,b)=>b.jumpHt-a.jumpHt).map(p=>p.jumpHt.toFixed(1)),backgroundColor:C.acc+'BB',borderRadius:3},
-    ]},options:{...CHART_DEFAULTS}});
-
-    document.getElementById('vald-group-table').innerHTML=grp.map(p=>{
-        const lsiCls2=p.lsi>0?(p.lsi<90?'danger':p.lsi<95?'warn':'ok'):'info';
-        return`<tr>
-            <td style="font-weight:600">${p.name}</td>
-            <td class="mono">${p.jumpHt>0?p.jumpHt.toFixed(1):'—'}</td>
-            <td class="mono">${p.mRSI>0?p.mRSI.toFixed(3):'—'}</td>
-            <td class="mono ${p.nc&&Number(p.nc.asymmetry_index_pct)>15?'danger':p.nc&&Number(p.nc.asymmetry_index_pct)>10?'warn':''}">${p.nc?Number(p.nc.asymmetry_index_pct).toFixed(1)+'%':'—'}</td>
-            <td class="mono">${p.nordLF>0?Math.round(p.nordLF):'—'}</td>
-            <td class="mono">${p.nordRF>0?Math.round(p.nordRF):'—'}</td>
-            <td class="mono ${lsiCls2}">${p.lsi>0?p.lsi.toFixed(1)+'%':'—'}</td>
-            <td>${pill(lsiCls2,lsiCls2==='danger'?'FLAG':lsiCls2==='warn'?'MONITOR':'OK')}</td>
-        </tr>`;
-    }).join('');
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-// LIFTING MAXES
-// ─────────────────────────────────────────────────────────────────────────
-let liftSort={col:'clean',dir:'desc'};
-window.sortLifting=function(col){
-    if(liftSort.col===col)liftSort.dir=liftSort.dir==='asc'?'desc':'asc';
-    else{liftSort.col=col;liftSort.dir='desc';}
-    renderLifting();
-};
-
-window.renderLifting=function(){
-    const pos=document.getElementById('lifting-pos-sel').value;
-    let data=pos==='ALL'?PLAYERS:PLAYERS.filter(p=>p.position===pos);
-    data=[...data].sort((a,b)=>{
-        if(liftSort.col==='name')return liftSort.dir==='asc'?a.name.localeCompare(b.name):b.name.localeCompare(a.name);
-        if(liftSort.col==='pos')return liftSort.dir==='asc'?a.position.localeCompare(b.position):b.position.localeCompare(a.position);
-        const key={clean:'clean',squat:'squat',bench:'bench',deadlift:'deadlift',fsq:'fsq'}[liftSort.col]||'clean';
-        return liftSort.dir==='asc'?(a[key]||0)-(b[key]||0):(b[key]||0)-(a[key]||0);
-    });
-
-    const withData=data.filter(p=>p.clean>0);
-    const avgClean=withData.length?Math.round(withData.reduce((s,p)=>s+p.clean,0)/withData.length):0;
-    const avgSquat=withData.length?Math.round(withData.reduce((s,p)=>s+p.squat,0)/withData.length):0;
-    const topClean=Math.max(...data.map(p=>p.clean||0));
-    const topSquat=Math.max(...data.map(p=>p.squat||0));
-
-    document.getElementById('lifting-stats').innerHTML=`
-        <div class="stat-card acc"><div class="sc-label">Avg Clean</div><div class="sc-val acc">${avgClean||'—'}</div><div class="sc-sub">lbs · ${withData.length} athletes</div></div>
-        <div class="stat-card blue"><div class="sc-label">Top Clean</div><div class="sc-val blue">${topClean||'—'}</div><div class="sc-sub">lbs · group max</div></div>
-        <div class="stat-card ok"><div class="sc-label">Avg Squat</div><div class="sc-val ok">${avgSquat||'—'}</div><div class="sc-sub">lbs · ${withData.length} athletes</div></div>
-        <div class="stat-card warn"><div class="sc-label">Top Squat</div><div class="sc-val warn">${topSquat||'—'}</div><div class="sc-sub">lbs · group max</div></div>
-    `;
-
-    // Update sort indicators
-    document.querySelectorAll('#lifting-table').forEach(()=>{});
-    document.getElementById('lifting-table').innerHTML=data.map(p=>`
-        <tr>
-            <td style="font-weight:600;color:var(--uf-blue)">${p.name}</td>
-            <td><span class="pill acc" style="font-size:10px">${p.position}</span></td>
-            <td class="mono">${p.clean||'—'}</td>
-            <td class="mono">${p.squat||'—'}</td>
-            <td class="mono">${p.bench||'—'}</td>
-            <td class="mono">${p.deadlift||'—'}</td>
-            <td class="mono">${p.fsq||'—'}</td>
-        </tr>`).join('');
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-// STRENGTH STANDARDS
-// ─────────────────────────────────────────────────────────────────────────
-const STANDARDS={
-    OL:{label:'Offensive Linemen',clean:315,squat:500,bench:365,dl:500},
-    DL:{label:'Defensive Linemen',clean:315,squat:500,bench:365,dl:500},
-    LB:{label:'Linebackers',clean:300,squat:450,bench:345,dl:535},
-    TE:{label:'Tight Ends',clean:300,squat:450,bench:345,dl:500},
-    DB:{label:'Defensive Backs',clean:275,squat:405,bench:285,dl:450},
-    QB:{label:'Quarterbacks',clean:275,squat:365,bench:275,dl:405},
-    RB:{label:'Running Backs',clean:315,squat:450,bench:345,dl:500},
-    WR:{label:'Wide Receivers',clean:275,squat:405,bench:285,dl:450},
-    ST:{label:'Special Teams',clean:275,squat:365,bench:275,dl:405},
-};
-
-let stdSort={col:'name',dir:'asc'};
-window.renderStandards=function(){
-    const pos=document.getElementById('standards-pos-sel').value;
-    const std=STANDARDS[pos]; if(!std)return;
-    const grp=PLAYERS.filter(p=>p.position===pos);
-    const withData=grp.filter(p=>p.clean>0&&p.squat>0&&p.bench>0&&p.deadlift>0);
-    const meetAll=withData.filter(p=>p.clean>=std.clean&&p.squat>=std.squat&&p.bench>=std.bench&&p.deadlift>=std.dl).length;
-
-    const varCell=(actual,standard)=>{
-        if(!actual)return'<td class="mono" style="color:var(--text3)">—</td>';
-        const diff=actual-standard;
-        const col=diff>=0?'#15803D':'#B91C1C';
-        const bg=diff>=0?'rgba(22,163,74,.06)':'rgba(220,38,38,.06)';
-        return`<td class="mono" style="color:${col};background:${bg};font-weight:600">${diff>=0?'+':''}${diff}</td>`;
-    };
-
-    document.getElementById('standards-content').innerHTML=`
-        <div class="panel" style="margin-bottom:14px">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
-            <div>
-              <div style="font-family:var(--font-d);font-size:22px;font-weight:900;color:var(--uf-blue);text-transform:uppercase">${std.label} — Strength Standards</div>
-              <div style="display:flex;gap:20px;margin-top:8px;flex-wrap:wrap">
-                <span style="font-family:var(--font-m);font-size:11px;color:var(--text2)">Clean: <strong style="color:var(--uf-orange)">${std.clean} lbs</strong></span>
-                <span style="font-family:var(--font-m);font-size:11px;color:var(--text2)">Squat: <strong style="color:var(--uf-orange)">${std.squat} lbs</strong></span>
-                <span style="font-family:var(--font-m);font-size:11px;color:var(--text2)">Bench: <strong style="color:var(--uf-orange)">${std.bench} lbs</strong></span>
-                <span style="font-family:var(--font-m);font-size:11px;color:var(--text2)">Deadlift: <strong style="color:var(--uf-orange)">${std.dl} lbs</strong></span>
-              </div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-family:var(--font-m);font-size:10px;color:var(--text);font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Meeting All Standards</div>
-              <div style="font-family:var(--font-d);font-size:42px;font-weight:900;line-height:1;color:${meetAll===withData.length&&withData.length>0?'#15803D':meetAll>0?'#D97706':'#B91C1C'}">${meetAll}<span style="font-size:20px;color:var(--text);font-weight:700"> / ${withData.length}</span></div>
-              <div style="font-size:11px;color:var(--text2);margin-top:2px">${grp.length} athletes in group</div>
-            </div>
-          </div>
-        </div>
-        <div class="panel">
-          <div class="panel-title"><i class="ti ti-table"></i>Individual Comparison vs Standard</div>
-          <div class="tbl-wrap"><table>
-            <thead><tr>
-              <th>Athlete</th>
-              <th>Clean</th><th>vs ${std.clean}</th>
-              <th>Squat</th><th>vs ${std.squat}</th>
-              <th>Bench</th><th>vs ${std.bench}</th>
-              <th>Deadlift</th><th>vs ${std.dl}</th>
-              <th>All Met</th>
-            </tr></thead>
-            <tbody>${grp.map(p=>{
-                const allMet=p.clean>0&&p.squat>0&&p.bench>0&&p.deadlift>0&&p.clean>=std.clean&&p.squat>=std.squat&&p.bench>=std.bench&&p.deadlift>=std.dl;
-                return`<tr style="${allMet?'background:rgba(22,163,74,.04)':''}">
-                    <td style="font-weight:700;color:var(--uf-blue)">${p.name}</td>
-                    <td class="mono">${p.clean||'—'}</td>${varCell(p.clean,std.clean)}
-                    <td class="mono">${p.squat||'—'}</td>${varCell(p.squat,std.squat)}
-                    <td class="mono">${p.bench||'—'}</td>${varCell(p.bench,std.bench)}
-                    <td class="mono">${p.deadlift||'—'}</td>${varCell(p.deadlift,std.dl)}
-                    <td style="text-align:center">${p.clean>0?pill(allMet?'ok':'danger',allMet?'YES':'NO'):pill('info','NO DATA')}</td>
-                </tr>`;
-            }).join('')}</tbody>
-          </table></div>
-        </div>`;
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-// LEADERBOARDS
-// ─────────────────────────────────────────────────────────────────────────
-const LB_CATS=[
-    {id:'maxvel',   lbl:'Max Velocity',    fn:p=>p.maxVel>0?p.maxVel:null,     fmt:v=>v.toFixed(2)+' mph'},
-    {id:'clean',    lbl:'Max Clean',       fn:p=>p.clean>0?p.clean:null,       fmt:v=>v+' lbs'},
-    {id:'squat',    lbl:'Max Squat',       fn:p=>p.squat>0?p.squat:null,       fmt:v=>v+' lbs'},
-    {id:'bench',    lbl:'Max Bench',       fn:p=>p.bench>0?p.bench:null,       fmt:v=>v+' lbs'},
-    {id:'deadlift', lbl:'Deadlift',        fn:p=>p.deadlift>0?p.deadlift:null, fmt:v=>v+' lbs'},
-    {id:'jump',     lbl:'Jump Height',     fn:p=>p.jumpHt>0?p.jumpHt:null,     fmt:v=>v.toFixed(1)+' cm'},
-    {id:'mrsi',     lbl:'mRSI',            fn:p=>p.mRSI>0?p.mRSI:null,        fmt:v=>v.toFixed(3)},
-    {id:'keiser',   lbl:'Keiser Power',    fn:p=>p.keiserPow>0?p.keiserPow:null,fmt:v=>v+' W'},
-    {id:'hsr',      lbl:'High Speed Dist', fn:p=>p.totalHSR>0?p.totalHSR:null,fmt:v=>Math.round(v).toLocaleString()+' m'},
-    {id:'gauntlet', lbl:'Gauntlet Wins',   fn:p=>p.gauntletW>0?p.gauntletW:null,fmt:v=>v+' wins'},
-];
-let lbActive=LB_CATS[0];
-
-window.renderLeaderboards=function(){
-    document.getElementById('lb-tabs').innerHTML=LB_CATS.map(c=>`
-        <div class="lb-tab ${c.id===lbActive.id?'active':''}" onclick="setLBCat('${c.id}')">${c.lbl}</div>`).join('');
-    renderLBPanel();
-};
-
-window.setLBCat=function(id){
-    lbActive=LB_CATS.find(c=>c.id===id)||LB_CATS[0];
-    renderLeaderboards();
-};
-
-function renderLBPanel(){
-    const ranked=[...PLAYERS].map(p=>({p,v:lbActive.fn(p)})).filter(x=>x.v!=null).sort((a,b)=>b.v-a.v);
-    const top10=ranked.slice(0,10);
-    const max=top10[0]?.v??1;
-    const rankColor=(i)=>i===0?'#B45309':i===1?'#475569':i===2?'#92400E':'var(--text3)';
-
-    document.getElementById('lb-panel-left').innerHTML=`
-        <div class="panel-title"><i class="ti ti-trophy"></i>${lbActive.lbl} — Top ${top10.length}</div>
-        ${top10.map(({p,v},i)=>`
-        <div class="lb-row" onclick="openModal('${p.id}')">
-            <span class="lb-rank" style="color:${rankColor(i)}">${i+1}</span>
-            <div class="avatar" style="background:rgba(250,70,22,.1);color:var(--uf-orange)">${ini(p.name)}</div>
-            <div style="flex:1"><div style="font-weight:600;font-size:12px">${p.name}</div><div style="font-size:10px;color:var(--text3)">${p.position}</div></div>
-            <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.round(v/max*100)}%"></div></div>
-            <span class="lb-val">${lbActive.fmt(v)}</span>
-        </div>`).join('')}`;
-
-    // Right panel: position breakdown
-    const byPos={};
-    ranked.forEach(({p,v})=>{if(!byPos[p.position])byPos[p.position]={pos:p.position,vals:[]};byPos[p.position].vals.push(v);});
-    const posAvg=Object.values(byPos).map(x=>({pos:x.pos,avg:x.vals.reduce((s,v)=>s+v,0)/x.vals.length,n:x.vals.length})).sort((a,b)=>b.avg-a.avg);
-    const maxAvg=posAvg[0]?.avg??1;
-
-    document.getElementById('lb-panel-right').innerHTML=`
-        <div class="panel-title"><i class="ti ti-chart-bar"></i>${lbActive.lbl} — By Position</div>
-        ${posAvg.map(({pos,avg,n})=>`
-        <div class="lb-row">
-            <span class="lb-rank" style="font-size:12px;color:var(--uf-orange)">${pos}</span>
-            <div style="flex:1"><div style="font-weight:600;font-size:12px">${pos}</div><div style="font-size:10px;color:var(--text3)">${n} athletes</div></div>
-            <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.round(avg/maxAvg*100)}%"></div></div>
-            <span class="lb-val">${lbActive.fmt(avg)}</span>
-        </div>`).join('')}`;
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// INJURY RISK
-// ─────────────────────────────────────────────────────────────────────────
-let injSort={col:'risk',dir:'desc'};
-window.sortInjury=function(col){
-    if(injSort.col===col)injSort.dir=injSort.dir==='asc'?'desc':'asc';
-    else{injSort.col=col;injSort.dir='desc';}
-    renderInjury();
-};
-
-window.renderInjury=function(){
-    const high=PLAYERS.filter(p=>p.risk==='high');
-    const mod=PLAYERS.filter(p=>p.risk==='mod');
-    const low=PLAYERS.filter(p=>p.risk==='low');
-
-    document.getElementById('injury-stats').innerHTML=`
-        <div class="stat-card danger"><div class="sc-label">High Risk</div><div class="sc-val danger">${high.length}</div><div class="sc-sub">Immediate attention</div></div>
-        <div class="stat-card warn"><div class="sc-label">Moderate Risk</div><div class="sc-val warn">${mod.length}</div><div class="sc-sub">Monitor closely</div></div>
-        <div class="stat-card ok"><div class="sc-label">Low Risk</div><div class="sc-val ok">${low.length}</div><div class="sc-sub">Full training</div></div>
-        <div class="stat-card blue"><div class="sc-label">Total Athletes</div><div class="sc-val blue">${PLAYERS.length}</div><div class="sc-sub">on roster</div></div>
-    `;
-
-    const riskRow=(p)=>`
-        <div class="risk-row" onclick="openModal('${p.id}')" style="cursor:pointer">
-            <div class="avatar" style="background:${p.risk==='high'?'rgba(220,38,38,.1)':'rgba(217,119,6,.1)'};color:${p.risk==='high'?C.red:C.yellow}">${ini(p.name)}</div>
-            <div class="risk-name-block">
-                <div class="risk-name">${p.name}</div>
-                <div class="risk-pos">${p.position} · ACWR ${p.acwr!=null?p.acwr.toFixed(2):'—'}</div>
-                <div class="flags">${p.flagList.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div>
-            </div>
-        </div>`;
-
-    document.getElementById('injury-high-list').innerHTML=high.length?high.map(riskRow).join(''):'<div style="color:var(--acc3);font-size:12px;font-weight:600;padding:.5rem 0">✓ No high risk athletes</div>';
-    document.getElementById('injury-mod-list').innerHTML=mod.length?mod.map(riskRow).join(''):'<div style="color:var(--acc3);font-size:12px;font-weight:600;padding:.5rem 0">✓ No moderate risk athletes</div>';
-
-    const sorted=[...PLAYERS].sort((a,b)=>{
-        const riskVal={high:3,mod:2,low:1};
-        if(injSort.col==='risk')return injSort.dir==='desc'?(riskVal[b.risk]||0)-(riskVal[a.risk]||0):(riskVal[a.risk]||0)-(riskVal[b.risk]||0);
-        if(injSort.col==='name')return injSort.dir==='asc'?a.name.localeCompare(b.name):b.name.localeCompare(a.name);
-        return 0;
-    });
-
-    document.getElementById('injury-table').innerHTML=sorted.map(p=>`
-        <tr onclick="openModal('${p.id}')" style="cursor:pointer">
-            <td style="font-weight:600;color:var(--uf-blue)">${p.name}</td>
-            <td><span class="pill info">${p.position}</span></td>
-            <td class="mono ${p.acwr==null?'':p.acwr>1.5||p.acwr<0.8?'danger':p.acwr>1.3?'warn':'ok'}">${p.acwr!=null?p.acwr.toFixed(2):'—'}</td>
-            <td class="mono">${p.jumpHt>0?p.jumpHt.toFixed(1):'—'}</td>
-            <td class="mono ${p.lsi>0?(p.lsi<90?'danger':p.lsi<95?'warn':'ok'):''}"> ${p.lsi>0?p.lsi.toFixed(1)+'%':'—'}</td>
-            <td class="mono">${p.maxVel>0?p.maxVel.toFixed(2):'—'}</td>
-            <td class="mono ${p.mRSI>0?(p.mRSI<0.40?'danger':p.mRSI<0.51?'warn':'ok'):''}"> ${p.mRSI>0?p.mRSI.toFixed(3):'—'}</td>
-            <td>${pill(p.risk==='high'?'danger':p.risk==='mod'?'warn':'ok',p.risk.toUpperCase())}</td>
-            <td><div class="flags">${p.flagList.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')||'—'}</div></td>
-        </tr>`).join('');
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-// BODY COMP
-// ─────────────────────────────────────────────────────────────────────────
-const BC_COLS=[
-    {key:'name',   label:'Athlete',         get:p=>p.name,   numeric:false},
-    {key:'pos',    label:'Pos',             get:p=>p.position,numeric:false},
-    {key:'bw',     label:'Body Wt (lbs)',   get:p=>p.bw,     numeric:true},
-    {key:'goal',   label:'Goal Wt (lbs)',   get:p=>p.goalWt, numeric:true},
-    {key:'var',    label:'Variance',        get:p=>p.wtVar,  numeric:true},
-    {key:'lean',   label:'Lean Mass (lbs)', get:p=>p.nb?Number(p.nb.lean_mass_lbs):0, numeric:true},
-    {key:'fat',    label:'Body Fat %',      get:p=>p.nb?Number(p.nb.body_fat_pct):0,  numeric:true},
-];
-let bcSort={col:'var',dir:'desc'};
-window.sortBC=function(col){
-    if(bcSort.col===col)bcSort.dir=bcSort.dir==='asc'?'desc':'asc';
-    else{bcSort.col=col;bcSort.dir='desc';}
-    renderBCTable();
-};
-
-window.renderBodyComp=function(){
-    const withWt=PLAYERS.filter(p=>p.bw>0);
-    const avgBW=withWt.length?(withWt.reduce((s,p)=>s+p.bw,0)/withWt.length).toFixed(1):'—';
-    const overWt=PLAYERS.filter(p=>p.wtVar>5).length;
-    const underWt=PLAYERS.filter(p=>p.wtVar<-5).length;
-
-    document.getElementById('bc-stats').innerHTML=`
-        <div class="stat-card acc"><div class="sc-label">Avg Body Weight</div><div class="sc-val acc">${avgBW}</div><div class="sc-sub">lbs · ${withWt.length} athletes weighed</div></div>
-        <div class="stat-card ok"><div class="sc-label">On Target</div><div class="sc-val ok">${withWt.length-overWt-underWt}</div><div class="sc-sub">within ±5 lbs of goal</div></div>
-        <div class="stat-card warn"><div class="sc-label">Over Goal Weight</div><div class="sc-val warn">${overWt}</div><div class="sc-sub">&gt;5 lbs above goal</div></div>
-        <div class="stat-card danger"><div class="sc-label">Under Goal Weight</div><div class="sc-val danger">${underWt}</div><div class="sc-sub">&gt;5 lbs below goal</div></div>
-    `;
-
-    document.getElementById('bc-thead').innerHTML=BC_COLS.map(col=>{
-        const active=bcSort.col===col.key;
-        const dirCls=active?(bcSort.dir==='asc'?'sort-asc':'sort-desc'):'';
-        return`<th class="sortable ${dirCls}" onclick="sortBC('${col.key}')">${col.label}</th>`;
-    }).join('');
-    renderBCTable();
-};
-
-function renderBCTable(){
-    const col=BC_COLS.find(c=>c.key===bcSort.col)||BC_COLS[4];
-    const sorted=[...PLAYERS].sort((a,b)=>{
-        const av=col.get(a),bv=col.get(b);
-        let cmp=col.numeric?av-bv:av.localeCompare(bv);
-        return bcSort.dir==='desc'?-cmp:cmp;
-    });
-    document.querySelectorAll('#bc-thead th').forEach((th,i)=>{
-        th.className='sortable';
-        if(BC_COLS[i].key===bcSort.col)th.classList.add(bcSort.dir==='asc'?'sort-asc':'sort-desc');
-    });
-    document.getElementById('bc-table').innerHTML=sorted.map(p=>{
-        const hasWt=p.bw>0;
-        const varCls=Math.abs(p.wtVar)>5?(p.wtVar>0?'warn':'danger'):'ok';
-        const sign=p.wtVar>0?'+':'';
-        const barPct=hasWt&&p.goalWt>0?Math.min(100,Math.round(p.bw/p.goalWt*100)):0;
-        const barColor=p.wtVar>5?'var(--acc4)':p.wtVar<-5?'var(--acc5)':'var(--acc3)';
-        const lean=p.nb?Number(p.nb.lean_mass_lbs):0;
-        const fat=p.nb?Number(p.nb.body_fat_pct):0;
-        let statusPill;
-        if(!hasWt)statusPill=pill('info','NO DATA');
-        else if(p.wtVar>5)statusPill=pill('warn','OVER');
-        else if(p.wtVar<-5)statusPill=pill('danger','UNDER');
-        else statusPill=pill('ok','ON TARGET');
-        return`<tr>
-            <td><span onclick="openModal('${p.id}')" style="font-weight:700;cursor:pointer;color:var(--uf-blue)">${p.name}</span></td>
-            <td><span class="pill acc" style="font-size:10px">${p.position}</span></td>
-            <td class="mono">${hasWt?p.bw.toFixed(1):'—'}</td>
-            <td class="mono">${p.goalWt||'—'}</td>
-            <td class="mono ${varCls}">${hasWt&&p.goalWt>0?sign+p.wtVar.toFixed(1)+' lbs':'—'}</td>
-            <td style="min-width:100px"><div class="bc-bar-bg"><div class="bc-bar" style="width:${barPct}%;background:${barColor}"></div></div></td>
-            <td class="mono">${lean>0?lean.toFixed(1):'—'}</td>
-            <td class="mono">${fat>0?fat.toFixed(1)+'%':'—'}</td>
-            <td>${statusPill}</td>
-        </tr>`;
-    }).join('');
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// COMPARE
-// ─────────────────────────────────────────────────────────────────────────
-window.renderCompare=function(){
-    const idA=document.getElementById('cmp-a').value;
-    const idB=document.getElementById('cmp-b').value;
-    const a=PLAYERS.find(p=>p.id===idA)||PLAYERS[0];
-    const b=PLAYERS.find(p=>p.id===idB)||PLAYERS[1]||PLAYERS[0];
-
-    const CATS=[
-        {lbl:'Max Velocity (mph)',  ka:'maxVel',    high:true,  fmt:v=>v>0?v.toFixed(2):'—'},
-        {lbl:'Max Clean (lbs)',     ka:'clean',     high:true,  fmt:v=>v>0?v+' lbs':'—'},
-        {lbl:'Max Squat (lbs)',     ka:'squat',     high:true,  fmt:v=>v>0?v+' lbs':'—'},
-        {lbl:'Max Bench (lbs)',     ka:'bench',     high:true,  fmt:v=>v>0?v+' lbs':'—'},
-        {lbl:'Deadlift (lbs)',      ka:'deadlift',  high:true,  fmt:v=>v>0?v+' lbs':'—'},
-        {lbl:'Jump Height (cm)',    ka:'jumpHt',    high:true,  fmt:v=>v>0?v.toFixed(1)+' cm':'—'},
-        {lbl:'mRSI',                ka:'mRSI',      high:true,  fmt:v=>v>0?v.toFixed(3):'—'},
-        {lbl:'Keiser Power (W)',    ka:'keiserPow', high:true,  fmt:v=>v>0?v+' W':'—'},
-        {lbl:'Gauntlet Wins',       ka:'gauntletW', high:true,  fmt:v=>v>0?v:'—'},
-        {lbl:'Player Infractions',  ka:'infractions',high:false,fmt:v=>v>0?v:'—'},
-    ];
-
-    const buildPanel=(p,other)=>`
-        <div style="text-align:center;margin-bottom:16px">
-            <div class="avatar" style="width:44px;height:44px;font-size:14px;background:rgba(250,70,22,.1);color:var(--uf-orange);margin:0 auto 6px">${ini(p.name)}</div>
-            <div style="font-weight:600;font-size:13px">${p.name}</div>
-            <div style="font-size:11px;color:var(--text3)">${p.position} · #${p.jersey_number}</div>
-            <div style="margin-top:6px">${pill(acwrStatus(p.acwr).cls,acwrStatus(p.acwr).lbl)}</div>
-        </div>
-        ${CATS.map(cat=>{
-            const av=p[cat.ka]??0, bv=other[cat.ka]??0;
-            const win=cat.high?av>=bv:av<=bv;
-            return`<div class="cmp-stat-row">
-                <span class="cmp-label">${cat.lbl}</span>
-                <span class="cmp-val ${win&&(av>0||!cat.high)?'w':'l'}">${cat.fmt(av)}</span>
-            </div>`;
-        }).join('')}`;
-
-    document.getElementById('cmp-left').innerHTML=buildPanel(a,b);
-    document.getElementById('cmp-right').innerHTML=buildPanel(b,a);
-
-    // Radar
-    const labels=['Max Clean','Max Squat','Max Bench','Jump Ht','Max Vel','mRSI×100','Keiser÷10'];
-    const maxes=[400,550,400,70,25,100,300];
-    const radarData=(p)=>[p.clean||0,p.squat||0,p.bench||0,p.jumpHt||0,p.maxVel||0,(p.mRSI||0)*100,Math.round((p.keiserPow||0)/10)]
-        .map((v,i)=>parseFloat((Math.min(v/maxes[i]*100,100)).toFixed(1)));
-
-    mk('cmp-radar',{type:'radar',data:{labels,datasets:[
-        {label:a.name,data:radarData(a),borderColor:C.acc,backgroundColor:'rgba(250,70,22,.10)',pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,pointRadius:4},
-        {label:b.name,data:radarData(b),borderColor:C.blue,backgroundColor:'rgba(0,48,135,.08)',pointBackgroundColor:C.blue,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,pointRadius:4},
-    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#475569',font:{size:11,family:'DM Mono'},boxWidth:10,padding:14}}},scales:{r:{ticks:{color:'#94A3B8',backdropColor:'rgba(244,245,247,0.8)',font:{size:9}},grid:{color:'rgba(0,48,135,.1)'},pointLabels:{color:'#1e3a5f',font:{size:10,weight:'600'}},min:0,max:100}}}});
-};
-
-// ─────────────────────────────────────────────────────────────────────────
-// PLAYER MODAL
-// ─────────────────────────────────────────────────────────────────────────
-window.openModal=function(id){
-    const p=PLAYERS.find(x=>x.id===id); if(!p)return;
-    document.getElementById('pm-name').textContent=p.name;
-    document.getElementById('pm-pos').textContent=`#${p.jersey_number} · ${p.position} · ${p.class_year} · ${p.height_in? Math.floor(p.height_in/12)+"'"+p.height_in%12+'"':''} · ${p.weight_lbs} lbs`;
-
-    const athFlags=flags.filter(f=>f.athlete_id===id);
-    const st=acwrStatus(p.acwr);
-
-    document.getElementById('pm-body').innerHTML=`
-        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:10px;margin-bottom:18px;background:${p.risk==='high'?'rgba(220,38,38,.07)':p.risk==='mod'?'rgba(217,119,6,.07)':'rgba(22,163,74,.07)'};border:1px solid ${p.risk==='high'?'rgba(220,38,38,.2)':p.risk==='mod'?'rgba(217,119,6,.2)':'rgba(22,163,74,.2)'}">
-            <span style="font-family:var(--font-d);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${p.risk.toUpperCase()} RISK</span>
-            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-left:auto">${p.flagList.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div>
-        </div>
-
-        <div class="modal-section">Load Monitoring</div>
-        <div class="modal-grid">
-            <div class="modal-stat"><div class="modal-stat-lbl">ACWR</div><div class="modal-stat-val ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.acwr!=null?p.acwr.toFixed(2):'—'}</div></div>
-            <div class="modal-stat"><div class="modal-stat-lbl">Max Velocity</div><div class="modal-stat-val acc">${p.maxVel>0?p.maxVel.toFixed(2):'—'}</div></div>
-            <div class="modal-stat"><div class="modal-stat-lbl">HSR Total (m)</div><div class="modal-stat-val blue">${fmt0(p.totalHSR)||'—'}</div></div>
-        </div>
-
-        <div class="modal-section">VALD Testing</div>
-        <div class="modal-grid">
-            <div class="modal-stat"><div class="modal-stat-lbl">Jump Height (cm)</div><div class="modal-stat-val">${p.jumpHt>0?p.jumpHt.toFixed(1):'—'}</div></div>
-            <div class="modal-stat"><div class="modal-stat-lbl">mRSI</div><div class="modal-stat-val ${p.mRSI>0?(p.mRSI<0.40?'danger':p.mRSI<0.51?'warn':'ok'):''}"> ${p.mRSI>0?p.mRSI.toFixed(3):'—'}</div></div>
-            <div class="modal-stat"><div class="modal-stat-lbl">Nord LSI</div><div class="modal-stat-val ${p.lsi>0?(p.lsi<90?'danger':p.lsi<95?'warn':'ok'):''}"> ${p.lsi>0?p.lsi.toFixed(1)+'%':'—'}</div></div>
-        </div>
-
-        <div class="modal-section">Lifting Maxes</div>
-        <div class="modal-grid">
-            <div class="modal-stat"><div class="modal-stat-lbl">Clean</div><div class="modal-stat-val">${p.clean||'—'}</div></div>
-            <div class="modal-stat"><div class="modal-stat-lbl">Squat</div><div class="modal-stat-val">${p.squat||'—'}</div></div>
-            <div class="modal-stat"><div class="modal-stat-lbl">Bench</div><div class="modal-stat-val">${p.bench||'—'}</div></div>
-        </div>
-
-        <div class="modal-section">Body Composition</div>
-        <div class="modal-grid">
-            <div class="modal-stat"><div class="modal-stat-lbl">Body Weight</div><div class="modal-stat-val">${p.bw>0?p.bw.toFixed(1):'—'}</div></div>
-            <div class="modal-stat"><div class="modal-stat-lbl">Goal Weight</div><div class="modal-stat-val">${p.goalWt||'—'}</div></div>
-            <div class="modal-stat"><div class="modal-stat-lbl">Variance</div><div class="modal-stat-val ${Math.abs(p.wtVar)>5?(p.wtVar>0?'warn':'danger'):'ok'}">${p.bw>0&&p.goalWt>0?(p.wtVar>0?'+':'')+p.wtVar.toFixed(1)+' lbs':'—'}</div></div>
-        </div>
-
-        ${athFlags.length?`
-        <div class="modal-section">Active Flags</div>
-        ${athFlags.filter(f=>!f.resolved).map(f=>`
-            <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-                <span class="flag ${f.severity==='HIGH'?'r':'y'}">${f.severity}</span>
-                <div><div style="font-weight:600;font-size:12px">${f.flag_type}</div><div style="color:var(--text3);font-size:11px">${f.triggered_by}</div></div>
-            </div>`).join('')}
-        `:''}
-    `;
-    document.getElementById('player-modal').classList.add('open');
-};
-
-window.closeModal=function(){
-    document.getElementById('player-modal').classList.remove('open');
-};
-document.getElementById('player-modal').addEventListener('click',e=>{
-    if(e.target===e.currentTarget)closeModal();
+document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
+    const pg=el.dataset.page;
+    document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+    document.getElementById('pg-'+pg)?.classList.add('active');
+    document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
+    document.getElementById('content-area').scrollTop=0;
+    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:renderLeaderboards,injury:renderInjury,compare:renderCompare};
+    if(map[pg])setTimeout(map[pg],60);
+  });
 });
+function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.options.length>1)return;PLAYERS.forEach(p=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;s.appendChild(o);});}
+['cmp-a','cmp-b'].forEach((id,i)=>{const s=document.getElementById(id);PLAYERS.forEach((p,j)=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;if(i===1&&j===1)o.selected=true;s.appendChild(o);});});
 
-// ─────────────────────────────────────────────────────────────────────────
-// INIT — render all pages
-// ─────────────────────────────────────────────────────────────────────────
-renderGPS();
-setTimeout(()=>{
-    renderLifting();
-    renderVALD();
-    renderInjury();
-    renderBodyComp();
-    renderCompare();
-    renderStandards();
-    renderLeaderboards();
-},200);
+// ── DASHBOARD ─────────────────────────────────────────────────────
+(function renderDashboard(){
+  const high=PLAYERS.filter(p=>p.risk==='high').length,mod=PLAYERS.filter(p=>p.risk==='mod').length;
+  document.getElementById('tb-high').textContent=`${high} High Risk`;
+  document.getElementById('tb-mod').textContent=`${mod} Moderate`;
+  const ds=acwrSt(latTD),as2=acwrSt(latTA);
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="stat-card ${ds.cls}" onclick="navTo('gps')" style="cursor:pointer"><div class="sc-label">Team ACWR — Distance</div><div class="sc-val ${ds.cls}">${latTD.toFixed(2)}</div><div class="sc-sub">${ds.lbl}</div></div>
+    <div class="stat-card ${as2.cls}" onclick="navTo('gps')" style="cursor:pointer"><div class="sc-label">ACWR — Accel &amp; Decel</div><div class="sc-val ${as2.cls}">${latTA.toFixed(2)}</div><div class="sc-sub">${as2.lbl}</div></div>
+    <div class="stat-card danger" onclick="navTo('injury')" style="cursor:pointer"><div class="sc-label">High Risk Athletes</div><div class="sc-val danger">${high}</div><div class="sc-sub">Flags triggered</div></div>
+    <div class="stat-card warn" onclick="navTo('injury')" style="cursor:pointer"><div class="sc-label">Moderate Risk</div><div class="sc-val warn">${mod}</div><div class="sc-sub">Monitor closely</div></div>`;
+  acwrChart('dash-acwr-chart',tDACWR,validWks);
+  const topV=[...PLAYERS].filter(p=>p.latMaxV>0).sort((a,b)=>b.latMaxV-a.latMaxV).slice(0,5);
+  document.getElementById('dash-maxvel').innerHTML=topV.map((p,i)=>`<div class="risk-row"><div style="font-family:var(--font-d);font-size:16px;font-weight:800;width:22px;text-align:center;color:${i===0?'#B45309':i===1?'#94a3b8':i===2?'#cd7c3e':'var(--text3)'}">${i+1}</div><div class="avatar" style="background:rgba(22,163,74,.12);color:#15803D">${ini(p.name)}</div><div class="rnb"><div class="rname" onclick="navToGPS('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer" onmouseover="this.style.color='var(--uf-orange)'" onmouseout="this.style.color='var(--uf-blue)'">${p.name}</div><div class="rpos">${p.pos} · ${p.unit}</div></div>${pill('ok',p.latMaxV.toFixed(2)+' mph')}</div>`).join('');
+  const riskPs=PLAYERS.filter(p=>p.risk==='high').slice(0,4),moreH=PLAYERS.filter(p=>p.risk==='high').length-4;
+  document.getElementById('dash-high-risk').innerHTML=riskPs.length?riskPs.map(p=>`<div class="risk-row"><div class="avatar" style="background:rgba(220,38,38,.1);color:#B91C1C">${ini(p.name)}</div><div class="rnb"><div class="rname" onclick="navTo('injury')" style="cursor:pointer">${p.name}</div><div class="flags">${p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div></div>${pill('danger','HIGH')}</div>`).join('')+(moreH>0?`<div onclick="navTo('injury')" style="text-align:center;padding:8px 0;font-family:var(--font-m);font-size:11px;color:#B91C1C;font-weight:600;cursor:pointer">+${moreH} more</div>`:''): '<div style="color:var(--text3);font-size:12px;padding:12px 0">No high risk athletes</div>';
+  const topH=[...PLAYERS].filter(p=>p.totalHSR>0).sort((a,b)=>b.totalHSR-a.totalHSR).slice(0,5);
+  document.getElementById('dash-hsr').innerHTML=topH.map((p,i)=>`<div class="risk-row"><div style="font-family:var(--font-d);font-size:16px;font-weight:800;width:22px;text-align:center;color:${i===0?'#B45309':i===1?'#94a3b8':i===2?'#cd7c3e':'var(--text3)'}">${i+1}</div><div class="avatar" style="background:rgba(0,48,135,.1);color:var(--uf-blue)">${ini(p.name)}</div><div class="rnb"><div class="rname" onclick="navToGPS('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer" onmouseover="this.style.color='var(--uf-orange)'" onmouseout="this.style.color='var(--uf-blue)'">${p.name}</div><div class="rpos">${p.pos} · all sessions</div></div>${pill('ok',Math.round(p.totalHSR).toLocaleString()+' m')}</div>`).join('');
+})();
+
+// ── ROSTER ────────────────────────────────────────────────────────
+function filterRoster(q=''){
+  const filtered=PLAYERS.filter(p=>p.name.toLowerCase().includes(q)||p.pos.toLowerCase().includes(q)||p.unit.toLowerCase().includes(q));
+  document.getElementById('roster-grid').innerHTML=filtered.map(p=>{
+    const st=acwrSt(p.latD),bc=p.risk==='high'?'rc-high':p.risk==='mod'?'rc-warn-card':'';
+    return`<div class="roster-card ${bc}" onclick="openPM('${p.name.replace(/'/g,"\\'")}')"><div class="rc-top"><div><div class="rc-name">${p.name}</div><div class="rc-pos">${p.pos} · ${p.unit}</div></div>${pill(st.cls,st.lbl)}</div>${p.flags.length?`<div class="flags">${p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div>`:''}<div class="rc-stats"><div class="rc-stat"><div class="rc-stat-val">${p.latD>0?p.latD.toFixed(2):'—'}</div><div class="rc-stat-lbl">ACWR Dist</div></div><div class="rc-stat"><div class="rc-stat-val">${p.latMaxV>0?p.latMaxV.toFixed(1):'—'}</div><div class="rc-stat-lbl">Max Vel (mph)</div></div><div class="rc-stat"><div class="rc-stat-val">${p.latA>0?p.latA.toFixed(2):'—'}</div><div class="rc-stat-lbl">ACWR A&D</div></div><div class="rc-stat"><div class="rc-stat-val">${p.sessions.length}</div><div class="rc-stat-lbl">Sessions</div></div></div></div>`;
+  }).join('');
+}
+document.getElementById('roster-search').addEventListener('input',function(){filterRoster(this.value.toLowerCase());});
+filterRoster();
+
+// ── GPS TEAM ──────────────────────────────────────────────────────
+function renderGPSTeam(){
+  const ds=acwrSt(latTD),as2=acwrSt(latTA);
+  const avgMV=PLAYERS.filter(p=>p.latMaxV>0).reduce((s,p)=>s+p.latMaxV,0)/Math.max(1,PLAYERS.filter(p=>p.latMaxV>0).length);
+  document.getElementById('gps-team-stats').innerHTML=`<div class="stat-card ${ds.cls}"><div class="sc-label">Team ACWR — Distance</div><div class="sc-val ${ds.cls}">${latTD.toFixed(2)}</div><div class="sc-sub">${ds.lbl}</div></div><div class="stat-card ${as2.cls}"><div class="sc-label">Team ACWR — Accel/Decel</div><div class="sc-val ${as2.cls}">${latTA.toFixed(2)}</div><div class="sc-sub">${as2.lbl}</div></div><div class="stat-card acc"><div class="sc-label">Avg Max Velocity</div><div class="sc-val acc">${avgMV>0?avgMV.toFixed(2):'—'}</div><div class="sc-sub">mph</div></div><div class="stat-card blue"><div class="sc-label">Athletes w/ Data</div><div class="sc-val blue">${PLAYERS.length}</div><div class="sc-sub">active sessions</div></div>`;
+  const tDf=tDA.filter(v=>v!=null),tAf=tAA.filter(v=>v!=null);
+  const tDch=tDf.map((_,i)=>{const w=tDf.slice(Math.max(0,i-3),i+1);return w.reduce((a,b)=>a+b)/w.length;});
+  const tAch=tAf.map((_,i)=>{const w=tAf.slice(Math.max(0,i-3),i+1);return w.reduce((a,b)=>a+b)/w.length;});
+  acChart('gps-team-ac-dist',tDf,tDch,validWks,'Acute (m)','Chronic (m)');
+  acwrChart('gps-team-acwr-dist',tDACWR,validWks);
+  acChart('gps-team-ac-accel',tAf,tAch,validWks,'Acute A&D','Chronic A&D');
+  acwrChart('gps-team-acwr-accel',tAACWR,validWks);
+  document.getElementById('gps-team-weekly').innerHTML=validWks.map((wk,i)=>{
+    const d=tDACWR[i]??0,a=tAACWR[i]??0,st=acwrSt(d);
+    const amv=(()=>{const v=PLAYERS.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();
+    return`<tr><td class="mono">${wk}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${amv}</td><td class="mono">${Math.round(tDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono">${Math.round((tDf[i]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(tDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(tDch[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono">${Math.round(tAch[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;
+  }).join('');
+  document.getElementById('gps-team-roster').innerHTML=[...PLAYERS].sort((a,b)=>b.latD-a.latD).map(p=>{const st=acwrSt(p.latD);const s=p.latest;return`<tr><td style="font-weight:600;cursor:pointer;color:var(--uf-blue)" onclick="openPM('${p.name.replace(/'/g,"\\'")}');">${p.name}</td><td>${pill('info',p.pos)}</td><td style="font-size:10px;color:var(--text3)">${p.unit}</td><td class="mono">${s?Math.round(s.dist).toLocaleString():'—'}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</td><td class="mono">${s?(s.accel+s.decel):'—'}</td><td class="mono">${s?Math.round(s.hsr):'—'}</td><td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td><td class="mono ${acwrSt(p.latA).cls==='ok'?'ok':acwrSt(p.latA).cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
+}
+
+// ── GPS INDIVIDUAL ────────────────────────────────────────────────
+window.renderGPS=function(){
+  const name=document.getElementById('gps-sel').value;
+  const p=PLAYERS.find(x=>x.name===name)||PLAYERS[0];if(!p)return;
+  const st=acwrSt(p.latD);
+  document.getElementById('gps-status-badge').textContent=st.lbl;
+  document.getElementById('gps-status-badge').className=`tbb ${st.cls}`;
+  const dF=p.dA.filter(v=>v!=null),aF=p.aA.filter(v=>v!=null);
+  const dCh=dF.map((_,i)=>{const w=dF.slice(Math.max(0,i-3),i+1);return w.reduce((a,b)=>a+b)/w.length;});
+  const aCh=aF.map((_,i)=>{const w=aF.slice(Math.max(0,i-3),i+1);return w.reduce((a,b)=>a+b)/w.length;});
+  const s=p.latest;
+  document.getElementById('gps-stats').innerHTML=`<div class="stat-card ${st.cls}"><div class="sc-label">ACWR — Distance</div><div class="sc-val ${st.cls}">${p.latD>0?p.latD.toFixed(2):'—'}</div><div class="sc-sub">${st.lbl}</div></div><div class="stat-card ${acwrSt(p.latA).cls}"><div class="sc-label">ACWR — Accel/Decel</div><div class="sc-val ${acwrSt(p.latA).cls}">${p.latA>0?p.latA.toFixed(2):'—'}</div><div class="sc-sub">${acwrSt(p.latA).lbl}</div></div><div class="stat-card acc"><div class="sc-label">Max Velocity</div><div class="sc-val acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</div><div class="sc-sub">mph · latest</div></div><div class="stat-card orange"><div class="sc-label">Latest Distance</div><div class="sc-val orange">${s?Math.round(s.dist).toLocaleString():'—'}</div><div class="sc-sub">meters</div></div>`;
+  acChart('gps-ac-dist',dF,dCh,validWks,'Acute (m)','Chronic (m)');
+  acwrChart('gps-acwr-dist',p.dACWR,validWks);
+  acChart('gps-ac-accel',aF,aCh,validWks,'Acute A&D','Chronic A&D');
+  acwrChart('gps-acwr-accel',p.aACWR,validWks);
+  document.getElementById('gps-table').innerHTML=validWks.map((wk,i)=>{const d=p.dACWR[i]??0,a=p.aACWR[i]??0,st=acwrSt(d);const ws=p.sessions.filter(s=>s.wk===wk);const wMV=ws.length?Math.max(...ws.map(s=>s.maxV)):0;return`<tr><td class="mono">${wk}</td><td class="mono">${Math.round(dF[i]||0).toLocaleString()}</td><td class="mono acc">${wMV>0?wMV.toFixed(2):'—'}</td><td class="mono">${Math.round(aF[i]||0)}</td><td class="mono">${Math.round(ws.reduce((t,s)=>t+s.hsr,0)).toLocaleString()}</td><td class="mono">${Math.round(dF[i]||0).toLocaleString()}</td><td class="mono">${Math.round(dCh[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(aF[i]||0)}</td><td class="mono">${Math.round(aCh[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
+  document.getElementById('gps-roster-table').innerHTML=[...PLAYERS].sort((a,b)=>b.latD-a.latD).map(pl=>{const st=acwrSt(pl.latD);const ls=pl.latest;return`<tr><td style="font-weight:600;cursor:pointer;color:var(--uf-blue)" onclick="openPM('${pl.name.replace(/'/g,"\\'")}');">${pl.name}</td><td>${pill('info',pl.pos)}</td><td class="mono">${ls?Math.round(ls.dist).toLocaleString():'—'}</td><td class="mono acc">${pl.latMaxV>0?pl.latMaxV.toFixed(2):'—'}</td><td class="mono">${ls?(ls.accel+ls.decel):'—'}</td><td class="mono">${ls?Math.round(ls.hsr):'—'}</td><td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${pl.latD>0?pl.latD.toFixed(2):'—'}</td><td class="mono ${acwrSt(pl.latA).cls==='ok'?'ok':acwrSt(pl.latA).cls==='warn'?'warn':'danger'}">${pl.latA>0?pl.latA.toFixed(2):'—'}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
+};
+
+// ── GPS GROUP ─────────────────────────────────────────────────────
+window.renderGPSGroup=function(){
+  const pos=document.getElementById('gps-group-sel').value;
+  const grp=PLAYERS.filter(p=>p.pos===pos);
+  if(!grp.length){document.getElementById('gps-group-stats').innerHTML='<div style="color:var(--text3);padding:20px">No data for this position.</div>';return;}
+  document.getElementById('gps-group-badge').textContent=`${pos} · ${grp.length} athletes`;
+  function grpWk(f){return allPhWks.map(wk=>{const v=grp.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.reduce((t,x)=>t+x[f],0)/Math.max(1,s.length);}).filter(v=>v>0);return v.length?v.reduce((a,b)=>a+b)/v.length:null;});}
+  const gD=grpWk('dist'),gA=grpWk('accel');
+  const gDf=gD.filter(v=>v!=null),gAf=gA.filter(v=>v!=null);
+  const vWks=allPhWks.filter((_,i)=>gD[i]!=null);
+  const gDch=gDf.map((_,i)=>{const w=gDf.slice(Math.max(0,i-3),i+1);return w.reduce((a,b)=>a+b)/w.length;});
+  const gAch=gAf.map((_,i)=>{const w=gAf.slice(Math.max(0,i-3),i+1);return w.reduce((a,b)=>a+b)/w.length;});
+  const gDACWR=calcACWR(gDf),gAACWR=calcACWR(gAf);
+  const lgD=gDACWR[gDACWR.length-1]??0,lgA=gAACWR[gAACWR.length-1]??0;
+  const avgMV=grp.filter(p=>p.latMaxV>0).reduce((s,p)=>s+p.latMaxV,0)/Math.max(1,grp.filter(p=>p.latMaxV>0).length);
+  document.getElementById('gps-group-stats').innerHTML=`<div class="stat-card ${acwrSt(lgD).cls}"><div class="sc-label">ACWR — Distance</div><div class="sc-val ${acwrSt(lgD).cls}">${lgD.toFixed(2)}</div><div class="sc-sub">${acwrSt(lgD).lbl}</div></div><div class="stat-card ${acwrSt(lgA).cls}"><div class="sc-label">ACWR — Accel/Decel</div><div class="sc-val ${acwrSt(lgA).cls}">${lgA.toFixed(2)}</div><div class="sc-sub">${acwrSt(lgA).lbl}</div></div><div class="stat-card acc"><div class="sc-label">Avg Max Velocity</div><div class="sc-val acc">${avgMV>0?avgMV.toFixed(2):'—'}</div><div class="sc-sub">mph</div></div><div class="stat-card blue"><div class="sc-label">Athletes in Group</div><div class="sc-val blue">${grp.length}</div><div class="sc-sub">with session data</div></div>`;
+  acChart('grp-ac-dist',gDf,gDch,vWks,'Avg Acute (m)','Avg Chronic (m)');
+  acwrChart('grp-acwr-dist',gDACWR,vWks);
+  acChart('grp-ac-accel',gAf,gAch,vWks,'Avg Acute A&D','Avg Chronic A&D');
+  acwrChart('grp-acwr-accel',gAACWR,vWks);
+  document.getElementById('gps-grp-roster').innerHTML=grp.map(p=>{const st=acwrSt(p.latD);const s=p.latest;return`<tr><td style="font-weight:600">${p.name}</td><td class="mono">${s?Math.round(s.dist).toLocaleString():'—'}</td><td class="mono acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</td><td class="mono">${s?(s.accel+s.decel):'—'}</td><td class="mono">${s?Math.round(s.hsr):'—'}</td><td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td><td class="mono ${acwrSt(p.latA).cls==='ok'?'ok':acwrSt(p.latA).cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
+  document.getElementById('gps-group-table').innerHTML=vWks.map((wk,i)=>{const d=gDACWR[i]??0,a=gAACWR[i]??0,st=acwrSt(d);const amv=(()=>{const v=grp.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();return`<tr><td class="mono">${wk}</td><td class="mono acc">${amv}</td><td class="mono">${Math.round(gDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(gAf[i]||0)}</td><td class="mono">${Math.round((gDf[i]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(gDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(gDch[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(gAf[i]||0)}</td><td class="mono">${Math.round(gAch[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
+};
+
+// ── LOAD MONITOR ──────────────────────────────────────────────────
+let lmUnit='All',lmPos='All',lmAcwr='all',lmMetric='load',lmSelIdx=null,lmTC=null,lmAC=null,lmPC=null;
+const LMP=PLAYERS.map(p=>({...p,allLoads:p.allLMLoad,allDist:p.allLMDist,allHSR:p.allLMHSR,allAccel:p.allLMAccel,allDecel:p.allLMDecel,allVel:p.allLMVel,acwr:p.acwr4}));
+function lmFilt(){return LMP.filter(p=>{const uOK=lmUnit==='All'||p.unit===lmUnit;const pOK=lmPos==='All'||p.pos===lmPos;const z=lmZone(p.acwr);const aOK=lmAcwr==='all'||z.key===lmAcwr;return uOK&&pOK&&aOK;});}
+function renderLMMetrics(){
+  const fp=lmFilt();if(!fp.length){document.getElementById('lm-metrics').innerHTML='';return;}
+  const avgLoad=Math.round(fp.reduce((a,p)=>a+p.cl,0)/fp.length);
+  const avgSp=Math.round(fp.reduce((a,p)=>a+p.spAvg,0)/fp.length);
+  const pct=avgSp>0?Math.round((avgLoad/avgSp-1)*100):0;
+  const flagged=fp.filter(p=>p.acwr>1.3).length;
+  const avgHSR=Math.round(fp.reduce((a,p)=>a+p.ch2,0)/fp.length);
+  const avgDist=Math.round(fp.reduce((a,p)=>a+p.cd,0)/fp.length);
+  const avgAccel=Math.round(fp.reduce((a,p)=>a+p.ca,0)/fp.length);
+  const avgDecel=Math.round(fp.reduce((a,p)=>a+p.cde,0)/fp.length);
+  const topV=Math.max(...fp.map(p=>p.cv||0)).toFixed(1);
+  const cards=[{label:'Team avg load',val:avgLoad,sub:`<span class="${pct>=0?'up':'dn'}">${pct>=0?'+':''}${pct}%</span> vs spring avg`,c:C.acc},{label:'Avg HSRD',val:avgHSR+'m',sub:'high speed dist',c:C.blue},{label:'Avg total dist',val:avgDist+'m',sub:'this period',c:C.green},{label:'Accel / Decel',val:`${avgAccel}/${avgDecel}`,sub:'avg efforts',c:C.yellow},{label:'Top max velo',val:topV+' mph',sub:'fastest player',c:'#4a7fd4'},{label:'Players flagged',val:flagged,sub:'ACWR above 1.3',c:C.red}];
+  document.getElementById('lm-metrics').innerHTML=cards.map(c=>`<div class="lm-mcard" style="--lm-c:${c.c}"><div class="lm-ml">${c.label}</div><div class="lm-mv" style="color:${c.c}">${c.val}</div><div class="lm-ms">${c.sub}</div></div>`).join('');
+}
+function renderLMTeamChart(){
+  const fp=lmFilt();if(!fp.length)return;
+  const MCFG={load:{arr:p=>p.allLoads,label:'Team avg player load',color:C.blue,unit:''},dist:{arr:p=>p.allDist,label:'Avg distance (m)',color:'#4a7fd4',unit:'m'},hsrd:{arr:p=>p.allHSR,label:'Avg HSRD (m)',color:C.green,unit:'m'},accel:{arr:p=>p.allAccel,label:'Avg accel efforts',color:C.yellow,unit:''},decel:{arr:p=>p.allDecel,label:'Avg decel efforts',color:'#9b59b6',unit:''},acwr:{arr:null,label:'Team ACWR',color:C.acc,unit:''}};
+  const cfg=MCFG[lmMetric]||MCFG.load;
+  const realCount=spWks.length+suWks.length;
+  const allLbls=[...allLMWks,...faProjWks];
+  let primData;
+  if(lmMetric==='acwr'){const la=allLMWks.map((_,i)=>{const v=fp.map(p=>p.allLoads[i]).filter(v=>v!=null);return v.length?v.reduce((a,b)=>a+b)/v.length:null;});const ac2=calcACWR(la.filter(v=>v!=null));primData=[...Array(Math.max(0,realCount-ac2.length)).fill(null),...ac2,...Array(allLMWks.length-realCount+faProjWks.length).fill(null)];}
+  else{const avgs=allLMWks.map((_,i)=>{const v=fp.map(p=>cfg.arr(p)[i]).filter(v=>v!=null);return v.length?+(v.reduce((a,b)=>a+b)/v.length).toFixed(1):null;});primData=[...avgs,...faProjWks.map(()=>null)];}
+  const spAvgT=Math.round(fp.reduce((a,p)=>a+p.spAvg,0)/fp.length);
+  const baseline=allLbls.map(()=>spAvgT);
+  const projData=allLbls.map((_,i)=>i>=realCount&&i<allLMWks.length?(primData[realCount-1]??spAvgT)*(0.85+i*0.02):i>=allLMWks.length?(fp.reduce((a,p)=>a+(p.fallProj[i-allLMWks.length]??0),0)/fp.length):null);
+  const barColors=allLbls.map((_,i)=>i<spWks.length?'rgba(0,48,135,0.2)':i<realCount?C.blue:i<allLMWks.length?'rgba(250,70,22,0.25)':'transparent');
+  if(lmTC){lmTC.destroy();lmTC=null;}
+  const el=document.getElementById('lm-team-chart');if(!el)return;
+  document.getElementById('lm-chart-title').textContent=cfg.label;
+  document.getElementById('lm-legend').innerHTML=[{label:cfg.label,color:cfg.color,dash:false},{label:'Periodized proj.',color:C.acc,dash:true},{label:'Spring baseline',color:'rgba(0,48,135,0.35)',dash:true}].map(d=>`<span class="lm-leg">${d.dash?`<span class="lm-leg-dash" style="border-color:${d.color}"></span>`:`<span class="lm-leg-sq" style="background:${d.color}"></span>`}${d.label}</span>`).join('');
+  lmTC=new Chart(el,{type:'bar',data:{labels:allLbls,datasets:[{label:cfg.label,data:primData,backgroundColor:barColors,borderRadius:3,order:3},{label:'Spring baseline',data:baseline,type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},{label:'Fall projection',data:projData,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,fill:false,order:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}${cfg.unit}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9,family:'DM Mono'},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10,family:'DM Mono'}}}}}});
+}
+function renderLMACWR(){
+  const fp=lmFilt();
+  const zones=['under','optimal','caution','risk'],zl=['Under','Optimal','Caution','High Risk'],zc=['#4a7fd4',C.green,C.yellow,C.red];
+  const counts=zones.map(z=>fp.filter(p=>lmZone(p.acwr).key===z).length);
+  const total=fp.length||1;
+  const avgAcwr=fp.length?(fp.reduce((a,p)=>a+p.acwr,0)/fp.length).toFixed(2):'—';
+  document.getElementById('lm-acwr-avg').textContent=avgAcwr;
+  document.getElementById('lm-acwr-avg').style.color=fp.length?lmZone(+avgAcwr).color:'var(--text2)';
+  document.getElementById('lm-zone-bars').innerHTML=zones.map((z,i)=>`<div class="lm-zone-row"><div class="lm-zone-dot" style="background:${zc[i]}"></div><div class="lm-zone-name">${zl[i]}</div><div class="lm-zone-bar-wrap"><div class="lm-zone-bar-fill" style="width:${Math.round(counts[i]/total*100)}%;background:${zc[i]}"></div></div><div class="lm-zone-count">${counts[i]}</div></div>`).join('');
+  if(lmAC){lmAC.destroy();lmAC=null;}
+  const el=document.getElementById('lm-acwr-donut');if(!el)return;
+  lmAC=new Chart(el,{type:'doughnut',data:{labels:zl,datasets:[{data:counts.map(c=>c||0.001),backgroundColor:zc,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw<0.01?0:ctx.raw}`}}}}});
+}
+function renderLMPosFilters(){const pos=['All',...new Set(LMP.map(p=>p.pos))].sort();document.getElementById('lm-pos-filters').innerHTML=`<span class="lm-fl">Position:</span>`+pos.map(p=>`<button class="pos-chip${p===lmPos?' active':''}" onclick="setLMPos('${p}')">${p}</button>`).join('');}
+function renderLMRoster(){
+  const fp=lmFilt();
+  document.getElementById('lm-roster-count').textContent=`${fp.length} player${fp.length!==1?'s':''}`;
+  document.getElementById('lm-roster-body').innerHTML=fp.length?fp.map((p,i)=>{const z=lmZone(p.acwr);const sel=lmSelIdx===i;return`<tr style="${sel?'background:rgba(250,70,22,0.06)':''};cursor:pointer" onclick="selLMPlayer(${i})"><td style="font-weight:600">${p.name}</td><td style="font-family:var(--font-m);color:var(--text2)">${p.pos}</td><td style="color:var(--text2)">${p.unit}</td><td style="font-family:var(--font-m)">${p.cl||'—'}</td><td style="font-family:var(--font-m);color:var(--text3)">${p.spAvg||'—'}</td><td style="font-family:var(--font-m);color:${p.spPct>=80?C.green:C.yellow}">${p.spPct||'—'}%</td><td style="font-family:var(--font-m)">${p.ch2?Math.round(p.ch2):'—'}</td><td style="font-family:var(--font-m)">${p.cd?Math.round(p.cd):'—'}</td><td style="font-family:var(--font-m)">${p.ca||'—'}</td><td style="font-family:var(--font-m)">${p.cde||'—'}</td><td style="font-family:var(--font-m);font-weight:600;color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1):'—'}</td><td style="font-family:var(--font-m)">${p.acwr||'—'}</td><td><span class="pill ${z.cls}">${z.label}</span></td></tr>`;}).join(''):`<tr><td colspan="13" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No players match filters.</td></tr>`;
+}
+window.setLMMetric=function(m,btn){lmMetric=m;document.querySelectorAll('.lm-chip').forEach(c=>c.classList.remove('active'));btn.classList.add('active');renderLMTeamChart();};
+window.setLMPos=function(p){lmPos=p;lmSelIdx=null;renderLMMetrics();renderLMTeamChart();renderLMACWR();renderLMPosFilters();renderLMRoster();};
+function renderLMAll(){renderLMMetrics();renderLMTeamChart();renderLMACWR();renderLMPosFilters();renderLMRoster();}
+window.renderLoadMonitor=renderLMAll;
+window.selLMPlayer=function(i){
+  lmSelIdx=lmSelIdx===i?null:i;renderLMRoster();
+  const fp=lmFilt();const p=fp[lmSelIdx];const sec=document.getElementById('lm-detail-section');
+  if(!p||lmSelIdx===null){sec.classList.remove('visible');return;}
+  sec.classList.add('visible');
+  const z=lmZone(p.acwr);
+  document.getElementById('lm-detail-card').innerHTML=`<div class="lm-dh"><div><div class="lm-dn">${p.name}</div><div class="lm-dm">${p.pos} · ${p.unit} · Spring avg: ${p.spAvg}</div></div><span class="pill ${z.cls}" style="font-size:13px;padding:5px 14px">ACWR ${p.acwr} — ${z.label}</span></div><div class="lm-detail-stats"><div class="lm-ds"><div class="dl">Player load</div><div class="dv">${p.cl||'—'}</div></div><div class="lm-ds"><div class="dl">% of spring</div><div class="dv" style="color:${p.spPct>=80?C.green:C.yellow}">${p.spPct}%</div></div><div class="lm-ds"><div class="dl">ACWR (4wk)</div><div class="dv" style="color:${z.color}">${p.acwr}</div></div><div class="lm-ds"><div class="dl">HSRD</div><div class="dv">${p.ch2?Math.round(p.ch2)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Total dist</div><div class="dv">${p.cd?Math.round(p.cd)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Max velo</div><div class="dv" style="color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1)+' mph':'—'}</div></div><div class="lm-ds"><div class="dl">Accel</div><div class="dv">${p.ca||'—'}</div></div><div class="lm-ds"><div class="dl">Decel</div><div class="dv">${p.cde||'—'}</div></div><div class="lm-ds"><div class="dl">End summer proj</div><div class="dv" style="color:${p.endSumPct>=95?C.green:p.endSumPct>=80?C.yellow:C.red}">${p.endSumPct}%</div></div><div class="lm-ds"><div class="dl">Fall W1 proj</div><div class="dv" style="color:${p.fallW1Pct>=105?C.green:p.fallW1Pct>=95?C.yellow:C.red}">${p.fallW1Pct}%</div></div></div><div style="position:relative;height:200px"><canvas id="lm-player-chart"></canvas></div>`;
+  if(lmPC){lmPC.destroy();lmPC=null;}
+  const allL2=[...allLMWks,...faProjWks];const rc2=spWks.length+suWks.length;
+  const bc2=allL2.map((_,i)=>i<spWks.length?'rgba(0,48,135,0.2)':i<rc2?C.blue:i<allLMWks.length?'rgba(250,70,22,0.25)':'transparent');
+  const lb2=allL2.map((_,i)=>i<allLMWks.length?(p.allLoads[i]??null):null);
+  const fl2=allL2.map((_,i)=>{if(i===allLMWks.length-1)return p.allLoads[allLMWks.length-1];if(i>=allLMWks.length)return p.fallProj[i-allLMWks.length]??null;return null;});
+  const el2=document.getElementById('lm-player-chart');if(!el2)return;
+  lmPC=new Chart(el2,{type:'bar',data:{labels:allL2,datasets:[{label:'Load',data:lb2,backgroundColor:bc2,borderRadius:3,order:3},{label:'Spring baseline',data:allL2.map(()=>p.spAvg),type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},{label:'Fall projection',data:fl2,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,fill:false,order:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10}}}}}});
+  setTimeout(()=>sec.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+};
+
+// ── LEADERBOARDS ──────────────────────────────────────────────────
+const LB_CATS=[{id:'maxvel',lbl:'Max Velocity',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},{id:'hsr',lbl:'Total HSR (m)',fn:p=>p.totalHSR>0?p.totalHSR:null,fmt:v=>Math.round(v).toLocaleString()+' m'},{id:'sessions',lbl:'Session Count',fn:p=>p.sessions.length,fmt:v=>v+' sessions'},{id:'acwr',lbl:'ACWR Distance',fn:p=>p.latD>0?p.latD:null,fmt:v=>v.toFixed(2)}];
+let lbActive=LB_CATS[0];
+window.renderLeaderboards=function(){
+  document.getElementById('lb-tabs').innerHTML=LB_CATS.map(c=>`<div class="lb-tab ${c.id===lbActive.id?'active':''}" onclick="setLBCat('${c.id}')">${c.lbl}</div>`).join('');
+  const ranked=[...PLAYERS].map(p=>({p,v:lbActive.fn(p)})).filter(x=>x.v!=null).sort((a,b)=>b.v-a.v);
+  const top10=ranked.slice(0,10),max=top10[0]?.v??1;
+  document.getElementById('lb-panel-left').innerHTML=`<div class="panel-title"><i class="ti ti-trophy"></i>${lbActive.lbl} — Top ${top10.length}</div>`+top10.map(({p,v},i)=>`<div class="lb-row" onclick="openPM('${p.name.replace(/'/g,"\\'")}')"><span class="lb-rank" style="color:${i===0?'#B45309':i===1?'#475569':i===2?'#92400E':'var(--text3)'}">${i+1}</span><div class="avatar" style="background:rgba(250,70,22,.1);color:var(--uf-orange)">${ini(p.name)}</div><div style="flex:1"><div style="font-weight:600;font-size:12px">${p.name}</div><div style="font-size:10px;color:var(--text3)">${p.pos} · ${p.unit}</div></div><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.round(v/max*100)}%"></div></div><span class="lb-val">${lbActive.fmt(v)}</span></div>`).join('');
+  const byPos={};ranked.forEach(({p,v})=>{if(!byPos[p.pos])byPos[p.pos]={pos:p.pos,vals:[]};byPos[p.pos].vals.push(v);});
+  const posAvg=Object.values(byPos).map(x=>({pos:x.pos,avg:x.vals.reduce((a,b)=>a+b)/x.vals.length,n:x.vals.length})).sort((a,b)=>b.avg-a.avg);
+  const maxAvg=posAvg[0]?.avg??1;
+  document.getElementById('lb-panel-right').innerHTML=`<div class="panel-title"><i class="ti ti-chart-bar"></i>${lbActive.lbl} — By Position</div>`+posAvg.map(({pos,avg,n})=>`<div class="lb-row"><span class="lb-rank" style="font-size:11px;color:var(--uf-orange)">${pos}</span><div style="flex:1"><div style="font-weight:600;font-size:12px">${pos}</div><div style="font-size:10px;color:var(--text3)">${n} athletes</div></div><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.round(avg/maxAvg*100)}%"></div></div><span class="lb-val">${lbActive.fmt(avg)}</span></div>`).join('');
+};
+window.setLBCat=function(id){lbActive=LB_CATS.find(c=>c.id===id)||LB_CATS[0];renderLeaderboards();};
+
+// ── INJURY RISK ───────────────────────────────────────────────────
+let injSort={col:'risk',dir:'desc'};
+window.sortInjury=function(col){if(injSort.col===col)injSort.dir=injSort.dir==='asc'?'desc':'asc';else{injSort.col=col;injSort.dir='desc';}renderInjury();};
+window.renderInjury=function(){
+  const high=PLAYERS.filter(p=>p.risk==='high'),mod=PLAYERS.filter(p=>p.risk==='mod'),low=PLAYERS.filter(p=>p.risk==='low');
+  document.getElementById('injury-stats').innerHTML=`<div class="stat-card danger"><div class="sc-label">High Risk</div><div class="sc-val danger">${high.length}</div><div class="sc-sub">Immediate attention</div></div><div class="stat-card warn"><div class="sc-label">Moderate Risk</div><div class="sc-val warn">${mod.length}</div><div class="sc-sub">Monitor closely</div></div><div class="stat-card ok"><div class="sc-label">Low Risk</div><div class="sc-val ok">${low.length}</div><div class="sc-sub">Full training</div></div><div class="stat-card blue"><div class="sc-label">Total Athletes</div><div class="sc-val blue">${PLAYERS.length}</div><div class="sc-sub">with session data</div></div>`;
+  const rRow=p=>`<div class="risk-row" onclick="openPM('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer"><div class="avatar" style="background:${p.risk==='high'?'rgba(220,38,38,.1)':'rgba(217,119,6,.1)'};color:${p.risk==='high'?'#B91C1C':'#92400E'}">${ini(p.name)}</div><div class="rnb"><div class="rname">${p.name}</div><div class="rpos">${p.pos} · ${p.unit}</div><div class="flags">${p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div></div></div>`;
+  document.getElementById('injury-high-list').innerHTML=high.length?high.map(rRow).join(''):'<div style="color:var(--acc3);font-size:12px;font-weight:600;padding:.5rem 0">✓ No high risk athletes</div>';
+  document.getElementById('injury-mod-list').innerHTML=mod.length?mod.map(rRow).join(''):'<div style="color:var(--acc3);font-size:12px;font-weight:600;padding:.5rem 0">✓ No moderate risk athletes</div>';
+  const rv={high:3,mod:2,low:1};
+  const sorted=[...PLAYERS].sort((a,b)=>{if(injSort.col==='risk')return injSort.dir==='desc'?(rv[b.risk]||0)-(rv[a.risk]||0):(rv[a.risk]||0)-(rv[b.risk]||0);if(injSort.col==='name')return injSort.dir==='asc'?a.name.localeCompare(b.name):b.name.localeCompare(a.name);if(injSort.col==='acwr')return injSort.dir==='desc'?b.latD-a.latD:a.latD-b.latD;return 0;});
+  document.getElementById('injury-table').innerHTML=sorted.map(p=>{const ds=acwrSt(p.latD),as2=acwrSt(p.latA);return`<tr onclick="openPM('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer"><td style="font-weight:600;color:var(--uf-blue)">${p.name}</td><td>${pill('info',p.pos)}</td><td style="font-size:10px;color:var(--text3)">${p.unit}</td><td class="mono ${ds.cls==='ok'?'ok':ds.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td><td class="mono ${as2.cls==='ok'?'ok':as2.cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td><td class="mono acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</td><td class="mono">${p.totalHSR>0?Math.round(p.totalHSR).toLocaleString():'—'}</td><td>${pill(p.risk==='high'?'danger':p.risk==='mod'?'warn':'ok',p.risk.toUpperCase())}</td><td><div class="flags">${p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')||'—'}</div></td></tr>`;}).join('');
+};
+
+// ── COMPARE ───────────────────────────────────────────────────────
+window.renderCompare=function(){
+  const a=PLAYERS.find(p=>p.name===document.getElementById('cmp-a').value)||PLAYERS[0];
+  const b=PLAYERS.find(p=>p.name===document.getElementById('cmp-b').value)||PLAYERS[1]||PLAYERS[0];
+  const CATS=[{lbl:'ACWR — Distance',ka:'latD',high:true,fmt:v=>v>0?v.toFixed(2):'—'},{lbl:'ACWR — Accel/Decel',ka:'latA',high:true,fmt:v=>v>0?v.toFixed(2):'—'},{lbl:'Max Velocity (mph)',ka:'latMaxV',high:true,fmt:v=>v>0?v.toFixed(2):'—'},{lbl:'Total HSR (m)',ka:'totalHSR',high:true,fmt:v=>v>0?Math.round(v).toLocaleString():'—'},{lbl:'Sessions',ka:'sessions',high:true,fmt:(_,p)=>p.sessions.length+' sessions'}];
+  const bp=(p,other)=>`<div style="text-align:center;margin-bottom:16px"><div class="avatar" style="width:44px;height:44px;font-size:14px;background:rgba(250,70,22,.1);color:var(--uf-orange);margin:0 auto 6px">${ini(p.name)}</div><div style="font-weight:700;font-size:14px">${p.name}</div><div style="font-size:11px;color:var(--text3)">${p.pos} · ${p.unit}</div><div style="margin-top:6px">${pill(acwrSt(p.latD).cls,acwrSt(p.latD).lbl)}</div></div>${CATS.map(cat=>{const av=cat.ka==='sessions'?p.sessions.length:(p[cat.ka]??0);const bv=cat.ka==='sessions'?other.sessions.length:(other[cat.ka]??0);const win=cat.high?av>=bv:av<=bv;return`<div class="cmp-stat-row"><span class="cmp-label">${cat.lbl}</span><span class="cmp-val ${win&&av>0?'w':'l'}">${cat.fmt(av,p)}</span></div>`;}).join('')}`;
+  document.getElementById('cmp-left').innerHTML=bp(a,b);
+  document.getElementById('cmp-right').innerHTML=bp(b,a);
+  const labels=['ACWR Dist','ACWR A&D','Max Vel','HSR','Sessions'];
+  const maxes=[2.0,2.0,25,50000,200];
+  const rd=p=>[p.latD||0,p.latA||0,p.latMaxV||0,p.totalHSR||0,p.sessions.length].map((v,i)=>parseFloat((Math.min(v/maxes[i]*100,100)).toFixed(1)));
+  mk('cmp-radar',{type:'radar',data:{labels,datasets:[{label:a.name,data:rd(a),borderColor:C.acc,backgroundColor:'rgba(250,70,22,.10)',pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,pointRadius:4},{label:b.name,data:rd(b),borderColor:C.blue,backgroundColor:'rgba(0,48,135,.08)',pointBackgroundColor:C.blue,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#475569',font:{size:11,family:'DM Mono'},boxWidth:10,padding:14}}},scales:{r:{ticks:{color:'#94A3B8',backdropColor:'rgba(244,245,247,0.8)',font:{size:9}},grid:{color:'rgba(0,48,135,.1)'},pointLabels:{color:'#1e3a5f',font:{size:10,weight:'600'}},min:0,max:100}}}});
+};
+
+// ── PLAYER MODAL ──────────────────────────────────────────────────
+window.openPM=function(name){
+  const p=PLAYERS.find(x=>x.name===name);if(!p)return;
+  document.getElementById('pm-name').textContent=p.name;
+  document.getElementById('pm-pos').textContent=`${p.pos} · ${p.unit} · ${p.sessions.length} sessions`;
+  const ds=acwrSt(p.latD),as2=acwrSt(p.latA);
+  const rc=p.risk==='high'?'#B91C1C':p.risk==='mod'?'#92400E':'#15803D';
+  const rb=document.getElementById('pm-risk-banner');
+  rb.style.background=p.risk==='high'?'rgba(220,38,38,.08)':p.risk==='mod'?'rgba(217,119,6,.08)':'rgba(22,163,74,.08)';
+  rb.style.border=`1px solid ${rc}33`;
+  document.getElementById('pm-risk-label').textContent=p.risk.toUpperCase()+' RISK';
+  document.getElementById('pm-risk-label').style.color=rc;
+  document.getElementById('pm-flags').innerHTML=p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('');
+  document.getElementById('pm-grid').innerHTML=`<div class="pm-stat"><div class="pm-stat-lbl">ACWR — Distance</div><div class="pm-stat-val ${ds.cls==='ok'?'ok':ds.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">ACWR — Accel/Decel</div><div class="pm-stat-val ${as2.cls==='ok'?'ok':as2.cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Max Velocity</div><div class="pm-stat-val acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Total HSR (m)</div><div class="pm-stat-val blue">${p.totalHSR>0?Math.round(p.totalHSR).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Latest Distance</div><div class="pm-stat-val">${p.latest?Math.round(p.latest.dist).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Sessions</div><div class="pm-stat-val">${p.sessions.length}</div></div>`;
+  document.getElementById('pm-overlay').classList.add('open');
+};
+window.closePM=function(e,force=false){if(force||e?.target===e?.currentTarget)document.getElementById('pm-overlay').classList.remove('open');};
+window.navToGPS=function(name){navTo('gps');setTimeout(()=>{setGPSView('player');setTimeout(()=>{const s=document.getElementById('gps-sel');if(s){s.value=name;renderGPS();}},80);},80);};
+
+// ── INIT ──────────────────────────────────────────────────────────
+setGPSView('team');
 </script>
 </body>
 </html>
