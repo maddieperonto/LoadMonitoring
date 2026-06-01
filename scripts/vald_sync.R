@@ -21,7 +21,7 @@ SUPABASE_SERVICE_KEY <- Sys.getenv("SUPABASE_SERVICE_KEY")
 VALD_TOKEN_URL <- "https://auth.prd.vald.com/oauth/token"
 VALD_PROF_BASE <- "https://prd-use-api-extprofile.valdperformance.com"
 VALD_FD_BASE   <- "https://prd-use-api-extforcedecks.valdperformance.com"
-VALD_NORD_BASE <- "https://prd-use-api-extnordbord.valdperformance.com"
+VALD_NORD_BASE <- "https://prd-use-api-externalnordbord.valdperformance.com"
 
 LOOKBACK_DAYS <- 7
 
