@@ -100,10 +100,8 @@ if (is.null(profiles_raw) || length(profiles_raw) == 0) {
   cat("[VALD Sync] No profiles — will use profileId as athlete name.\n")
   profiles_df <- data.frame(profileId = character(), name = character(), stringsAsFactors = FALSE)
 } else {
-  profiles_df <- as.data.frame(profiles_raw) |>
-    mutate(profileId = as.character(id), name = paste(as.character(givenName), as.character(familyName))) |>
-    select(profileId, name)
-  cat("[VALD Sync]", nrow(profiles_df), "profiles fetched.\n")
+  cat("[VALD Sync] Profiles response columns:", paste(names(as.data.frame(profiles_raw)), collapse=", "), "\n")
+  profiles_df <- data.frame(profileId = character(), name = character(), stringsAsFactors = FALSE)
 }
 
 # ── Step 3: ForceDecks ────────────────────────────────────────────────────
