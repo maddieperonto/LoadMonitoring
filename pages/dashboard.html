@@ -824,7 +824,7 @@ const LMP=PLAYERS.map(p=>({
   }),
   acwr:p.acwr4,
 }));
-function lmFilt(){return LMP.filter(p=>{const uOK=lmUnit==='All'||p.unit===lmUnit;const pOK=lmPos==='All'||p.pos===lmPos;const z=lmZone(p.acwr);const aOK=lmAcwr==='all'||z.key===lmAcwr;return uOK&&pOK&&aOK;});}
+function lmFilt(){return LMP.filter(p=>{const pOK=lmPos==='All'||p.pos===lmPos;const z=lmZone(p.acwr);const aOK=lmAcwr==='all'||z.key===lmAcwr;return pOK&&aOK;});}
 function renderLMMetrics(){
   const fp=lmFilt();if(!fp.length){document.getElementById('lm-metrics').innerHTML='';return;}
   const avgLoad=Math.round(fp.reduce((a,p)=>a+p.cl,0)/fp.length);
@@ -879,7 +879,12 @@ function renderLMRoster(){
 }
 window.setLMMetric=function(m,btn){lmMetric=m;document.querySelectorAll('.lm-chip').forEach(c=>c.classList.remove('active'));btn.classList.add('active');renderLMTeamChart();};
 window.setLMPos=function(p){lmPos=p;lmSelIdx=null;renderLMMetrics();renderLMTeamChart();renderLMACWR();renderLMPosFilters();renderLMRoster();};
-function renderLMAll(){renderLMMetrics();renderLMTeamChart();renderLMACWR();renderLMPosFilters();renderLMRoster();}
+function renderLMAll(){
+  renderLMMetrics();
+  renderLMPosFilters();
+  renderLMRoster();
+  setTimeout(()=>{renderLMTeamChart();renderLMACWR();},100);
+}
 window.renderLoadMonitor=renderLMAll;
 window.selLMPlayer=function(i){
   lmSelIdx=lmSelIdx===i?null:i;renderLMRoster();
