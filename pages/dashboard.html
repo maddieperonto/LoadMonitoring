@@ -846,8 +846,8 @@ function renderLMTeamChart(){
   const realCount=spWks.length+suWks.length;
   const allLbls=[...allLMWks,...fcProjWks];
   let primData;
-  if(lmMetric==='acwr'){const la=allLMWks.map((_,i)=>{const v=fp.map(p=>p.allLoads[i]).filter(v=>v!=null);return v.length?v.reduce((a,b)=>a+b)/v.length:null;});const ac2=calcACWR(la.filter(v=>v!=null));primData=[...Array(Math.max(0,realCount-ac2.length)).fill(null),...ac2,...Array(allLMWks.length-realCount+faProjWks.length).fill(null)];}
-  else{const avgs=allLMWks.map((_,i)=>{const v=fp.map(p=>cfg.arr(p)[i]).filter(v=>v!=null);return v.length?+(v.reduce((a,b)=>a+b)/v.length).toFixed(1):null;});primData=[...avgs,...faProjWks.map(()=>null)];}
+  if(lmMetric==='acwr'){const la=allLMWks.map((_,i)=>{const v=fp.map(p=>p.allLoads[i]).filter(v=>v!=null);return v.length?v.reduce((a,b)=>a+b)/v.length:null;});const ac2=calcACWR(la.filter(v=>v!=null));primData=[...Array(Math.max(0,realCount-ac2.length)).fill(null),...ac2,...Array(allLMWks.length-realCount+fcProjWks.length).fill(null)];}
+  else{const avgs=allLMWks.map((_,i)=>{const v=fp.map(p=>cfg.arr(p)[i]).filter(v=>v!=null);return v.length?+(v.reduce((a,b)=>a+b)/v.length).toFixed(1):null;});primData=[...avgs,...fcProjWks.map(()=>null)];}
   const spAvgT=Math.round(fp.reduce((a,p)=>a+p.spAvg,0)/fp.length);
   const baseline=allLbls.map(()=>spAvgT);
   const projData=allLbls.map((_,i)=>i>=realCount&&i<allLMWks.length?(primData[realCount-1]??spAvgT)*(0.85+i*0.02):i>=allLMWks.length?(fp.reduce((a,p)=>a+(p.fallProj[i-allLMWks.length]??0),0)/fp.length):null);
@@ -894,7 +894,7 @@ window.selLMPlayer=function(i){
   const z=lmZone(p.acwr);
   document.getElementById('lm-detail-card').innerHTML=`<div class="lm-dh"><div><div class="lm-dn">${p.name}</div><div class="lm-dm">${p.pos} · ${p.unit} · Spring avg: ${p.spAvg}</div></div><span class="pill ${z.cls}" style="font-size:13px;padding:5px 14px">ACWR ${p.acwr} — ${z.label}</span></div><div class="lm-detail-stats"><div class="lm-ds"><div class="dl">Player load</div><div class="dv">${p.cl||'—'}</div></div><div class="lm-ds"><div class="dl">% of spring</div><div class="dv" style="color:${p.spPct>=80?C.green:C.yellow}">${p.spPct}%</div></div><div class="lm-ds"><div class="dl">ACWR (4wk)</div><div class="dv" style="color:${z.color}">${p.acwr}</div></div><div class="lm-ds"><div class="dl">HSRD</div><div class="dv">${p.ch2?Math.round(p.ch2)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Total dist</div><div class="dv">${p.cd?Math.round(p.cd)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Max velo</div><div class="dv" style="color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1)+' mph':'—'}</div></div><div class="lm-ds"><div class="dl">Accel</div><div class="dv">${p.ca||'—'}</div></div><div class="lm-ds"><div class="dl">Decel</div><div class="dv">${p.cde||'—'}</div></div><div class="lm-ds"><div class="dl">End summer proj</div><div class="dv" style="color:${p.endSumPct>=95?C.green:p.endSumPct>=80?C.yellow:C.red}">${p.endSumPct}%</div></div><div class="lm-ds"><div class="dl">Fall W1 proj</div><div class="dv" style="color:${p.fallW1Pct>=105?C.green:p.fallW1Pct>=95?C.yellow:C.red}">${p.fallW1Pct}%</div></div></div><div style="position:relative;height:200px"><canvas id="lm-player-chart"></canvas></div>`;
   if(lmPC){lmPC.destroy();lmPC=null;}
-  const allL2=[...allLMWks,...faProjWks];const rc2=faWks.length+spWks.length+suWks.length;
+  const allL2=[...allLMWks,...fcProjWks];const rc2=faWks.length+spWks.length+suWks.length;
   const bc2=allL2.map((_,i)=>i<spWks.length?'rgba(0,48,135,0.2)':i<rc2?C.blue:i<allLMWks.length?'rgba(250,70,22,0.25)':'transparent');
   const lb2=allL2.map((_,i)=>i<allLMWks.length?(p.allLoads[i]??null):null);
   const fl2=allL2.map((_,i)=>{if(i===allLMWks.length-1)return p.allLoads[allLMWks.length-1];if(i>=allLMWks.length)return p.fallProj[i-allLMWks.length]??null;return null;});
