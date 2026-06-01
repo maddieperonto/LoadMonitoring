@@ -100,14 +100,18 @@ if (is.null(profiles_raw) || length(profiles_raw) == 0) {
   cat("[VALD Sync] No profiles — will use profileId as athlete name.\n")
   profiles_df <- data.frame(profileId = character(), name = character(), stringsAsFactors = FALSE)
 } else {
-  cat("[VALD Sync] Profiles response columns:", paste(names(as.data.frame(profiles_raw)), collapse=", "), "\n")
-  profiles_df <- data.frame(profileId = character(), name = character(), stringsAsFactors = FALSE)
+  pdf <- as.data.frame(profiles_raw)
+  names(pdf) <- gsub("^profiles\\.", "", names(pdf))
+  profiles_df <- pdf |>
+    mutate(profileId = as.character(profileId), name = paste(as.character(givenName), as.character(familyName))) |>
+    select(profileId, name)
+  cat("[VALD Sync]", nrow(profiles_df), "profiles fetched.\n")
 }
 
 # ── Step 3: ForceDecks ────────────────────────────────────────────────────
 cat("[VALD Sync] Fetching ForceDecks tests...\n")
 last_cmj  <- get_last_sync("cmj_tests", "test_date")
-from_utc  <- format(if (is.null(last_cmj)) Sys.time()-days(LOOKBACK_DAYS) else last_cmj-days(1), "%Y-%m-%dT%H:%M:%SZ")
+from_utc  <- format(if (is.null(last_cmj)) Sys.time()-days(365) else last_cmj-days(1), "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] ForceDecks from:", from_utc, "\n")
 
 fd_raw <- vald_get("/tests", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = from_utc), base_url = VALD_FD_BASE)
@@ -154,7 +158,7 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
 # ── Step 4: NordBord ──────────────────────────────────────────────────────
 cat("[VALD Sync] Fetching NordBord tests...\n")
 last_nord    <- get_last_sync("nordbord_tests", "test_date")
-from_utc_nb  <- format(if (is.null(last_nord)) Sys.time()-days(LOOKBACK_DAYS) else last_nord-days(1), "%Y-%m-%dT%H:%M:%SZ")
+from_utc_nb  <- format(if (is.null(last_nord)) Sys.time()-days(365) else last_nord-days(1), "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] NordBord from:", from_utc_nb, "\n")
 
 nb_raw <- vald_get("/tests/v2", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = from_utc_nb), base_url = VALD_NORD_BASE)
