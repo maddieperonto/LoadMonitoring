@@ -28,7 +28,7 @@ SUPABASE_URL         <- Sys.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY <- Sys.getenv("SUPABASE_SERVICE_KEY")
 
 VALD_TOKEN_URL <- "https://auth.prd.vald.com/oauth/token"
-VALD_API_BASE        <- "https://api.vald.com"
+VALD_API_BASE <- "https://prd-use-api-external.valdperformance.com"
 
 # How far back to look for new tests (days)
 # On first run this will be large; subsequent runs only fetch recent data
