@@ -55,7 +55,8 @@ token_resp <- request(VALD_TOKEN_URL) |>
   req_body_form(
     grant_type    = "client_credentials",
     client_id     = VALD_CLIENT_ID,
-    client_secret = VALD_CLIENT_SECRET
+    client_secret = VALD_CLIENT_SECRET,
+    audience      = "https://api.vald.com"
   ) |>
   req_error(is_error = function(resp) FALSE) |>
   req_perform()
