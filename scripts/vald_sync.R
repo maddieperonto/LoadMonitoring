@@ -95,7 +95,7 @@ get_last_sync <- function(table, date_col) {
 
 # ── Step 2: Fetch profiles ────────────────────────────────────────────────
 cat("[VALD Sync] Fetching athlete profiles...\n")
-profiles_raw <- vald_get("/profiles/v2", query = list(tenantId = VALD_TENANT_ID), base_url = VALD_PROF_BASE)
+profiles_raw <- vald_get("/profiles", query = list(tenantId = VALD_TENANT_ID), base_url = VALD_PROF_BASE)
 if (is.null(profiles_raw) || length(profiles_raw) == 0) {
   cat("[VALD Sync] No profiles — will use profileId as athlete name.\n")
   profiles_df <- data.frame(profileId = character(), name = character(), stringsAsFactors = FALSE)
