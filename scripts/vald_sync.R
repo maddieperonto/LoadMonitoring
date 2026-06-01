@@ -28,7 +28,9 @@ SUPABASE_URL         <- Sys.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY <- Sys.getenv("SUPABASE_SERVICE_KEY")
 
 VALD_TOKEN_URL <- "https://auth.prd.vald.com/oauth/token"
-VALD_API_BASE <- "https://prd-use-api-external.valdperformance.com"
+VALD_FD_BASE   <- "https://prd-use-api-extforcedecks.valdperformance.com"
+VALD_NORD_BASE <- "https://prd-use-api-extnordbord.valdperformance.com"
+VALD_PROF_BASE <- "https://prd-use-api-extprofile.valdperformance.com"
 
 # How far back to look for new tests (days)
 # On first run this will be large; subsequent runs only fetch recent data
@@ -72,8 +74,8 @@ cat("[VALD Sync] Token obtained. Expires in", token_data$expires_in, "seconds.\n
 
 # ── Helper: authenticated VALD GET ────────────────────────────────────────
 vald_get <- function(path, query = list()) {
-  req <- request(paste0(VALD_API_BASE, path)) |>
-    req_auth_bearer_token(access_token) |>
+  vald_get <- function(path, query = list(), base = VALD_PROF_BASE) {
+  req <- request(paste0(base, path)) |>
     req_headers(Accept = "application/json") |>
     req_error(is_error = function(resp) FALSE)
 
@@ -144,7 +146,8 @@ cat("[VALD Sync] Fetching athlete profiles...\n")
 
 profiles_raw <- vald_get(
   "/profiles/v2",
-  query = list(tenantId = VALD_TENANT_ID)
+  query = list(tenantId = VALD_TENANT_ID),
+  base = VALD_PROF_BASE
 )
 
 if (is.null(profiles_raw) || length(profiles_raw) == 0) {
@@ -176,11 +179,12 @@ from_utc <- format(from_date, "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] ForceDecks: fetching from", from_utc, "\n")
 
 fd_raw <- vald_get(
-  "/forcedecks/v2021q2/tests",
+  "/tests",
   query = list(
-    tenantId       = VALD_TENANT_ID,
+    tenantId        = VALD_TENANT_ID,
     modifiedFromUtc = from_utc
-  )
+  ),
+  base = VALD_FD_BASE
 )
 
 if (!is.null(fd_raw) && length(fd_raw) > 0) {
@@ -253,11 +257,12 @@ from_utc_nb <- format(from_date_nb, "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] NordBord: fetching from", from_utc_nb, "\n")
 
 nb_raw <- vald_get(
-  "/nordbord/v2/tests",
+  "/tests/v2",
   query = list(
     tenantId        = VALD_TENANT_ID,
     modifiedFromUtc = from_utc_nb
-  )
+  ),
+  base = VALD_NORD_BASE
 )
 
 if (!is.null(nb_raw) && length(nb_raw) > 0) {
