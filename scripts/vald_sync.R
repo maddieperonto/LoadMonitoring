@@ -27,7 +27,7 @@ VALD_TENANT_ID       <- Sys.getenv("VALD_DUENDE_ID")
 SUPABASE_URL         <- Sys.getenv("SUPABASE_URL")
 SUPABASE_SERVICE_KEY <- Sys.getenv("SUPABASE_SERVICE_KEY")
 
-VALD_TOKEN_URL       <- "https://auth.prd.vald.com/oauth/token"
+VALD_TOKEN_URL <- "https://security.valdperformance.com/connect/token"
 VALD_API_BASE        <- "https://api.vald.com"
 
 # How far back to look for new tests (days)
@@ -55,8 +55,7 @@ token_resp <- request(VALD_TOKEN_URL) |>
   req_body_form(
     grant_type    = "client_credentials",
     client_id     = VALD_CLIENT_ID,
-    client_secret = VALD_CLIENT_SECRET,
-    audience      = "https://api.vald.com"
+    client_secret = VALD_CLIENT_SECRET
   ) |>
   req_error(is_error = function(resp) FALSE) |>
   req_perform()
