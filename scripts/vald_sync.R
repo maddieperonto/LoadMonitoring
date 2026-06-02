@@ -126,7 +126,7 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
       mutate(
         athlete_name    = coalesce(name, as.character(profileId)),
         test_date       = as.character(as.Date(recordedDateUtc)),
-        vald_test_id    = as.character(id),
+        vald_test_id    = as.character(testId),
         vald_profile_id = as.character(profileId)
       )
   }, error = function(e) { cat("[VALD Sync] Parse error FD:", conditionMessage(e), "\n"); NULL })
