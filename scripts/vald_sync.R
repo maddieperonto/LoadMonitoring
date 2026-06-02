@@ -176,7 +176,7 @@ if (!is.null(nb_raw) && length(nb_raw) > 0) {
       mutate(
         athlete_name    = coalesce(name, as.character(profileId)),
         test_date       = as.character(as.Date(testDateUtc)),
-        vald_test_id    = as.character(id),
+        vald_test_id    = as.character(testId),
         vald_profile_id = as.character(profileId)
       )
   }, error = function(e) { cat("[VALD Sync] Parse error NB:", conditionMessage(e), "\n"); NULL })
@@ -184,8 +184,8 @@ if (!is.null(nb_raw) && length(nb_raw) > 0) {
   if (!is.null(nb_df) && nrow(nb_df) > 0) {
     nord_rows <- nb_df |>
       mutate(
-        left_peak_force_n  = as.numeric(leftPeakForce),
-        right_peak_force_n = as.numeric(rightPeakForce),
+        left_peak_force_n  = as.numeric(leftMaxForce),
+        right_peak_force_n = as.numeric(rightMaxForce),
         lsi_pct = case_when(
           !is.na(left_peak_force_n) & !is.na(right_peak_force_n) & pmax(left_peak_force_n,right_peak_force_n)>0 ~
             round(pmin(left_peak_force_n,right_peak_force_n)/pmax(left_peak_force_n,right_peak_force_n)*100, 1),
