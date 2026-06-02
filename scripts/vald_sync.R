@@ -125,7 +125,7 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
       left_join(profiles_df, by = c("profileId" = "profileId")) |> 
       mutate(
         athlete_name    = coalesce(name, as.character(profileId)),
-        test_date       = as.character(as.Date(testDateUtc)),
+        test_date       = as.character(as.Date(recordedDateUtc)),
         vald_test_id    = as.character(id),
         vald_profile_id = as.character(profileId)
       )
