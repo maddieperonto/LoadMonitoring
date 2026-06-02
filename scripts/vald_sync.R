@@ -70,7 +70,7 @@ sb_upsert <- function(table, rows) {
       apikey         = SUPABASE_SERVICE_KEY,
       Authorization  = paste("Bearer", SUPABASE_SERVICE_KEY),
       "Content-Type" = "application/json",
-      Prefer         = "resolution=merge-duplicates"
+      Prefer         = "return=minimal,resolution=merge-duplicates"
     ) |>
     req_body_json(rows) |>
     req_error(is_error = function(resp) FALSE) |>
