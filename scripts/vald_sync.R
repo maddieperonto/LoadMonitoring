@@ -139,15 +139,16 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
         NA_real_
       })
     }
+    has_results <- "attributes" %in% names(fd_df)
     cmj_rows <- fd_df |>
       mutate(
-        jump_height_cm             = if("results"%in%names(.)) extract_metric(results,"jump height") else NA_real_,
-        peak_force_n               = if("results"%in%names(.)) extract_metric(results,"peak force") else NA_real_,
-        peak_power_w               = if("results"%in%names(.)) extract_metric(results,"peak power") else NA_real_,
-        rsi_modified               = if("results"%in%names(.)) extract_metric(results,"rsi-modified") else NA_real_,
-        concentric_impulse_ns      = if("results"%in%names(.)) extract_metric(results,"concentric impulse") else NA_real_,
-        eccentric_decel_impulse_ns = if("results"%in%names(.)) extract_metric(results,"eccentric deceleration impulse") else NA_real_,
-        asymmetry_index_pct        = if("results"%in%names(.)) extract_metric(results,"asymmetry index") else NA_real_
+        jump_height_cm             = if(has_results) extract_metric(attributes,"jump height") else NA_real_,
+        peak_force_n               = if(has_results) extract_metric(attributes,"peak force") else NA_real_,
+        peak_power_w               = if(has_results) extract_metric(attributes,"peak power") else NA_real_,
+        rsi_modified               = if(has_results) extract_metric(attributes,"rsi-modified") else NA_real_,
+        concentric_impulse_ns      = if(has_results) extract_metric(attributes,"concentric impulse") else NA_real_,
+        eccentric_decel_impulse_ns = if(has_results) extract_metric(attributes,"eccentric deceleration impulse") else NA_real_,
+        asymmetry_index_pct        = if(has_results) extract_metric(attributes,"asymmetry index") else NA_real_
       ) |>
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
