@@ -120,7 +120,8 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
   fd_df <- tryCatch({
     fdf <- as.data.frame(fd_raw)
     names(fdf) <- gsub("^tests\\.", "", names(fdf))
-    fdf |>
+    cat("[VALD Sync] ForceDecks columns:", paste(names(fdf), collapse=", "), "\n")
+    fdf |> 
       left_join(profiles_df, by = c("profileId" = "profileId")) |> 
       mutate(
         athlete_name    = coalesce(name, as.character(profileId)),
@@ -169,6 +170,7 @@ if (!is.null(nb_raw) && length(nb_raw) > 0) {
   nb_df <- tryCatch({
     ndf <- as.data.frame(nb_raw)
     names(ndf) <- gsub("^tests\\.", "", names(ndf))
+    cat("[VALD Sync] NordBord columns:", paste(names(ndf), collapse=", "), "\n")
     ndf |>
       left_join(profiles_df, by = c("profileId" = "profileId")) |> 
       mutate(
