@@ -118,8 +118,10 @@ fd_raw <- vald_get("/tests", query = list(tenantId = VALD_TENANT_ID, modifiedFro
 
 if (!is.null(fd_raw) && length(fd_raw) > 0) {
   fd_df <- tryCatch({
-    as.data.frame(fd_raw) |>
-      left_join(profiles_df, by = c("profileId" = "profileId")) |>
+    fdf <- as.data.frame(fd_raw)
+    names(fdf) <- gsub("^tests\\.", "", names(fdf))
+    fdf |>
+      left_join(profiles_df, by = c("profileId" = "profileId")) |> 
       mutate(
         athlete_name    = coalesce(name, as.character(profileId)),
         test_date       = as.character(as.Date(testDateUtc)),
@@ -165,8 +167,10 @@ nb_raw <- vald_get("/tests/v2", query = list(tenantId = VALD_TENANT_ID, modified
 
 if (!is.null(nb_raw) && length(nb_raw) > 0) {
   nb_df <- tryCatch({
-    as.data.frame(nb_raw) |>
-      left_join(profiles_df, by = c("profileId" = "profileId")) |>
+    ndf <- as.data.frame(nb_raw)
+    names(ndf) <- gsub("^tests\\.", "", names(ndf))
+    ndf |>
+      left_join(profiles_df, by = c("profileId" = "profileId")) |> 
       mutate(
         athlete_name    = coalesce(name, as.character(profileId)),
         test_date       = as.character(as.Date(testDateUtc)),
