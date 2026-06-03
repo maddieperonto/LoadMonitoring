@@ -18,6 +18,7 @@ VALD_TOKEN_URL <- "https://auth.prd.vald.com/oauth/token"
 VALD_PROF_BASE <- "https://prd-use-api-externalprofile.valdperformance.com"
 VALD_FD_BASE   <- "https://prd-use-api-extforcedecks.valdperformance.com"
 VALD_NORD_BASE <- "https://prd-use-api-externalnordbord.valdperformance.com"
+VALD_TEAM_ID   <- "f7baafec-7022-4247-8474-1fe92062c787"
 LOOKBACK_DAYS  <- 7
 
 cat("[VALD Sync] Starting at", format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC"), "\n")
@@ -166,42 +167,46 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
 
   if (!is.null(fd_df) && nrow(fd_df) > 0) {
     # Extract all params for each row safely
-    get_val <- function(row_idx, keywords) {
-      tryCatch({
-        p_row <- fd_df$parameter[row_idx]
-        ep_row <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[row_idx]] else NULL
-        
-        # Build combined params data frame
-        all_params <- data.frame(resultId=character(), value=numeric(), stringsAsFactors=FALSE)
-        
-        if (!is.null(p_row) && !is.na(p_row$resultId)) {
-          all_params <- rbind(all_params, data.frame(resultId=as.character(p_row$resultId), value=as.numeric(p_row$value), stringsAsFactors=FALSE))
-        }
-        if (!is.null(ep_row) && is.data.frame(ep_row) && nrow(ep_row) > 0) {
-          all_params <- rbind(all_params, data.frame(resultId=as.character(ep_row$resultId), value=as.numeric(ep_row$value), stringsAsFactors=FALSE))
-        }
-        
-        if (nrow(all_params) == 0) return(NA_real_)
-        
-        for (rid in all_params$resultId) {
+    # Fetch trials for each test to get actual metrics
+    cat("[VALD Sync] Fetching trials for", nrow(fd_df), "tests...\n")
+    
+    get_trial_metric <- function(trials, keywords) {
+      if (is.null(trials) || length(trials) == 0) return(NA_real_)
+      if (!is.data.frame(trials)) return(NA_real_)
+      if (!"results" %in% names(trials)) return(NA_real_)
+      for (i in seq_len(nrow(trials))) {
+        res <- trials$results[[i]]
+        if (is.null(res) || !is.data.frame(res)) next
+        for (j in seq_len(nrow(res))) {
+          rid <- as.character(res$resultId[j])
           rname <- tolower(rd_lookup[[rid]] %||% "")
           if (any(sapply(keywords, function(k) grepl(k, rname, fixed=TRUE)))) {
-            return(as.numeric(all_params$value[all_params$resultId == rid][1]))
+            return(as.numeric(res$value[j]))
           }
         }
-        NA_real_
-      }, error = function(e) NA_real_)
+      }
+      NA_real_
     }
+
+    trial_data <- lapply(fd_df$testId, function(tid) {
+      tr <- vald_get(
+        paste0("/v2019q3/teams/", VALD_TEAM_ID, "/tests/", tid, "/trials"),
+        query = list(),
+        base_url = VALD_FD_BASE
+      )
+      Sys.sleep(0.1)  # rate limit
+      tr
+    })
 
     cmj_rows <- fd_df |>
       mutate(
-        jump_height_cm             = sapply(seq_len(n()), function(i) get_val(i, c("jump height","jump_height"))),
-        peak_force_n               = sapply(seq_len(n()), function(i) get_val(i, c("peak force","peak_force"))),
-        peak_power_w               = sapply(seq_len(n()), function(i) get_val(i, c("peak power","peak_power"))),
-        rsi_modified               = sapply(seq_len(n()), function(i) get_val(i, c("rsi-modified","rsi modified"))),
-        concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_val(i, c("concentric impulse"))),
-        eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_val(i, c("eccentric decel"))),
-        asymmetry_index_pct        = sapply(seq_len(n()), function(i) get_val(i, c("asymmetry index")))
+        jump_height_cm             = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("jump height"))),
+        peak_force_n               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak force"))),
+        peak_power_w               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak power"))),
+        rsi_modified               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("rsi-modified","rsi modified"))),
+        concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("concentric impulse"))),
+        eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric decel"))),
+        asymmetry_index_pct        = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("asymmetry index")))
       ) |>
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
