@@ -163,35 +163,43 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
   }, error = function(e) { cat("[VALD Sync] Parse error FD:", conditionMessage(e), "\n"); NULL })
 
   if (!is.null(fd_df) && nrow(fd_df) > 0) {
+    # Extract all params for each row safely
+    get_val <- function(row_idx, keywords) {
+      tryCatch({
+        p_row <- fd_df$parameter[row_idx]
+        ep_row <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[row_idx]] else NULL
+        
+        # Build combined params data frame
+        all_params <- data.frame(resultId=character(), value=numeric(), stringsAsFactors=FALSE)
+        
+        if (!is.null(p_row) && !is.na(p_row$resultId)) {
+          all_params <- rbind(all_params, data.frame(resultId=as.character(p_row$resultId), value=as.numeric(p_row$value), stringsAsFactors=FALSE))
+        }
+        if (!is.null(ep_row) && is.data.frame(ep_row) && nrow(ep_row) > 0) {
+          all_params <- rbind(all_params, data.frame(resultId=as.character(ep_row$resultId), value=as.numeric(ep_row$value), stringsAsFactors=FALSE))
+        }
+        
+        if (nrow(all_params) == 0) return(NA_real_)
+        
+        for (rid in all_params$resultId) {
+          rname <- tolower(rd_lookup[[rid]] %||% "")
+          if (any(sapply(keywords, function(k) grepl(k, rname, fixed=TRUE)))) {
+            return(as.numeric(all_params$value[all_params$resultId == rid][1]))
+          }
+        }
+        NA_real_
+      }, error = function(e) NA_real_)
+    }
+
     cmj_rows <- fd_df |>
       mutate(
-        jump_height_cm = sapply(seq_len(n()), function(i) {
-          p <- if("parameter" %in% names(fd_df)) list(fd_df$parameter[[i]]) else list()
-          ep <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[i]] else NULL
-          all_p <- if(is.data.frame(ep)) rbind(as.data.frame(p[[1]]), ep) else as.data.frame(p[[1]])
-          get_result_val(all_p, c("jump height","jump_height"))
-        }),
-        peak_force_n = sapply(seq_len(n()), function(i) {
-          p <- if("parameter" %in% names(fd_df)) list(fd_df$parameter[[i]]) else list()
-          ep <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[i]] else NULL
-          all_p <- if(is.data.frame(ep)) rbind(as.data.frame(p[[1]]), ep) else as.data.frame(p[[1]])
-          get_result_val(all_p, c("peak force","peak_force"))
-        }),
-        peak_power_w = NA_real_,
-        rsi_modified = sapply(seq_len(n()), function(i) {
-          p <- if("parameter" %in% names(fd_df)) list(fd_df$parameter[[i]]) else list()
-          ep <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[i]] else NULL
-          all_p <- if(is.data.frame(ep)) rbind(as.data.frame(p[[1]]), ep) else as.data.frame(p[[1]])
-          get_result_val(all_p, c("rsi","reactive strength"))
-        }),
-        concentric_impulse_ns = NA_real_,
-        eccentric_decel_impulse_ns = NA_real_,
-        asymmetry_index_pct = sapply(seq_len(n()), function(i) {
-          p <- if("parameter" %in% names(fd_df)) list(fd_df$parameter[[i]]) else list()
-          ep <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[i]] else NULL
-          all_p <- if(is.data.frame(ep)) rbind(as.data.frame(p[[1]]), ep) else as.data.frame(p[[1]])
-          get_result_val(all_p, c("asymmetry","asym"))
-        })
+        jump_height_cm             = sapply(seq_len(n()), function(i) get_val(i, c("jump height","jump_height"))),
+        peak_force_n               = sapply(seq_len(n()), function(i) get_val(i, c("peak force","peak_force"))),
+        peak_power_w               = sapply(seq_len(n()), function(i) get_val(i, c("peak power","peak_power"))),
+        rsi_modified               = sapply(seq_len(n()), function(i) get_val(i, c("rsi-modified","rsi modified"))),
+        concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_val(i, c("concentric impulse"))),
+        eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_val(i, c("eccentric decel"))),
+        asymmetry_index_pct        = sapply(seq_len(n()), function(i) get_val(i, c("asymmetry index")))
       ) |>
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
