@@ -114,8 +114,7 @@ last_cmj  <- get_last_sync("cmj_tests", "test_date")
 from_utc  <- format(if (is.null(last_cmj)) Sys.time()-days(365) else last_cmj-days(1), "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] ForceDecks from:", from_utc, "\n")
 
-fd_raw <- vald_get("/tests", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = from_utc), base_url = VALD_FD_BASE)
-
+fd_raw <- vald_get("/tests/results", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = from_utc), base_url = VALD_FD_BASE)
 if (!is.null(fd_raw) && length(fd_raw) > 0) {
   fd_df <- tryCatch({
     fdf <- as.data.frame(fd_raw)
