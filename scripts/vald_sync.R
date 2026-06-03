@@ -121,6 +121,8 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
     fdf <- as.data.frame(fd_raw)
     names(fdf) <- gsub("^tests\\.", "", names(fdf))
     cat("[VALD Sync] ForceDecks columns:", paste(names(fdf), collapse=", "), "\n")
+    cat("[VALD Sync] Sample extendedParameters:", jsonlite::toJSON(fdf$extendedParameters[[1]]), "\n")
+    cat("[VALD Sync] Sample attributes:", jsonlite::toJSON(fdf$attributes[[1]]), "\n")
     fdf |> 
       left_join(profiles_df, by = c("profileId" = "profileId")) |> 
       mutate(
