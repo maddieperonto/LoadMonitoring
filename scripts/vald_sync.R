@@ -109,21 +109,51 @@ if (is.null(profiles_raw) || length(profiles_raw) == 0) {
 }
 
 # ── Step 3: ForceDecks ────────────────────────────────────────────────────
+cat("[VALD Sync] Fetching ForceDecks result definitions...\n")
+rd_raw <- vald_get("/resultdefinitions", query = list(), base_url = VALD_FD_BASE)
+rd_lookup <- list()
+if (!is.null(rd_raw) && length(rd_raw) > 0) {
+  rd_df <- as.data.frame(rd_raw)
+  if ("resultDefinitions" %in% names(rd_df)) rd_df <- as.data.frame(rd_df$resultDefinitions)
+  names(rd_df) <- gsub("^resultDefinitions\\.", "", names(rd_df))
+  for (i in seq_len(nrow(rd_df))) {
+    rid <- as.character(rd_df$resultId[i])
+    rname <- tolower(as.character(rd_df$resultName[i]))
+    rd_lookup[[rid]] <- rname
+  }
+  cat("[VALD Sync]", length(rd_lookup), "result definitions loaded.\n")
+}
+
+get_result_val <- function(params, target_strings) {
+  if (is.null(params) || length(params) == 0) return(NA_real_)
+  if (is.data.frame(params)) {
+    for (rid in as.character(params$resultId)) {
+      name <- tolower(rd_lookup[[rid]] %||% "")
+      if (any(sapply(target_strings, function(t) grepl(t, name, fixed=TRUE)))) {
+        idx <- which(as.character(params$resultId) == rid)[1]
+        return(as.numeric(params$value[idx]))
+      }
+    }
+  }
+  NA_real_
+}
+`%||%` <- function(a, b) if (!is.null(a)) a else b
+
 cat("[VALD Sync] Fetching ForceDecks tests...\n")
 last_cmj  <- get_last_sync("cmj_tests", "test_date")
 from_utc  <- format(if (is.null(last_cmj)) Sys.time()-days(365) else last_cmj-days(1), "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] ForceDecks from:", from_utc, "\n")
 
-fd_raw <- vald_get("/tests/results", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = from_utc), base_url = VALD_FD_BASE)
+fd_raw <- vald_get("/tests", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = from_utc), base_url = VALD_FD_BASE)
+
 if (!is.null(fd_raw) && length(fd_raw) > 0) {
+  fdf <- as.data.frame(fd_raw)
+  names(fdf) <- gsub("^tests\\.", "", names(fdf))
+  cat("[VALD Sync] ForceDecks columns:", paste(names(fdf), collapse=", "), "\n")
+  
   fd_df <- tryCatch({
-    fdf <- as.data.frame(fd_raw)
-    names(fdf) <- gsub("^tests\\.", "", names(fdf))
-    cat("[VALD Sync] ForceDecks columns:", paste(names(fdf), collapse=", "), "\n")
-    cat("[VALD Sync] Sample extendedParameters:", jsonlite::toJSON(fdf$extendedParameters[[1]]), "\n")
-    cat("[VALD Sync] Sample attributes:", jsonlite::toJSON(fdf$attributes[[1]]), "\n")
-    fdf |> 
-      left_join(profiles_df, by = c("profileId" = "profileId")) |> 
+    fdf |>
+      left_join(profiles_df, by = c("profileId" = "profileId")) |>
       mutate(
         athlete_name    = coalesce(name, as.character(profileId)),
         test_date       = as.character(as.Date(recordedDateUtc)),
@@ -133,28 +163,41 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
   }, error = function(e) { cat("[VALD Sync] Parse error FD:", conditionMessage(e), "\n"); NULL })
 
   if (!is.null(fd_df) && nrow(fd_df) > 0) {
-    extract_metric <- function(results_col, metric_name) {
-      sapply(results_col, function(r) {
-        if (is.null(r) || length(r) == 0) return(NA_real_)
-        if (is.data.frame(r)) { idx <- which(tolower(r$metric)==tolower(metric_name)); if(length(idx)==0) return(NA_real_); return(as.numeric(r$value[idx[1]])) }
-        NA_real_
-      })
-    }
-    has_results <- "attributes" %in% names(fd_df)
     cmj_rows <- fd_df |>
       mutate(
-        jump_height_cm             = if(has_results) extract_metric(attributes,"jump height") else NA_real_,
-        peak_force_n               = if(has_results) extract_metric(attributes,"peak force") else NA_real_,
-        peak_power_w               = if(has_results) extract_metric(attributes,"peak power") else NA_real_,
-        rsi_modified               = if(has_results) extract_metric(attributes,"rsi-modified") else NA_real_,
-        concentric_impulse_ns      = if(has_results) extract_metric(attributes,"concentric impulse") else NA_real_,
-        eccentric_decel_impulse_ns = if(has_results) extract_metric(attributes,"eccentric deceleration impulse") else NA_real_,
-        asymmetry_index_pct        = if(has_results) extract_metric(attributes,"asymmetry index") else NA_real_
+        jump_height_cm = sapply(seq_len(n()), function(i) {
+          p <- if("parameter" %in% names(fd_df)) list(fd_df$parameter[[i]]) else list()
+          ep <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[i]] else NULL
+          all_p <- if(is.data.frame(ep)) rbind(as.data.frame(p[[1]]), ep) else as.data.frame(p[[1]])
+          get_result_val(all_p, c("jump height","jump_height"))
+        }),
+        peak_force_n = sapply(seq_len(n()), function(i) {
+          p <- if("parameter" %in% names(fd_df)) list(fd_df$parameter[[i]]) else list()
+          ep <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[i]] else NULL
+          all_p <- if(is.data.frame(ep)) rbind(as.data.frame(p[[1]]), ep) else as.data.frame(p[[1]])
+          get_result_val(all_p, c("peak force","peak_force"))
+        }),
+        peak_power_w = NA_real_,
+        rsi_modified = sapply(seq_len(n()), function(i) {
+          p <- if("parameter" %in% names(fd_df)) list(fd_df$parameter[[i]]) else list()
+          ep <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[i]] else NULL
+          all_p <- if(is.data.frame(ep)) rbind(as.data.frame(p[[1]]), ep) else as.data.frame(p[[1]])
+          get_result_val(all_p, c("rsi","reactive strength"))
+        }),
+        concentric_impulse_ns = NA_real_,
+        eccentric_decel_impulse_ns = NA_real_,
+        asymmetry_index_pct = sapply(seq_len(n()), function(i) {
+          p <- if("parameter" %in% names(fd_df)) list(fd_df$parameter[[i]]) else list()
+          ep <- if("extendedParameters" %in% names(fd_df)) fd_df$extendedParameters[[i]] else NULL
+          all_p <- if(is.data.frame(ep)) rbind(as.data.frame(p[[1]]), ep) else as.data.frame(p[[1]])
+          get_result_val(all_p, c("asymmetry","asym"))
+        })
       ) |>
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
              concentric_impulse_ns, eccentric_decel_impulse_ns, asymmetry_index_pct) |>
       filter(!is.na(test_date))
+
     cat("[VALD Sync]", nrow(cmj_rows), "ForceDecks rows to upsert.\n")
     sb_upsert("cmj_tests", cmj_rows)
   }
