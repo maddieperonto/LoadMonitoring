@@ -190,8 +190,7 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
       if (!is.data.frame(trials)) return(NA_real_)
       if (!"results" %in% names(trials)) return(NA_real_)
       all_names <- unique(unlist(lapply(trials$results, function(r) if(is.data.frame(r)) sapply(as.character(r$resultId), function(id) rd_lookup[[id]]%||%"") else c())))
-      asym_names <- all_names[grepl("asym|lsi|symmetr", all_names, ignore.case=TRUE)]
-      cat("[VALD Sync] Asymmetry metrics found:", paste(asym_names, collapse=", "), "\n")
+      
       for (i in seq_len(nrow(trials))) {
         res <- trials$results[[i]]
         if (is.null(res) || !is.data.frame(res)) next
