@@ -190,7 +190,7 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
       if (!is.data.frame(trials)) return(NA_real_)
       if (!"results" %in% names(trials)) return(NA_real_)
       all_names <- unique(unlist(lapply(trials$results, function(r) if(is.data.frame(r)) sapply(as.character(r$resultId), function(id) rd_lookup[[id]]%||%"") else c())))
-      cat("[VALD Sync] Available metrics:", paste(head(all_names,20), collapse=", "), "\n")
+      cat("[VALD Sync] Available metrics:", paste(all_names, collapse=", "), "\n")
       for (i in seq_len(nrow(trials))) {
         res <- trials$results[[i]]
         if (is.null(res) || !is.data.frame(res)) next
@@ -221,13 +221,13 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
 
     cmj_rows <- fd_df |>
       mutate(
-        jump_height_cm             = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("jump height"))),
+        jump_height_cm             = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("jump height (flight time)"))),
         peak_force_n               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak force"))),
-        peak_power_w               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak power"))),
-        rsi_modified               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("rsi-modified","rsi modified"))),
+        peak_power_w               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak power / bm","peak power"))),
+        rsi_modified               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("rsi-modified","rsi modified","reactive strength"))),
         concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("concentric impulse"))),
         eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric decel"))),
-        asymmetry_index_pct = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("asymmetry","asym","lsi")))      ) |>
+        asymmetry_index_pct        = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("asym","lsi","symmetry")))
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
              concentric_impulse_ns, eccentric_decel_impulse_ns, asymmetry_index_pct) |>
