@@ -230,7 +230,8 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
              concentric_impulse_ns, eccentric_decel_impulse_ns, asymmetry_index_pct) |>
-      filter(!is.na(test_date))
+      filter(!is.na(test_date)) |>
+      mutate(across(where(is.numeric), ~ifelse(is.nan(.), NA_real_, .)))
 
     cat("[VALD Sync]", nrow(cmj_rows), "ForceDecks rows to upsert.\n")
     sb_upsert("cmj_tests", cmj_rows)
@@ -240,7 +241,7 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
 # ── Step 4: NordBord ──────────────────────────────────────────────────────
 cat("[VALD Sync] Fetching NordBord tests...\n")
 last_nord    <- get_last_sync("nordbord_tests", "test_date")
-from_utc_nb  <- format(if (is.null(last_nord)) Sys.time()-days(365) else last_nord-days(1), "%Y-%m-%dT%H:%M:%SZ")
+from_utc_nb  <- format(if (is.null(last_nord)) as.POSIXct("2026-01-01T00:00:00Z", tz="UTC") else last_nord-days(1), "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] NordBord from:", from_utc_nb, "\n")
 
 nb_raw <- vald_get("/tests/v2", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = from_utc_nb), base_url = VALD_NORD_BASE)
