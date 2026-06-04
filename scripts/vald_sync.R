@@ -73,7 +73,7 @@ sb_upsert <- function(table, rows) {
       "Content-Type" = "application/json",
       Prefer         = "return=minimal,resolution=merge-duplicates"
     ) |>
-    req_body_json(rows) |>
+    req_body_raw(jsonlite::toJSON(rows, na="null", auto_unbox=TRUE), type="application/json") |>
     req_error(is_error = function(resp) FALSE) |>
     req_perform()
   status <- resp_status(resp)
