@@ -225,8 +225,7 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
         rsi_modified               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("rsi-modified","rsi modified"))),
         concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("concentric impulse"))),
         eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric decel"))),
-        asymmetry_index_pct        = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("asymmetry index")))
-      ) |>
+        asymmetry_index_pct = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("asymmetry","asym","lsi")))      ) |>
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
              concentric_impulse_ns, eccentric_decel_impulse_ns, asymmetry_index_pct) |>
