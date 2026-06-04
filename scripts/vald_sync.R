@@ -142,10 +142,24 @@ get_result_val <- function(params, target_strings) {
 
 cat("[VALD Sync] Fetching ForceDecks tests...\n")
 last_cmj  <- get_last_sync("cmj_tests", "test_date")
-from_utc  <- format(if (is.null(last_cmj)) Sys.time()-days(365) else last_cmj-days(1), "%Y-%m-%dT%H:%M:%SZ")
+from_utc  <- format(if (is.null(last_cmj)) as.POSIXct("2026-01-01T00:00:00Z", tz="UTC") else last_cmj-days(1), "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] ForceDecks from:", from_utc, "\n")
 
-fd_raw <- vald_get("/tests", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = from_utc), base_url = VALD_FD_BASE)
+all_fd <- list()
+current_from <- from_utc
+repeat {
+  fd_page <- vald_get("/tests", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = current_from), base_url = VALD_FD_BASE)
+  if (is.null(fd_page) || length(fd_page) == 0) break
+  all_fd <- c(all_fd, list(fd_page))
+  if (length(fd_page) < 50) break
+  page_df <- as.data.frame(fd_page)
+  names(page_df) <- gsub("^tests\\.", "", names(page_df))
+  current_from <- page_df$modifiedDateUtc[nrow(page_df)]
+  cat("[VALD Sync] Fetched", length(fd_page), "tests, continuing from", current_from, "\n")
+  Sys.sleep(0.5)
+}
+fd_raw <- if (length(all_fd) > 0) do.call(c, all_fd) else NULL
+cat("[VALD Sync] Total ForceDecks tests fetched:", length(fd_raw), "\n")
 
 if (!is.null(fd_raw) && length(fd_raw) > 0) {
   fdf <- as.data.frame(fd_raw)
