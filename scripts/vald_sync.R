@@ -188,13 +188,17 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
       NA_real_
     }
 
-    trial_data <- lapply(fd_df$testId, function(tid) {
+    CMJ_TYPES <- c("CMJ","CMJA","CMJL","SJ","SJA","DJ","DJA","IMTP","HOP")
+    trial_data <- lapply(seq_len(nrow(fd_df)), function(i) {
+      tid <- fd_df$testId[i]
+      ttype <- toupper(fd_df$testType[i])
+      if (!any(sapply(CMJ_TYPES, function(t) grepl(t, ttype, fixed=TRUE)))) return(NULL)
       tr <- vald_get(
         paste0("/v2019q3/teams/", VALD_TEAM_ID, "/tests/", tid, "/trials"),
         query = list(),
         base_url = VALD_FD_BASE
       )
-      Sys.sleep(0.1)  # rate limit
+      Sys.sleep(0.1)
       tr
     })
 
