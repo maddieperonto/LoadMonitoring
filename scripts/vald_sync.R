@@ -145,25 +145,24 @@ last_cmj  <- get_last_sync("cmj_tests", "test_date")
 from_utc  <- format(if (is.null(last_cmj)) as.POSIXct("2026-01-01T00:00:00Z", tz="UTC") else last_cmj-days(1), "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] ForceDecks from:", from_utc, "\n")
 
-all_fd <- list()
+all_fd_rows <- list()
 current_from <- from_utc
 repeat {
   fd_page <- vald_get("/tests", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = current_from), base_url = VALD_FD_BASE)
   if (is.null(fd_page) || length(fd_page) == 0) break
-  all_fd <- c(all_fd, list(fd_page))
-  if (length(fd_page) < 50) break
   page_df <- as.data.frame(fd_page)
   names(page_df) <- gsub("^tests\\.", "", names(page_df))
+  all_fd_rows <- c(all_fd_rows, list(page_df))
+  cat("[VALD Sync] Fetched page of", nrow(page_df), "tests. Total so far:", sum(sapply(all_fd_rows, nrow)), "\n")
+  if (nrow(page_df) < 50) break
   current_from <- page_df$modifiedDateUtc[nrow(page_df)]
-  cat("[VALD Sync] Fetched", length(fd_page), "tests, continuing from", current_from, "\n")
   Sys.sleep(0.5)
 }
-fd_raw <- if (length(all_fd) > 0) do.call(c, all_fd) else NULL
-cat("[VALD Sync] Total ForceDecks tests fetched:", length(fd_raw), "\n")
+fd_raw <- if (length(all_fd_rows) > 0) do.call(rbind, all_fd_rows) else NULL
+cat("[VALD Sync] Total ForceDecks tests fetched:", if(!is.null(fd_raw)) nrow(fd_raw) else 0, "\n")
 
 if (!is.null(fd_raw) && length(fd_raw) > 0) {
-  fdf <- as.data.frame(fd_raw)
-  names(fdf) <- gsub("^tests\\.", "", names(fdf))
+  fdf <- fd_raw
   cat("[VALD Sync] ForceDecks columns:", paste(names(fdf), collapse=", "), "\n")
   cat("[VALD Sync] Test types in batch:", paste(names(table(fdf$testType)), collapse=", "), "\n")
   cat("[VALD Sync] Sample recordedDateUtc:", fdf$recordedDateUtc[1], "\n")
