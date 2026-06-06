@@ -679,8 +679,9 @@ const PLAYERS=Object.values(byP).map(p=>{
 }).filter(p=>p.sessions.length>0).sort((a,b)=>a.name.localeCompare(b.name));
 
 // ── TOPBAR ────────────────────────────────────────────────────────
-const today=new Date().toISOString().slice(0,10);
-const curPh=phase(today);
+const now=new Date();
+const today=`${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}/${now.getFullYear()}`;
+const curPh=phase(today); 
 const phLbl=curPh==='Sp'?'Spring Ball':curPh==='Su'?'Summer':curPh==='Fa'?'Fall Camp':'Off Season';
 document.getElementById('tb-season').textContent=`${PLAYERS.length} Athletes · ${phLbl}`;
 
@@ -1107,10 +1108,7 @@ window.renderNord=function(){
 
 // ── INIT ──────────────────────────────────────────────────────────
 console.log('[DEBUG] PLAYERS built:', PLAYERS.length);
-if(PLAYERS.length===0){
-  document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data found. Raw rows fetched: ${raw?.length||0}. Check catapult_sessions RLS policy allows authenticated reads.</div>`;
-  throw 0;
-}
+
 setGPSView('team');
 </script>
 </body>
