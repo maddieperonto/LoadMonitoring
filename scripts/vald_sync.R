@@ -237,8 +237,8 @@ cat("[VALD Sync] Eccentric metrics available:", paste(unique(ecc_names), collaps
         rsi_modified               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("rsi-modified","rsi modified","reactive strength"))),
         concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("concentric impulse"))),
         eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric decel"))),
-        eccentric_decel_rfd_bm     = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric deceleration rfd / bm","eccentric decel rfd"))),
-        eccentric_peak_power_bm    = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak power / bm","eccentric peak power"))),
+        eccentric_decel_rfd_bm     = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric deceleration rfd / bm"))),
+        eccentric_peak_power_bm    = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak power / bm"))),
       ) |>      
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
