@@ -1009,8 +1009,8 @@ async function loadVALD(){
     SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false})
   ]);
 
-  cmjData=(cmj||[]).map(r=>({...r,pos:lookPos(r.athlete_name),unit:lookUnit(r.athlete_name)}));
-  nordData=(nord||[]).map(r=>({...r,pos:lookPos(r.athlete_name),unit:lookUnit(r.athlete_name)}));
+  cmjData=(cmj||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
+  nordData=(nord||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
 
   // Populate date selectors
   const cmjDates=[...new Set(cmjData.map(r=>r.test_date))].sort().reverse();
