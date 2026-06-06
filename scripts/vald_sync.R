@@ -245,12 +245,25 @@ last_nord    <- get_last_sync("nordbord_tests", "test_date")
 from_utc_nb  <- format(if (is.null(last_nord)) as.POSIXct("2026-01-01T00:00:00Z", tz="UTC") else last_nord-days(1), "%Y-%m-%dT%H:%M:%SZ")
 cat("[VALD Sync] NordBord from:", from_utc_nb, "\n")
 
-nb_raw <- vald_get("/tests/v2", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = from_utc_nb), base_url = VALD_NORD_BASE)
+all_nb_rows <- list()
+current_from_nb <- from_utc_nb
+repeat {
+  nb_page <- vald_get("/tests/v2", query = list(tenantId = VALD_TENANT_ID, modifiedFromUtc = current_from_nb), base_url = VALD_NORD_BASE)
+  if (is.null(nb_page) || length(nb_page) == 0) break
+  page_df_nb <- as.data.frame(nb_page)
+  names(page_df_nb) <- gsub("^tests\\.", "", names(page_df_nb))
+  all_nb_rows <- c(all_nb_rows, list(page_df_nb))
+  cat("[VALD Sync] Fetched NordBord page of", nrow(page_df_nb), "tests. Total:", sum(sapply(all_nb_rows, nrow)), "\n")
+  if (nrow(page_df_nb) < 50) break
+  current_from_nb <- page_df_nb$modifiedDateUtc[nrow(page_df_nb)]
+  Sys.sleep(0.5)
+}
+nb_raw <- if (length(all_nb_rows) > 0) do.call(rbind, all_nb_rows) else NULL
+cat("[VALD Sync] Total NordBord tests fetched:", if(!is.null(nb_raw)) nrow(nb_raw) else 0, "\n")
 
 if (!is.null(nb_raw) && length(nb_raw) > 0) {
   nb_df <- tryCatch({
-    ndf <- as.data.frame(nb_raw)
-    names(ndf) <- gsub("^tests\\.", "", names(ndf))
+    ndf <- nb_raw
     cat("[VALD Sync] NordBord columns:", paste(names(ndf), collapse=", "), "\n")
     ndf |>
       left_join(profiles_df, by = c("profileId" = "profileId")) |> 
