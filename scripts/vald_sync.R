@@ -190,12 +190,6 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
       if (!is.data.frame(trials)) return(NA_real_)
       if (!"results" %in% names(trials)) return(NA_real_)
       all_names <- unique(unlist(lapply(trials$results, function(r) if(is.data.frame(r)) sapply(as.character(r$resultId), function(id) rd_lookup[[id]]%||%"") else c())))
-      # Debug eccentric metric names
-      ecc_names <- unique(unlist(lapply(trial_data, function(t) {
-        if(is.null(t)||!is.data.frame(t)||!"results"%in%names(t)) return(c())
-        unlist(lapply(t$results, function(r) {
-          if(!is.data.frame(r)) return(c())
-          sapply(as.character(r$resultId), function(id) rd_lookup[[id]]%||%"")
       }))
   })))
 ecc_names <- ecc_names[grepl("eccentric", ecc_names, ignore.case=TRUE)]
