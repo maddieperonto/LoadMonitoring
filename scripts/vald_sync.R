@@ -227,10 +227,13 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
         rsi_modified               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("rsi-modified","rsi modified","reactive strength"))),
         concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("concentric impulse"))),
         eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric decel"))),
+        eccentric_decel_rfd_bm     = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric deceleration rfd / bm","eccentric decel rfd"))),
+        eccentric_peak_power_bm    = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak power / bm","eccentric peak power"))),
       ) |>      
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
-             concentric_impulse_ns, eccentric_decel_impulse_ns) |>
+             concentric_impulse_ns, eccentric_decel_impulse_ns,
+             eccentric_decel_rfd_bm, eccentric_peak_power_bm) |>
       filter(!is.na(test_date)) |>
       mutate(across(where(is.numeric), ~ifelse(is.nan(.), NA_real_, .)))
 
