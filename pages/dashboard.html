@@ -279,7 +279,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   </div>
   <div class="two-col">
     <div class="panel"><div class="panel-title"><i class="ti ti-run" style="color:var(--uf-orange)"></i>Top High Speed Distance (m)</div><div id="dash-hsr"></div></div>
-    <div class="panel"><div class="panel-title"><i class="ti ti-arrows-horizontal" style="color:var(--acc5)"></i>Highest Nord Asymmetry</div><div class="placeholder-state" style="min-height:100px;border:1px dashed var(--border2)"><div class="placeholder-sub" style="font-size:11px">VALD data pending automation</div></div></div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-arrows-horizontal" style="color:var(--acc5)"></i>Highest Nord Asymmetry %</div><div id="dash-nord-asymm"></div></div>
   </div>
   <div class="panel">
     <div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR Trend — Distance</div>
@@ -790,6 +790,32 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
   document.getElementById('dash-high-risk').innerHTML=riskPs.length?riskPs.map(p=>`<div class="risk-row"><div class="avatar" style="background:rgba(220,38,38,.1);color:#B91C1C">${ini(p.name)}</div><div class="rnb"><div class="rname" onclick="navTo('injury')" style="cursor:pointer">${p.name}</div><div class="flags">${p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div></div>${pill('danger','HIGH')}</div>`).join('')+(moreH>0?`<div onclick="navTo('injury')" style="text-align:center;padding:8px 0;font-family:var(--font-m);font-size:11px;color:#B91C1C;font-weight:600;cursor:pointer">+${moreH} more</div>`:''): '<div style="color:var(--text3);font-size:12px;padding:12px 0">No high risk athletes</div>';
   const topH=[...PLAYERS].filter(p=>p.totalHSR>0).sort((a,b)=>b.totalHSR-a.totalHSR).slice(0,5);
   document.getElementById('dash-hsr').innerHTML=topH.map((p,i)=>`<div class="risk-row"><div style="font-family:var(--font-d);font-size:16px;font-weight:800;width:22px;text-align:center;color:${i===0?'#B45309':i===1?'#94a3b8':i===2?'#cd7c3e':'var(--text3)'}">${i+1}</div><div class="avatar" style="background:rgba(0,48,135,.1);color:var(--uf-blue)">${ini(p.name)}</div><div class="rnb"><div class="rname" onclick="navToGPS('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer" onmouseover="this.style.color='var(--uf-orange)'" onmouseout="this.style.color='var(--uf-blue)'">${p.name}</div><div class="rpos">${p.pos} · all sessions</div></div>${pill('ok',Math.round(p.totalHSR).toLocaleString()+' m')}</div>`).join('');
+  // Nord asymmetry panel
+  const nordAsymm = await SB.from('nordbord_tests')
+    .select('athlete_name,test_date,lsi_pct,left_peak_force_n,right_peak_force_n')
+    .not('lsi_pct','is',null)
+    .gt('left_peak_force_n',0)
+    .gt('right_peak_force_n',0)
+    .order('test_date',{ascending:false})
+    .limit(200);
+  const nordRows = (nordAsymm.data||[]);
+  const latestNord = {};
+  nordRows.forEach(r=>{
+    if(!latestNord[r.athlete_name]) latestNord[r.athlete_name]=r;
+  });
+  const topAsymm = Object.values(latestNord)
+    .filter(r=>r.lsi_pct!=null&&r.lsi_pct<100)
+    .sort((a,b)=>a.lsi_pct-b.lsi_pct)
+    .slice(0,5);
+  document.getElementById('dash-nord-asymm').innerHTML = topAsymm.length
+    ? topAsymm.map((r,i)=>`
+      <div class="risk-row">
+        <div style="font-family:var(--font-d);font-size:16px;font-weight:800;width:22px;text-align:center;color:${i===0?'#B91C1C':i===1?'#92400E':'var(--text3)'}">${i+1}</div>
+        <div class="avatar" style="background:rgba(220,38,38,.1);color:#B91C1C">${ini(r.athlete_name)}</div>
+        <div class="rnb"><div class="rname">${r.athlete_name}</div><div class="rpos">${r.test_date}</div></div>
+        ${pill(r.lsi_pct<80?'danger':r.lsi_pct<90?'warn':'ok', r.lsi_pct.toFixed(1)+'%')}
+      </div>`).join('')
+    : '<div style="color:var(--text3);font-size:12px;padding:12px 0">No asymmetry data</div>';
 })();
 
 // ── ROSTER ────────────────────────────────────────────────────────
