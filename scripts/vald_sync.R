@@ -213,13 +213,15 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
         concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("concentric impulse"))),
         eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric decel"))),
         eccentric_decel_rfd_bm     = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric deceleration rfd / bm"))),
-        eccentric_peak_power_bm    = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak power / bm")))
+        eccentric_peak_power_bm    = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak power / bm"))),
+        flight_time_contraction_time = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("flight time:contraction time", "flighttime:contraction time")))
       ) |>
       mutate(across(where(is.numeric), ~ ifelse(is.nan(.), NA_real_, .))) |>
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
              concentric_impulse_ns, eccentric_decel_impulse_ns,
-             eccentric_decel_rfd_bm, eccentric_peak_power_bm) |>
+             eccentric_decel_rfd_bm, eccentric_peak_power_bm,
+             flight_time_contraction_time) |>
       filter(!is.na(test_date)) |>
       group_by(vald_test_id) |>
       slice_max(order_by = coalesce(jump_height_cm, 0), n = 1, with_ties = FALSE) |>
