@@ -20,6 +20,7 @@ VALD_FD_BASE   <- "https://prd-use-api-extforcedecks.valdperformance.com"
 VALD_NORD_BASE <- "https://prd-use-api-externalnordbord.valdperformance.com"
 VALD_TEAM_ID   <- "f7baafec-7022-4247-8474-1fe92062c787"
 LOOKBACK_DAYS  <- 7
+`%||%` <- function(a, b) if (!is.null(a)) a else b
 
 cat("[VALD Sync] Starting at", format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC"), "\n")
 
@@ -73,12 +74,13 @@ sb_upsert <- function(table, rows) {
       "Content-Type" = "application/json",
       Prefer         = "return=minimal,resolution=merge-duplicates"
     ) |>
-    req_body_raw(jsonlite::toJSON(rows, na="null", auto_unbox=TRUE), type="application/json") |>
+    req_body_raw(jsonlite::toJSON(rows, na = "null", auto_unbox = TRUE), type = "application/json") |>
     req_error(is_error = function(resp) FALSE) |>
     req_perform()
   status <- resp_status(resp)
   if (status %in% c(200, 201)) cat("[Supabase] Upserted", nrow(rows), "rows into", table, "\n")
-  else warning("[Supabase] Upsert to ", table, " failed: ", status, "\n", tryCatch(resp_body_string(resp), error=function(e)"(empty)"))
+  else warning("[Supabase] Upsert to ", table, " failed: ", status, "\n",
+               tryCatch(resp_body_string(resp), error = function(e) "(empty)"))
 }
 
 # ── Helper: last sync date ────────────────────────────────────────────────
@@ -98,18 +100,19 @@ get_last_sync <- function(table, date_col) {
 cat("[VALD Sync] Fetching athlete profiles...\n")
 profiles_raw <- vald_get("/profiles", query = list(tenantId = VALD_TENANT_ID), base_url = VALD_PROF_BASE)
 if (is.null(profiles_raw) || length(profiles_raw) == 0) {
-  cat("[VALD Sync] No profiles — will use profileId as athlete name.\n")
+  cat("[VALD Sync] No profiles returned.\n")
   profiles_df <- data.frame(profileId = character(), name = character(), stringsAsFactors = FALSE)
 } else {
   pdf <- as.data.frame(profiles_raw)
   names(pdf) <- gsub("^profiles\\.", "", names(pdf))
   profiles_df <- pdf |>
-    mutate(profileId = as.character(profileId), name = paste(as.character(givenName), as.character(familyName))) |>
+    mutate(profileId = as.character(profileId),
+           name = paste(as.character(givenName), as.character(familyName))) |>
     select(profileId, name)
   cat("[VALD Sync]", nrow(profiles_df), "profiles fetched.\n")
 }
 
-# ── Step 3: ForceDecks ────────────────────────────────────────────────────
+# ── Step 3: ForceDecks result definitions ─────────────────────────────────
 cat("[VALD Sync] Fetching ForceDecks result definitions...\n")
 rd_raw <- vald_get("/resultdefinitions", query = list(), base_url = VALD_FD_BASE)
 rd_lookup <- list()
@@ -118,31 +121,18 @@ if (!is.null(rd_raw) && length(rd_raw) > 0) {
   if ("resultDefinitions" %in% names(rd_df)) rd_df <- as.data.frame(rd_df$resultDefinitions)
   names(rd_df) <- gsub("^resultDefinitions\\.", "", names(rd_df))
   for (i in seq_len(nrow(rd_df))) {
-    rid <- as.character(rd_df$resultId[i])
-    rname <- tolower(as.character(rd_df$resultName[i]))
-    rd_lookup[[rid]] <- rname
+    rd_lookup[[as.character(rd_df$resultId[i])]] <- tolower(as.character(rd_df$resultName[i]))
   }
   cat("[VALD Sync]", length(rd_lookup), "result definitions loaded.\n")
 }
 
-get_result_val <- function(params, target_strings) {
-  if (is.null(params) || length(params) == 0) return(NA_real_)
-  if (is.data.frame(params)) {
-    for (rid in as.character(params$resultId)) {
-      name <- tolower(rd_lookup[[rid]] %||% "")
-      if (any(sapply(target_strings, function(t) grepl(t, name, fixed=TRUE)))) {
-        idx <- which(as.character(params$resultId) == rid)[1]
-        return(as.numeric(params$value[idx]))
-      }
-    }
-  }
-  NA_real_
-}
-`%||%` <- function(a, b) if (!is.null(a)) a else b
-
+# ── Step 4: ForceDecks tests ──────────────────────────────────────────────
 cat("[VALD Sync] Fetching ForceDecks tests...\n")
-last_cmj  <- get_last_sync("cmj_tests", "test_date")
-from_utc  <- format(if (is.null(last_cmj)) as.POSIXct("2026-01-01T00:00:00Z", tz="UTC") else last_cmj-days(1), "%Y-%m-%dT%H:%M:%SZ")
+last_cmj <- get_last_sync("cmj_tests", "test_date")
+from_utc <- format(
+  if (is.null(last_cmj)) as.POSIXct("2026-01-01T00:00:00Z", tz = "UTC") else last_cmj - days(1),
+  "%Y-%m-%dT%H:%M:%SZ"
+)
 cat("[VALD Sync] ForceDecks from:", from_utc, "\n")
 
 all_fd_rows <- list()
@@ -159,16 +149,13 @@ repeat {
   Sys.sleep(0.5)
 }
 fd_raw <- if (length(all_fd_rows) > 0) do.call(rbind, all_fd_rows) else NULL
-cat("[VALD Sync] Total ForceDecks tests fetched:", if(!is.null(fd_raw)) nrow(fd_raw) else 0, "\n")
+cat("[VALD Sync] Total ForceDecks tests fetched:", if (!is.null(fd_raw)) nrow(fd_raw) else 0, "\n")
 
-if (!is.null(fd_raw) && length(fd_raw) > 0) {
+if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
   fdf <- fd_raw
-  cat("[VALD Sync] ForceDecks columns:", paste(names(fdf), collapse=", "), "\n")
-  cat("[VALD Sync] Test types in batch:", paste(names(table(fdf$testType)), collapse=", "), "\n")
-  cat("[VALD Sync] Sample recordedDateUtc:", fdf$recordedDateUtc[1], "\n")
-  cat("[VALD Sync] Sample parameter:", jsonlite::toJSON(fdf$parameter[1,], auto_unbox=TRUE), "\n")
-  cat("[VALD Sync] Sample extendedParameters row 1:", jsonlite::toJSON(fdf$extendedParameters[[1]], auto_unbox=TRUE), "\n")
-  
+  cat("[VALD Sync] ForceDecks columns:", paste(names(fdf), collapse = ", "), "\n")
+  cat("[VALD Sync] Test types in batch:", paste(names(table(fdf$testType)), collapse = ", "), "\n")
+
   fd_df <- tryCatch({
     fdf |>
       left_join(profiles_df, by = c("profileId" = "profileId")) |>
@@ -181,27 +168,20 @@ if (!is.null(fd_raw) && length(fd_raw) > 0) {
   }, error = function(e) { cat("[VALD Sync] Parse error FD:", conditionMessage(e), "\n"); NULL })
 
   if (!is.null(fd_df) && nrow(fd_df) > 0) {
-    # Extract all params for each row safely
-    # Fetch trials for each test to get actual metrics
     cat("[VALD Sync] Fetching trials for", nrow(fd_df), "tests...\n")
-    
+
+    # Helper: extract metric from trials by keyword
     get_trial_metric <- function(trials, keywords) {
       if (is.null(trials) || length(trials) == 0) return(NA_real_)
       if (!is.data.frame(trials)) return(NA_real_)
       if (!"results" %in% names(trials)) return(NA_real_)
-      all_names <- unique(unlist(lapply(trials$results, function(r) if(is.data.frame(r)) sapply(as.character(r$resultId), function(id) rd_lookup[[id]]%||%"") else c())))
-      }))
-  })))
-ecc_names <- ecc_names[grepl("eccentric", ecc_names, ignore.case=TRUE)]
-cat("[VALD Sync] Eccentric metrics available:", paste(unique(ecc_names), collapse=", "), "\n")
-      
       for (i in seq_len(nrow(trials))) {
         res <- trials$results[[i]]
         if (is.null(res) || !is.data.frame(res)) next
         for (j in seq_len(nrow(res))) {
           rid <- as.character(res$resultId[j])
           rname <- tolower(rd_lookup[[rid]] %||% "")
-          if (any(sapply(keywords, function(k) grepl(k, rname, fixed=TRUE)))) {
+          if (any(sapply(keywords, function(k) grepl(k, rname, fixed = TRUE)))) {
             return(as.numeric(res$value[j]))
           }
         }
@@ -209,14 +189,15 @@ cat("[VALD Sync] Eccentric metrics available:", paste(unique(ecc_names), collaps
       NA_real_
     }
 
-    CMJ_TYPES <- c("CMJ","CMJA","CMJL","SJ","SJA","DJ","DJA","IMTP","HOP")
+    # Only fetch trials for jump test types
+    CMJ_TYPES <- c("CMJ", "CMJA", "CMJL", "SJ", "SJA", "DJ", "DJA", "IMTP", "HOP")
     trial_data <- lapply(seq_len(nrow(fd_df)), function(i) {
-      tid <- fd_df$testId[i]
+      tid   <- fd_df$testId[i]
       ttype <- toupper(fd_df$testType[i])
-      if (!any(sapply(CMJ_TYPES, function(t) grepl(t, ttype, fixed=TRUE)))) return(NULL)
+      if (!any(sapply(CMJ_TYPES, function(t) grepl(t, ttype, fixed = TRUE)))) return(NULL)
       tr <- vald_get(
         paste0("/v2019q3/teams/", VALD_TEAM_ID, "/tests/", tid, "/trials"),
-        query = list(),
+        query    = list(),
         base_url = VALD_FD_BASE
       )
       Sys.sleep(0.1)
@@ -227,29 +208,37 @@ cat("[VALD Sync] Eccentric metrics available:", paste(unique(ecc_names), collaps
       mutate(
         jump_height_cm             = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("jump height (flight time)"))),
         peak_force_n               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak force"))),
-        peak_power_w               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak power / bm","peak power"))),
-        rsi_modified               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("rsi-modified","rsi modified","reactive strength"))),
+        peak_power_w               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak power / bm", "peak power"))),
+        rsi_modified               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("rsi-modified", "rsi modified", "reactive strength"))),
         concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("concentric impulse"))),
         eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric decel"))),
         eccentric_decel_rfd_bm     = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric deceleration rfd / bm"))),
-        eccentric_peak_power_bm    = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak power / bm"))),
-      ) |>      
+        eccentric_peak_power_bm    = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak power / bm")))
+      ) |>
+      mutate(across(where(is.numeric), ~ ifelse(is.nan(.), NA_real_, .))) |>
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
              concentric_impulse_ns, eccentric_decel_impulse_ns,
              eccentric_decel_rfd_bm, eccentric_peak_power_bm) |>
       filter(!is.na(test_date)) |>
-      mutate(across(where(is.numeric), ~ifelse(is.nan(.), NA_real_, .)))
+      group_by(vald_test_id) |>
+      slice_max(order_by = coalesce(jump_height_cm, 0), n = 1, with_ties = FALSE) |>
+      ungroup()
 
     cat("[VALD Sync]", nrow(cmj_rows), "ForceDecks rows to upsert.\n")
     sb_upsert("cmj_tests", cmj_rows)
   }
-} else { cat("[VALD Sync] No new ForceDecks tests.\n") }
+} else {
+  cat("[VALD Sync] No new ForceDecks tests.\n")
+}
 
-# ── Step 4: NordBord ──────────────────────────────────────────────────────
+# ── Step 5: NordBord ──────────────────────────────────────────────────────
 cat("[VALD Sync] Fetching NordBord tests...\n")
-last_nord    <- get_last_sync("nordbord_tests", "test_date")
-from_utc_nb  <- format(if (is.null(last_nord)) as.POSIXct("2026-01-01T00:00:00Z", tz="UTC") else last_nord-days(1), "%Y-%m-%dT%H:%M:%SZ")
+last_nord   <- get_last_sync("nordbord_tests", "test_date")
+from_utc_nb <- format(
+  if (is.null(last_nord)) as.POSIXct("2026-01-01T00:00:00Z", tz = "UTC") else last_nord - days(1),
+  "%Y-%m-%dT%H:%M:%SZ"
+)
 cat("[VALD Sync] NordBord from:", from_utc_nb, "\n")
 
 all_nb_rows <- list()
@@ -266,14 +255,12 @@ repeat {
   Sys.sleep(0.5)
 }
 nb_raw <- if (length(all_nb_rows) > 0) do.call(rbind, all_nb_rows) else NULL
-cat("[VALD Sync] Total NordBord tests fetched:", if(!is.null(nb_raw)) nrow(nb_raw) else 0, "\n")
+cat("[VALD Sync] Total NordBord tests fetched:", if (!is.null(nb_raw)) nrow(nb_raw) else 0, "\n")
 
-if (!is.null(nb_raw) && length(nb_raw) > 0) {
+if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
   nb_df <- tryCatch({
-    ndf <- nb_raw
-    cat("[VALD Sync] NordBord columns:", paste(names(ndf), collapse=", "), "\n")
-    ndf |>
-      left_join(profiles_df, by = c("profileId" = "profileId")) |> 
+    nb_raw |>
+      left_join(profiles_df, by = c("profileId" = "profileId")) |>
       mutate(
         athlete_name    = coalesce(name, as.character(profileId)),
         test_date       = as.character(as.Date(testDateUtc)),
@@ -288,8 +275,10 @@ if (!is.null(nb_raw) && length(nb_raw) > 0) {
         left_peak_force_n  = as.numeric(leftMaxForce),
         right_peak_force_n = as.numeric(rightMaxForce),
         lsi_pct = case_when(
-          !is.na(left_peak_force_n) & !is.na(right_peak_force_n) & pmax(left_peak_force_n,right_peak_force_n)>0 ~
-            round(pmin(left_peak_force_n,right_peak_force_n)/pmax(left_peak_force_n,right_peak_force_n)*100, 1),
+          !is.na(left_peak_force_n) & !is.na(right_peak_force_n) &
+            pmax(left_peak_force_n, right_peak_force_n) > 0 ~
+            round(pmin(left_peak_force_n, right_peak_force_n) /
+                    pmax(left_peak_force_n, right_peak_force_n) * 100, 1),
           TRUE ~ NA_real_
         ),
         bw_ratio = NA_real_
@@ -297,9 +286,12 @@ if (!is.null(nb_raw) && length(nb_raw) > 0) {
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              left_peak_force_n, right_peak_force_n, lsi_pct, bw_ratio) |>
       filter(!is.na(test_date))
+
     cat("[VALD Sync]", nrow(nord_rows), "NordBord rows to upsert.\n")
     sb_upsert("nordbord_tests", nord_rows)
   }
-} else { cat("[VALD Sync] No new NordBord tests.\n") }
+} else {
+  cat("[VALD Sync] No new NordBord tests.\n")
+}
 
 cat("[VALD Sync] Completed at", format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC"), "\n")
