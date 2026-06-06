@@ -569,12 +569,29 @@ document.getElementById('sidebar-username').textContent=me.full_name;
 document.getElementById('logout-btn').onclick=async()=>{await SB.auth.signOut();location.href='./login.html';};
 
 // ── PHASE ─────────────────────────────────────────────────────────
-const PH={ss:'2025-01-23',se:'2025-04-11',us:'2025-05-13',ue:'2025-07-29',fs:'2025-08-05'};
-function phase(d){if(d>=PH.ss&&d<=PH.se)return'Sp';if(d>=PH.us&&d<=PH.ue)return'Su';if(d>=PH.fs)return'Fa';return null;}
+function parseDate(d){
+  if(!d)return null;
+  const p=d.split('/');
+  if(p.length===3)return new Date(+p[2],+p[0]-1,+p[1]);
+  return new Date(d);
+}
+const PH={
+  fs:new Date(2025,9,1),  fe:new Date(2025,10,29),
+  ss:new Date(2026,0,23), se:new Date(2026,3,11),
+  us:new Date(2026,4,13), ue:new Date(2026,6,29),
+  cs:new Date(2026,7,5)
+};
+function phase(d){
+  const dt=parseDate(d);if(!dt)return null;
+  if(dt>=PH.fs&&dt<=PH.fe)return'Fa';
+  if(dt>=PH.ss&&dt<=PH.se)return'Sp';
+  if(dt>=PH.us&&dt<=PH.ue)return'Su';
+  return null;
+}
 function phWk(d){
   const ph=phase(d);if(!ph)return null;
-  const base=new Date((ph==='Sp'?PH.ss:ph==='Su'?PH.us:PH.fs)+'T00:00:00');
-  const days=Math.floor((new Date(d+'T00:00:00')-base)/86400000);
+  const base=ph==='Fa'?PH.fs:ph==='Sp'?PH.ss:PH.us;
+  const days=Math.floor((parseDate(d)-base)/86400000);
   return`${ph} W${Math.floor(days/7)+1}`;
 }
 
@@ -681,7 +698,7 @@ const PLAYERS=Object.values(byP).map(p=>{
 // ── TOPBAR ────────────────────────────────────────────────────────
 const now=new Date();
 const today=`${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}/${now.getFullYear()}`;
-const curPh=phase(today); 
+const curPh=phase(today);
 const phLbl=curPh==='Sp'?'Spring Ball':curPh==='Su'?'Summer':curPh==='Fa'?'Fall Camp':'Off Season';
 document.getElementById('tb-season').textContent=`${PLAYERS.length} Athletes · ${phLbl}`;
 
