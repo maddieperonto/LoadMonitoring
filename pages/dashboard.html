@@ -773,7 +773,7 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
 ['cmp-a','cmp-b'].forEach((id,i)=>{const s=document.getElementById(id);PLAYERS.forEach((p,j)=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;if(i===1&&j===1)o.selected=true;s.appendChild(o);});});
 
 // ── DASHBOARD ─────────────────────────────────────────────────────
-(function renderDashboard(){
+(async function renderDashboard(){
   const high=PLAYERS.filter(p=>p.risk==='high').length,mod=PLAYERS.filter(p=>p.risk==='mod').length;
   document.getElementById('tb-high').textContent=`${high} High Risk`;
   document.getElementById('tb-mod').textContent=`${mod} Moderate`;
