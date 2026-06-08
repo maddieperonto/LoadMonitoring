@@ -615,6 +615,46 @@ const eR=null;
 const {data:aths}=await SB.from('athletes').select('name,position');
 if(!raw.length){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data returned from Supabase.</div>`;throw 0;}
 
+// ── NAME NORMALIZATION ─────────────────────────────────────────────
+const NAME_MAP={
+  // Catapult variants
+  'TRAMELL JONES':'TRAMELL JONES JR',
+  'JASON ZANDAMELA':'JASON ZANDAMELA-POPA',
+  'BEN HANKS JR.':'BEN HANKS III',
+  'VINCENT BROWN':'VINCENT BROWN JR',
+  'ALFONZO ALLEN':'ALFONZO ALLEN JR',
+  'JAHARI MEDLOCK':'JAHARI MEDLOCK-WILSON',
+  'ERIC SINGLETON':'ERIC SINGLETON JR',
+  'MARK FAIRCLOTH':'MARK FAIRCLOTH JR',
+  'JALEN LLOYD':'JAYLEN LLOYD',
+  'MICAH MAYS':'MICAH MAYS JR',
+  'TAVARIS DICE':'TAVARIS DICE JR',
+  'DUKE CLARK':'WALTEZ CLARK',
+  'JADEN BAUGH':'JADAN BAUGH',
+  'CHARLES EMANUEL':'CHARLES EMANUEL III',
+  'PAT DURKIN':'PATRICK DURKIN',
+  'JEREYLAN MCCOY':'JAREYLAN MCCOY',
+  // VALD variants
+  'VERNELL BROWN':'VERNELL BROWN III',
+  'VERNELL BROWN III':'VERNELL BROWN III',
+  'ERIC SINGLETON JR':'ERIC SINGLETON JR',
+  'MICAH MAYS':'MICAH MAYS JR',
+  'AUSTIN "ACE" CIONGOLI':'AUSTIN CIONGOLI',
+  'THADDEUS TJ BULLARD JR.':'TJ BULLARD',
+  'TRAMELL JONES':'TRAMELL JONES JR',
+  'CJ  HESTER':'CJ HESTER',
+  'ALFONZO ALLEN':'ALFONZO ALLEN JR',
+  'BEN HANKS JR.':'BEN HANKS III',
+  'CAM\'RON DOOLEY':'CAM DOOLEY',
+  'HEZEKIAH KENT':'HEZE KENT',
+  'WILLIAM GRIFFIN':'WILL GRIFFIN',
+  'NICHOLAS INGLIS':'NICK INGLIS',
+};
+function normName(n){
+  if(!n)return n;
+  const u=n.trim().toUpperCase();
+  return NAME_MAP[u]||u;
+}
 
 // ── POSITION LOOKUP ───────────────────────────────────────────────
 const OFF=['QB','WR','RB','TE','OL'],DEF=['DL','LB','ILB','EDGE','CB','S'],STS=['K','P','ST'];
@@ -634,7 +674,7 @@ function lkUnit(n){const p=lkPos(n);return OFF.includes(p)?'Offense':DEF.include
 // ── BUILD SESSION DATA ─────────────────────────────────────────────
 const byP={};
 raw.forEach(r=>{
-  const k=(r.athlete_name||'').trim();if(!k)return;
+  const k=normName(r.athlete_name);
   if(!byP[k])byP[k]={name:k,sessions:[]};
   const wk=phWk(r.session_date);if(!wk)return;
   byP[k].sessions.push({
@@ -1043,8 +1083,8 @@ async function loadVALD(){
   const [{data:cmj},{data:nord}]=await Promise.all([
   SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_peak_force_asymmetry_pct').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)
   ]);
-  cmjData=(cmj||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
-  nordData=(nord||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
+  cmjData=(cmj||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
+  nordData=(nord||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
 
   // Populate athlete selector with athletes that have any VALD data
   const allNames=[...new Set([...cmjData.map(r=>r.athlete_name),...nordData.map(r=>r.athlete_name)])].sort();
