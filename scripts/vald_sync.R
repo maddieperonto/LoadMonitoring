@@ -218,7 +218,7 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
         eccentric_peak_force_asymmetry_pct = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak force asymmetry")))
       ) |>
       mutate(across(where(is.numeric), ~ ifelse(is.nan(.), NA_real_, .))) |>
-      sselect(vald_test_id, vald_profile_id, athlete_name, test_date,
+      select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
              concentric_impulse_ns, eccentric_decel_impulse_ns,
              eccentric_decel_rfd_bm, eccentric_peak_power_bm,
