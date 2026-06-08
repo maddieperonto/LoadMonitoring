@@ -171,27 +171,22 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
     cat("[VALD Sync] Fetching trials for", nrow(fd_df), "tests...\n")
 
     # Helper: extract metric from trials by keyword
-    get_trial_metric <- function(trials, keywords) {
+    get_trial_metric <- function(trials, keywords, limb_filter=NULL) {
       if (is.null(trials) || length(trials) == 0) return(NA_real_)
       if (!is.data.frame(trials)) return(NA_real_)
       if (!"results" %in% names(trials)) return(NA_real_)
-      if(!is.null(trials) && is.data.frame(trials) && "results" %in% names(trials)) {
-    res1 <- trials$results[[1]]
-    if(is.data.frame(res1)) {
-      cat("[VALD Sync] Trial result columns:", paste(names(res1), collapse=", "), "\n")
-      epf_rows <- res1[grepl("eccentric peak force", sapply(as.character(res1$resultId), function(id) rd_lookup[[id]]%||%""), ignore.case=TRUE),]
-      if(nrow(epf_rows)>0) cat("[VALD Sync] EPF rows:", jsonlite::toJSON(epf_rows, auto_unbox=TRUE), "\n")
-    }
-  }
       for (i in seq_len(nrow(trials))) {
         res <- trials$results[[i]]
         if (is.null(res) || !is.data.frame(res)) next
         for (j in seq_len(nrow(res))) {
           rid <- as.character(res$resultId[j])
           rname <- tolower(rd_lookup[[rid]] %||% "")
-          if (any(sapply(keywords, function(k) grepl(k, rname, fixed = TRUE)))) {
-            return(as.numeric(res$value[j]))
+          if (!any(sapply(keywords, function(k) grepl(k, rname, fixed=TRUE)))) next
+          if (!is.null(limb_filter)) {
+            limb_val <- if("limb" %in% names(res)) tolower(res$limb[j]) else ""
+            if (!grepl(tolower(limb_filter), limb_val, fixed=TRUE)) next
           }
+          return(as.numeric(res$value[j]))
         }
       }
       NA_real_
@@ -223,8 +218,7 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
         eccentric_decel_rfd_bm     = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric deceleration rfd / bm"))),
         eccentric_peak_power_bm    = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak power / bm"))),
         flight_time_contraction_time = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("flight time:contraction time", "flighttime:contraction time"))),
-        eccentric_peak_force_asymmetry_pct = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak force asymmetry")))
-      ) |>
+        eccentric_peak_force_asymmetry_pct = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak force"), limb_filter="asym")),      ) |>
       mutate(across(where(is.numeric), ~ ifelse(is.nan(.), NA_real_, .))) |>
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
