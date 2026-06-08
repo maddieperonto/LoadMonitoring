@@ -608,9 +608,7 @@ while(!_done){
 const eR=null;
 const {data:aths}=await SB.from('athletes').select('name,position');
 if(!raw.length){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data returned from Supabase.</div>`;throw 0;}
-console.log('[DEBUG] raw sessions fetched:', raw?.length, '| athletes fetched:', aths?.length);
-console.log('[DEBUG] sample raw row:', raw?.[0]);
-console.log('[DEBUG] sample ath row:', aths?.[0]);
+
 
 // ── POSITION LOOKUP ───────────────────────────────────────────────
 const OFF=['QB','WR','RB','TE','OL'],DEF=['DL','LB','ILB','EDGE','CB','S'],STS=['K','P','ST'];
@@ -658,10 +656,8 @@ const gpsChartWks=[...spWks,...suWks];
 // Load Monitor: Spring W1–W12 + Summer W1–W12 (project remaining) + Fa W1 (fall camp)
 const lastSuN=suWks.length?parseInt(suWks[suWks.length-1].replace('Su W','')):0;
 const suProjWks=Array.from({length:Math.max(0,12-lastSuN)},(_,i)=>`Su W${lastSuN+i+1}`);
-console.log('[DEBUG] lastSuN:', lastSuN, 'suProjWks length:', suProjWks.length);
 const fcProjWks=['Fa W1']; // just fall camp week 1
 const allLMWks=[...spWks,...suWks,...suProjWks];
-console.log('[DEBUG] spWks:', spWks, 'suWks:', suWks, 'suProjWks:', suProjWks, 'allLMWks:', allLMWks);
 
 // Periodized projection: peak at Su W10-W11 (115% spring avg), taper to Fa W1 (108%)
 function lmProjLoad(spAvg, wkLabel) {
@@ -941,7 +937,6 @@ function renderLMTeamChart(){
     if(i===realCount-1) return lastRealVal;
     return lmProjLoad(spAvgT, wk);
   });
-  console.log('[DEBUG] spAvgT:', spAvgT, 'lastRealVal:', lastRealVal, 'realCount:', realCount, 'projData sample:', projData.slice(realCount-1, realCount+3));
 // Bar colors: spring=light blue, summer real=blue, summer proj=orange tint, fall camp=transparent
   const barColors=allLbls.map((_,i)=>
     i<spWks.length?'rgba(0,48,135,0.25)':
@@ -1195,7 +1190,6 @@ window.renderNord=function(){
 };
 
 // ── INIT ──────────────────────────────────────────────────────────
-console.log('[DEBUG] PLAYERS built:', PLAYERS.length);
 if(PLAYERS.length===0){
   document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data found. Raw rows fetched: ${raw?.length||0}. Check catapult_sessions RLS policy allows authenticated reads.</div>`;
   throw 0;
