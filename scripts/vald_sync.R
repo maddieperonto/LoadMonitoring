@@ -175,6 +175,9 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
       if (is.null(trials) || length(trials) == 0) return(NA_real_)
       if (!is.data.frame(trials)) return(NA_real_)
       if (!"results" %in% names(trials)) return(NA_real_)
+      all_names <- unique(unlist(lapply(trials$results, function(r) if(is.data.frame(r)) sapply(as.character(r$resultId), function(id) rd_lookup[[id]]%||%"") else c())))
+      epf_names <- all_names[grepl("eccentric peak force", all_names, ignore.case=TRUE)]
+      if(length(epf_names)>0) cat("[VALD Sync] EPF metrics:", paste(epf_names, collapse=", "), "\n")
       for (i in seq_len(nrow(trials))) {
         res <- trials$results[[i]]
         if (is.null(res) || !is.data.frame(res)) next
