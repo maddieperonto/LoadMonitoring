@@ -733,7 +733,11 @@ function calcACWR(arr){return arr.map((_,i)=>{const w=arr.slice(Math.max(0,i-3),
 function wkTot(sessions,field,wk){return sessions.filter(s=>s.wk===wk).reduce((t,s)=>t+s[field],0);}
 
 // ── BUILD PLAYERS ─────────────────────────────────────────────────
-const PLAYERS=Object.values(byP).map(p=>{
+// Only include athletes on current roster
+const rosterNames=new Set((aths||[]).map(a=>a.name.toUpperCase()));
+const byPFiltered=Object.fromEntries(Object.entries(byP).filter(([k])=>rosterNames.has(k)));
+
+const PLAYERS=Object.values(byPFiltered).map(p=>{
   const pos=lkPos(p.name),unit=lkUnit(p.name);
   // GPS arrays use gpsChartWks (Spring + current Summer only)
   function totArr(f){return gpsChartWks.map(wk=>wkTot(p.sessions,f,wk)||null);}
