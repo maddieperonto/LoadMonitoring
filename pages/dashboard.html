@@ -660,6 +660,7 @@ const lastSuN=suWks.length?parseInt(suWks[suWks.length-1].slice(3)):0;
 const suProjWks=Array.from({length:Math.max(0,12-lastSuN)},(_,i)=>`Su W${lastSuN+i+1}`);
 const fcProjWks=['Fa W1']; // just fall camp week 1
 const allLMWks=[...spWks,...suWks,...suProjWks];
+console.log('[DEBUG] spWks:', spWks, 'suWks:', suWks, 'suProjWks:', suProjWks, 'allLMWks:', allLMWks);
 
 // Periodized projection: peak at Su W10-W11 (115% spring avg), taper to Fa W1 (108%)
 function lmProjLoad(spAvg, wkLabel) {
