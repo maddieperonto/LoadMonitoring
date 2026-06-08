@@ -939,7 +939,7 @@ function renderLMTeamChart(){
     if(i===realCount-1) return primData[realCount-1]; // connect from last real bar
     return lmProjLoad(spAvgT, wk);
   });
-  // Bar colors: spring=light blue, summer real=blue, summer proj=orange tint, fall camp=transparent
+// Bar colors: spring=light blue, summer real=blue, summer proj=orange tint, fall camp=transparent
   const barColors=allLbls.map((_,i)=>
     i<spWks.length?'rgba(0,48,135,0.25)':
     i<realCount?C.blue:
@@ -950,7 +950,11 @@ function renderLMTeamChart(){
   const el=document.getElementById('lm-team-chart');if(!el)return;
   document.getElementById('lm-chart-title').textContent=cfg.label;
   document.getElementById('lm-legend').innerHTML=[{label:cfg.label,color:cfg.color,dash:false},{label:'Periodized proj. (115% peak)',color:C.acc,dash:true},{label:'Spring baseline',color:'rgba(0,48,135,0.35)',dash:true}].map(d=>`<span class="lm-leg">${d.dash?`<span class="lm-leg-dash" style="border-color:${d.color}"></span>`:`<span class="lm-leg-sq" style="background:${d.color}"></span>`}${d.label}</span>`).join('');
-  lmTC=new Chart(el,{type:'bar',data:{labels:allLbls,datasets:[{label:cfg.label,data:primData,backgroundColor:barColors,borderRadius:3,order:3},{label:'Spring baseline',data:baseline,type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},{label:'Fall projection',data:projData,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,fill:false,order:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}${cfg.unit}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9,family:'DM Mono'},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10,family:'DM Mono'}}}}}});
+  lmTC=new Chart(el,{type:'bar',data:{labels:allLbls,datasets:[
+    {label:cfg.label,data:primData,backgroundColor:barColors,borderRadius:3,order:3},
+    {label:'Spring baseline',data:baseline,type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},
+    {label:'Periodized projection',data:projData,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:4,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,fill:false,order:0,spanGaps:false}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}${cfg.unit}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9,family:'DM Mono'},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10,family:'DM Mono'}}}}}});
 }
 function renderLMACWR(){
   const fp=lmFilt();
@@ -962,8 +966,8 @@ function renderLMACWR(){
   document.getElementById('lm-acwr-avg').style.color=fp.length?lmZone(+avgAcwr).color:'var(--text2)';
   document.getElementById('lm-zone-bars').innerHTML=zones.map((z,i)=>`<div class="lm-zone-row"><div class="lm-zone-dot" style="background:${zc[i]}"></div><div class="lm-zone-name">${zl[i]}</div><div class="lm-zone-bar-wrap"><div class="lm-zone-bar-fill" style="width:${Math.round(counts[i]/total*100)}%;background:${zc[i]}"></div></div><div class="lm-zone-count">${counts[i]}</div></div>`).join('');
   if(lmAC){lmAC.destroy();lmAC=null;}
-  const el=document.getElementById('lm-acwr-donut');if(!el)return;
-  lmAC=new Chart(el,{type:'doughnut',data:{labels:zl,datasets:[{data:counts.map(c=>c||0.001),backgroundColor:zc,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw<0.01?0:ctx.raw}`}}}}});
+  const el2=document.getElementById('lm-acwr-donut');if(!el2)return;
+  lmAC=new Chart(el2,{type:'doughnut',data:{labels:zl,datasets:[{data:counts.map(c=>c||0.001),backgroundColor:zc,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw<0.01?0:ctx.raw}`}}}}});
 }
 function renderLMPosFilters(){const pos=['All',...new Set(LMP.map(p=>p.pos))].sort();document.getElementById('lm-pos-filters').innerHTML=`<span class="lm-fl">Position:</span>`+pos.map(p=>`<button class="pos-chip${p===lmPos?' active':''}" onclick="setLMPos('${p}')">${p}</button>`).join('');}
 function renderLMRoster(){
@@ -973,7 +977,12 @@ function renderLMRoster(){
 }
 window.setLMMetric=function(m,btn){lmMetric=m;document.querySelectorAll('.lm-chip').forEach(c=>c.classList.remove('active'));btn.classList.add('active');renderLMTeamChart();};
 window.setLMPos=function(p){lmPos=p;lmSelIdx=null;renderLMMetrics();renderLMTeamChart();renderLMACWR();renderLMPosFilters();renderLMRoster();};
-function renderLMAll(){renderLMMetrics();renderLMTeamChart();renderLMACWR();renderLMPosFilters();renderLMRoster();}
+function renderLMAll(){
+  renderLMMetrics();
+  renderLMPosFilters();
+  renderLMRoster();
+  setTimeout(()=>{renderLMTeamChart();renderLMACWR();},100);
+}
 window.renderLoadMonitor=renderLMAll;
 window.selLMPlayer=function(i){
   lmSelIdx=lmSelIdx===i?null:i;renderLMRoster();
@@ -988,15 +997,16 @@ window.selLMPlayer=function(i){
   const lb2=allL2.map((_,i)=>i<allLMWks.length?(p.allLoads[i]??null):null);
   const fl2=allL2.map((_,i)=>{
     const wk=allL2[i];
-    if(i<rc2) return null;
-    return lmProjLoad(p.spAvg, wk);
+    if(i<rc2-1) return null;
+    if(i===rc2-1) return lb2[rc2-1];
+    return lmProjLoad(p.spAvg,wk);
   });
-  const el2=document.getElementById('lm-player-chart');if(!el2)return;
-  lmPC=new Chart(el2,{type:'bar',data:{labels:allL2,datasets:[{label:'Load',data:lb2,backgroundColor:bc2,borderRadius:3,order:3},{label:'Spring baseline',data:allL2.map(()=>p.spAvg),type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},{label:'Fall projection',data:fl2,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,fill:false,order:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10}}}}}});
+  const el3=document.getElementById('lm-player-chart');if(!el3)return;
+  lmPC=new Chart(el3,{type:'bar',data:{labels:allL2,datasets:[{label:'Load',data:lb2,backgroundColor:bc2,borderRadius:3,order:3},{label:'Spring baseline',data:allL2.map(()=>p.spAvg),type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},{label:'Projection',data:fl2,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,fill:false,order:0,spanGaps:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10}}}}}});
   setTimeout(()=>sec.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 };
 
-// ── LEADERBOARDS ──────────────────────────────────────────────────
+// ── LEADERBOARDS ────────────────────────────────────────────────── 
 const LB_CATS=[{id:'maxvel',lbl:'Max Velocity',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},{id:'hsr',lbl:'Total HSR (m)',fn:p=>p.totalHSR>0?p.totalHSR:null,fmt:v=>Math.round(v).toLocaleString()+' m'},{id:'sessions',lbl:'Session Count',fn:p=>p.sessions.length,fmt:v=>v+' sessions'},{id:'acwr',lbl:'ACWR Distance',fn:p=>p.latD>0?p.latD:null,fmt:v=>v.toFixed(2)}];
 let lbActive=LB_CATS[0];
 window.renderLeaderboards=function(){
