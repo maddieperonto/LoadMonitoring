@@ -941,7 +941,7 @@ function renderLMTeamChart(){
     if(i===realCount-1) return lastRealVal;
     return lmProjLoad(spAvgT, wk);
   });
-  });
+  console.log('[DEBUG] spAvgT:', spAvgT, 'lastRealVal:', lastRealVal, 'realCount:', realCount, 'projData sample:', projData.slice(realCount-1, realCount+3));
 // Bar colors: spring=light blue, summer real=blue, summer proj=orange tint, fall camp=transparent
   const barColors=allLbls.map((_,i)=>
     i<spWks.length?'rgba(0,48,135,0.25)':
