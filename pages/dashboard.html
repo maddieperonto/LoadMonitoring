@@ -656,7 +656,7 @@ const faWks=allPhWks.filter(w=>w.startsWith('Fa'));
 const gpsChartWks=[...spWks,...suWks];
 
 // Load Monitor: Spring W1–W12 + Summer W1–W12 (project remaining) + Fa W1 (fall camp)
-const lastSuN=suWks.length?parseInt(suWks[suWks.length-1].slice(3)):0;
+const lastSuN=suWks.length?parseInt(suWks[suWks.length-1].replace('Su W','')):0;
 const suProjWks=Array.from({length:Math.max(0,12-lastSuN)},(_,i)=>`Su W${lastSuN+i+1}`);
 console.log('[DEBUG] lastSuN:', lastSuN, 'suProjWks length:', suProjWks.length);
 const fcProjWks=['Fa W1']; // just fall camp week 1
