@@ -189,7 +189,6 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
       NA_real_
     }
 
-    # Only fetch trials for jump test types
     CMJ_TYPES <- c("CMJ", "CMJA", "CMJL", "SJ", "SJA", "DJ", "DJA", "IMTP", "HOP")
     trial_data <- lapply(seq_len(nrow(fd_df)), function(i) {
       tid   <- fd_df$testId[i]
@@ -200,9 +199,10 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
         query    = list(),
         base_url = VALD_FD_BASE
       )
-      Sys.sleep(0.1)
+      Sys.sleep(0.05)
       tr
     })
+    cat("[VALD Sync] Trials fetched.\n")
 
     cmj_rows <- fd_df |>
       mutate(
