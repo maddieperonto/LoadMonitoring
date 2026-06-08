@@ -314,7 +314,10 @@ if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
       ) |>
       select(vald_test_id, vald_profile_id, athlete_name, test_date,
              left_peak_force_n, right_peak_force_n, lsi_pct, bw_ratio) |>
-      filter(!is.na(test_date))
+      filter(!is.na(test_date)) |>
+      group_by(vald_test_id) |>
+      slice_max(order_by = coalesce(left_peak_force_n, 0), n = 1, with_ties = FALSE) |>
+      ungroup()
 
     cat("[VALD Sync]", nrow(nord_rows), "NordBord rows to upsert.\n")
     sb_upsert("nordbord_tests", nord_rows)
