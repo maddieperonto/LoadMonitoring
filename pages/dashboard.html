@@ -1042,8 +1042,7 @@ window.setVALDView=function(v){
 
 async function loadVALD(){
   const [{data:cmj},{data:nord}]=await Promise.all([
-    SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_peak_force_asymmetry_pct').order('test_date',{ascending:false}),
-    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false})
+  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_peak_force_asymmetry_pct').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)
   ]);
   cmjData=(cmj||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
   nordData=(nord||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
