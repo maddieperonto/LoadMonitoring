@@ -414,64 +414,72 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 
 <!-- VALD -->
 <div class="page" id="pg-vald">
-
-  <!-- CMJ SECTION -->
-  <div class="panel">
-    <div class="panel-title"><i class="ti ti-bolt"></i>ForceDecks — Countermovement Jump</div>
-    <div class="sel-row" style="margin-bottom:12px">
-      <select class="data-sel" id="cmj-date-sel" onchange="renderCMJ()"></select>
-      <select class="data-sel" id="cmj-pos-sel" onchange="renderCMJ()">
-        <option value="All">All Positions</option>
-        <option value="QB">QB</option><option value="RB">RB</option><option value="WR">WR</option>
-        <option value="TE">TE</option><option value="OL">OL</option><option value="DL">DL</option>
-        <option value="EDGE">EDGE</option><option value="ILB">ILB</option><option value="CB">CB</option>
-        <option value="S">S</option><option value="ST">ST</option>
-      </select>
-      <span class="tbb info" id="cmj-count">— athletes</span>
-    </div>
-    <div class="stat-row" id="cmj-stats" style="grid-template-columns:repeat(4,1fr)"></div>
-    <div class="tbl-wrap">
-      <table><thead><tr>
-        <th class="sortable" onclick="sortCMJ('name')">Athlete</th>
-        <th>Pos</th><th>Unit</th><th>Test Date</th>
-        <th class="sortable" onclick="sortCMJ('jump_height_cm')">Jump Height (cm)</th>
-        <th class="sortable" onclick="sortCMJ('rsi_modified')">RSI-Modified</th>
-        <th class="sortable" onclick="sortCMJ('peak_force_n')">Peak Force (N)</th>
-        <th class="sortable" onclick="sortCMJ('peak_power_w')">Peak Power (W)</th>
-        <th>Concentric Impulse</th>
-        <th>Ecc Decel Impulse</th>
-        <th>vs Spring Avg</th>
-      </tr></thead><tbody id="cmj-table"></tbody></table>
+  <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+    <div style="display:flex;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;overflow:hidden">
+      <button id="vald-btn-ind" onclick="setVALDView('individual')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:var(--uf-orange);color:#fff;cursor:pointer">Individual</button>
+      <button id="vald-btn-grp" onclick="setVALDView('group')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Position Group</button>
     </div>
   </div>
 
-  <!-- NORDBORD SECTION -->
-  <div class="panel">
-    <div class="panel-title"><i class="ti ti-arrows-horizontal" style="color:var(--acc5)"></i>NordBord — Hamstring Strength</div>
-    <div class="sel-row" style="margin-bottom:12px">
-      <select class="data-sel" id="nord-date-sel" onchange="renderNord()"></select>
-      <select class="data-sel" id="nord-pos-sel" onchange="renderNord()">
-        <option value="All">All Positions</option>
-        <option value="QB">QB</option><option value="RB">RB</option><option value="WR">WR</option>
-        <option value="TE">TE</option><option value="OL">OL</option><option value="DL">DL</option>
-        <option value="EDGE">EDGE</option><option value="ILB">ILB</option><option value="CB">CB</option>
-        <option value="S">S</option><option value="ST">ST</option>
-      </select>
-      <span class="tbb info" id="nord-count">— athletes</span>
+  <!-- INDIVIDUAL VIEW -->
+  <div id="vald-individual-view">
+    <div class="sel-row" style="margin-bottom:16px">
+      <select class="data-sel" id="vald-athlete-sel" onchange="renderVALDIndividual()" style="min-width:240px"></select>
+      <span class="tbb info" id="vald-test-date">—</span>
     </div>
-    <div class="stat-row" id="nord-stats" style="grid-template-columns:repeat(4,1fr)"></div>
-    <div class="tbl-wrap">
-      <table><thead><tr>
-        <th class="sortable" onclick="sortNord('name')">Athlete</th>
-        <th>Pos</th><th>Unit</th><th>Test Date</th>
-        <th class="sortable" onclick="sortNord('left_peak_force_n')">Left Force (N)</th>
-        <th class="sortable" onclick="sortNord('right_peak_force_n')">Right Force (N)</th>
-        <th class="sortable" onclick="sortNord('lsi_pct')">LSI %</th>
-        <th>Asymmetry Flag</th>
-      </tr></thead><tbody id="nord-table"></tbody></table>
+    <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px" id="vald-ind-cards"></div>
+    <div class="two-col" style="margin-bottom:14px">
+      <div class="panel" style="margin-bottom:0">
+        <div class="panel-title"><i class="ti ti-arrows-horizontal" style="color:var(--acc5)"></i>NordBord — L vs R Max Force (N)</div>
+        <div class="chart-wrap h220"><canvas id="vald-nord-chart"></canvas></div>
+      </div>
+      <div class="panel" style="margin-bottom:0">
+        <div class="panel-title"><i class="ti ti-bolt"></i>Force Plate — L vs R Eccentric Peak Force (N)</div>
+        <div class="chart-wrap h220"><canvas id="vald-epf-chart"></canvas></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-table"></i>VALD Testing Log</div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Athlete</th><th>Test Date</th><th>Nord Force (N)</th>
+          <th>Nord Asymm %</th><th>Jump Ht (cm)</th><th>mRSI</th>
+          <th>EPF Asymm %</th>
+        </tr></thead><tbody id="vald-log-table"></tbody></table>
+      </div>
     </div>
   </div>
 
+  <!-- POSITION GROUP VIEW -->
+  <div id="vald-group-view" style="display:none">
+    <div class="sel-row" style="margin-bottom:16px">
+      <select class="data-sel" id="vald-group-sel" onchange="renderVALDGroup()">
+        <option value="QB">Quarterbacks (QB)</option>
+        <option value="RB">Running Backs (RB)</option>
+        <option value="WR">Wide Receivers (WR)</option>
+        <option value="TE">Tight Ends (TE)</option>
+        <option value="OL">Offensive Line (OL)</option>
+        <option value="DL">Defensive Line (DL)</option>
+        <option value="EDGE">Edge Rushers (EDGE)</option>
+        <option value="ILB">Linebackers (ILB)</option>
+        <option value="CB">Cornerbacks (CB)</option>
+        <option value="S">Safeties (S)</option>
+        <option value="ST">Special Teams (ST)</option>
+      </select>
+      <span class="tbb info" id="vald-group-badge">—</span>
+    </div>
+    <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px" id="vald-grp-cards"></div>
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-table"></i>Position Group — VALD Testing Log</div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Athlete</th><th>Test Date</th><th>Nord Force (N)</th>
+          <th>Nord Asymm %</th><th>Jump Ht (cm)</th><th>mRSI</th>
+          <th>EPF Asymm %</th>
+        </tr></thead><tbody id="vald-grp-table"></tbody></table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- LIFTING -->
@@ -1018,6 +1026,177 @@ window.selLMPlayer=function(i){
   setTimeout(()=>sec.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 };
 
+// ── VALD ──────────────────────────────────────────────────────────
+let cmjData=[],nordData=[],valdView='individual';
+
+window.setVALDView=function(v){
+  valdView=v;
+  document.getElementById('vald-individual-view').style.display=v==='individual'?'':'none';
+  document.getElementById('vald-group-view').style.display=v==='group'?'':'none';
+  const bi=document.getElementById('vald-btn-ind'),bg=document.getElementById('vald-btn-grp');
+  bi.style.background=v==='individual'?'var(--uf-orange)':'transparent';bi.style.color=v==='individual'?'#fff':'var(--text3)';
+  bg.style.background=v==='group'?'var(--uf-orange)':'transparent';bg.style.color=v==='group'?'#fff':'var(--text3)';
+  if(v==='individual')renderVALDIndividual();
+  if(v==='group')renderVALDGroup();
+};
+
+async function loadVALD(){
+  const [{data:cmj},{data:nord}]=await Promise.all([
+    SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_peak_force_asymmetry_pct').order('test_date',{ascending:false}),
+    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false})
+  ]);
+  cmjData=(cmj||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
+  nordData=(nord||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
+
+  // Populate athlete selector with athletes that have any VALD data
+  const allNames=[...new Set([...cmjData.map(r=>r.athlete_name),...nordData.map(r=>r.athlete_name)])].sort();
+  const sel=document.getElementById('vald-athlete-sel');
+  sel.innerHTML='';
+  allNames.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
+
+  setVALDView('individual');
+}
+
+window.renderVALDIndividual=function(){
+  const name=document.getElementById('vald-athlete-sel').value;
+  if(!name)return;
+
+  // Get most recent tests for this athlete
+  const cmj=cmjData.filter(r=>r.athlete_name===name);
+  const nord=nordData.filter(r=>r.athlete_name===name);
+  const latestCmj=cmj[0]||null;
+  const latestNord=nord[0]||null;
+  const latestDate=latestCmj?.test_date||latestNord?.test_date||'—';
+  document.getElementById('vald-test-date').textContent=`Latest: ${latestDate}`;
+
+  // Metric cards
+  const nordAvg=latestNord?((latestNord.left_peak_force_n||0)+(latestNord.right_peak_force_n||0))/2:null;
+  const nordAsymm=latestNord?((1-(Math.min(latestNord.left_peak_force_n||0,latestNord.right_peak_force_n||0)/Math.max(latestNord.left_peak_force_n||1,latestNord.right_peak_force_n||1)))*100):null;
+  const cards=[
+    {label:'Nord Avg Force (L+R)',val:nordAvg!=null?nordAvg.toFixed(1):'—',unit:'N',cls:nordAvg>400?'ok':nordAvg>250?'warn':'danger'},
+    {label:'Nord R Max Force',val:latestNord?.right_peak_force_n!=null?latestNord.right_peak_force_n.toFixed(1):'—',unit:'N',cls:'blue'},
+    {label:'Nord L Max Force',val:latestNord?.left_peak_force_n!=null?latestNord.left_peak_force_n.toFixed(1):'—',unit:'N',cls:'blue'},
+    {label:'Nord Asymmetry',val:nordAsymm!=null?nordAsymm.toFixed(2)+'%':'—',unit:'',cls:nordAsymm!=null?(nordAsymm<10?'ok':nordAsymm<15?'warn':'danger'):'info'},
+    {label:'CMJ Jump Height',val:latestCmj?.jump_height_cm!=null?latestCmj.jump_height_cm.toFixed(1):'—',unit:'cm',cls:'acc'},
+    {label:'mRSI (Modified RSI)',val:latestCmj?.rsi_modified!=null?latestCmj.rsi_modified.toFixed(2):'—',unit:'m/s',cls:'ok'},
+  ];
+  document.getElementById('vald-ind-cards').innerHTML=cards.map(c=>`
+    <div class="stat-card ${c.cls}">
+      <div class="sc-label">${c.label}</div>
+      <div class="sc-val ${c.cls}">${c.val}</div>
+      <div class="sc-sub">${c.unit}</div>
+    </div>`).join('');
+
+  // NordBord bar chart
+  mk('vald-nord-chart',{type:'bar',data:{
+    labels:['L Force','R Force'],
+    datasets:[{
+      data:[latestNord?.left_peak_force_n||0,latestNord?.right_peak_force_n||0],
+      backgroundColor:['rgba(0,48,135,0.7)','rgba(250,70,22,0.7)'],
+      borderRadius:6,borderWidth:0
+    }]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Max Force (N): ${ctx.raw.toFixed(1)}`}}},scales:{x:{ticks:{color:C.tick,font:{size:12,family:'DM Mono'}}},y:{ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}}}}});
+
+  // EPF bar chart
+  const epfL=latestCmj?.eccentric_peak_force_left||0;
+  const epfR=latestCmj?.eccentric_peak_force_right||0;
+  mk('vald-epf-chart',{type:'bar',data:{
+    labels:['L Force','R Force'],
+    datasets:[{
+      data:[epfL,epfR],
+      backgroundColor:['rgba(0,48,135,0.7)','rgba(250,70,22,0.7)'],
+      borderRadius:6,borderWidth:0
+    }]
+  },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Ecc Peak Force (N): ${ctx.raw.toFixed(1)}`}}},scales:{x:{ticks:{color:C.tick,font:{size:12,family:'DM Mono'}}},y:{ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}}}}});
+
+  // Testing log — all tests for this athlete
+  const allTests=[];
+  const nordByDate={};nordData.filter(r=>r.athlete_name===name).forEach(r=>{if(!nordByDate[r.test_date])nordByDate[r.test_date]=r;});
+  cmjData.filter(r=>r.athlete_name===name).forEach(r=>{
+    allTests.push({date:r.test_date,cmj:r,nord:nordByDate[r.test_date]||null});
+  });
+  Object.keys(nordByDate).forEach(d=>{
+    if(!allTests.find(t=>t.date===d)) allTests.push({date:d,cmj:null,nord:nordByDate[d]});
+  });
+  allTests.sort((a,b)=>b.date.localeCompare(a.date));
+
+  const nordAvgFn=n=>n?((n.left_peak_force_n||0)+(n.right_peak_force_n||0))/2:null;
+  const nordAsymmFn=n=>n&&Math.max(n.left_peak_force_n||0,n.right_peak_force_n||0)>0?
+    (1-Math.min(n.left_peak_force_n||0,n.right_peak_force_n||0)/Math.max(n.left_peak_force_n||0,n.right_peak_force_n||0))*100:null;
+
+  document.getElementById('vald-log-table').innerHTML=allTests.map(t=>{
+    const na=nordAvgFn(t.nord),nasym=nordAsymmFn(t.nord);
+    const epfAsym=t.cmj?.eccentric_peak_force_asymmetry_pct;
+    return`<tr>
+      <td style="font-weight:600">${name}</td>
+      <td class="mono">${t.date}</td>
+      <td class="mono">${na!=null?na.toFixed(1):'—'}</td>
+      <td class="mono ${nasym!=null?(nasym<10?'ok':nasym<15?'warn':'danger'):''}">${nasym!=null?nasym.toFixed(2)+'%':'—'}</td>
+      <td class="mono ${t.cmj?.jump_height_cm?'acc':''}">${t.cmj?.jump_height_cm!=null?t.cmj.jump_height_cm.toFixed(1):'—'}</td>
+      <td class="mono">${t.cmj?.rsi_modified!=null?t.cmj.rsi_modified.toFixed(2):'—'}</td>
+      <td class="mono ${epfAsym!=null?(epfAsym<10?'ok':epfAsym<15?'warn':'danger'):''}">${epfAsym!=null?epfAsym.toFixed(2)+'%':'—'}</td>
+    </tr>`;
+  }).join('');
+};
+
+window.renderVALDGroup=function(){
+  const pos=document.getElementById('vald-group-sel').value;
+  const grpCmj=cmjData.filter(r=>r.pos===pos);
+  const grpNord=nordData.filter(r=>r.pos===pos);
+  document.getElementById('vald-group-badge').textContent=`${pos} · ${[...new Set([...grpCmj,...grpNord].map(r=>r.athlete_name))].length} athletes`;
+
+  // Latest test per athlete
+  const latestCmj={},latestNord={};
+  grpCmj.forEach(r=>{if(!latestCmj[r.athlete_name])latestCmj[r.athlete_name]=r;});
+  grpNord.forEach(r=>{if(!latestNord[r.athlete_name])latestNord[r.athlete_name]=r;});
+
+  const cmjArr=Object.values(latestCmj),nordArr=Object.values(latestNord);
+  const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
+
+  const nordAvgs=nordArr.map(r=>((r.left_peak_force_n||0)+(r.right_peak_force_n||0))/2).filter(v=>v>0);
+  const nordAsymms=nordArr.map(r=>Math.max(r.left_peak_force_n||0,r.right_peak_force_n||0)>0?(1-Math.min(r.left_peak_force_n||0,r.right_peak_force_n||0)/Math.max(r.left_peak_force_n||0,r.right_peak_force_n||0))*100:null).filter(v=>v!=null);
+  const jhs=cmjArr.map(r=>r.jump_height_cm).filter(v=>v!=null);
+  const rsis=cmjArr.map(r=>r.rsi_modified).filter(v=>v!=null);
+  const epfAsymms=cmjArr.map(r=>r.eccentric_peak_force_asymmetry_pct).filter(v=>v!=null);
+
+  const avgNord=avg(nordAvgs),avgNordAsymm=avg(nordAsymms),avgJH=avg(jhs),avgRSI=avg(rsis),avgEPF=avg(epfAsymms);
+
+  const cards=[
+    {label:'Avg Nord Force',val:avgNord!=null?avgNord.toFixed(1):'—',unit:'N',cls:'blue'},
+    {label:'Avg Nord Asymmetry',val:avgNordAsymm!=null?avgNordAsymm.toFixed(2)+'%':'—',unit:'',cls:avgNordAsymm!=null?(avgNordAsymm<10?'ok':avgNordAsymm<15?'warn':'danger'):'info'},
+    {label:'Avg Jump Height',val:avgJH!=null?avgJH.toFixed(1):'—',unit:'cm',cls:'acc'},
+    {label:'Avg mRSI',val:avgRSI!=null?avgRSI.toFixed(2):'—',unit:'m/s',cls:'ok'},
+    {label:'Avg EPF Asymmetry',val:avgEPF!=null?avgEPF.toFixed(2)+'%':'—',unit:'',cls:avgEPF!=null?(avgEPF<10?'ok':avgEPF<15?'warn':'danger'):'info'},
+    {label:'Athletes Tested',val:[...new Set([...grpCmj,...grpNord].map(r=>r.athlete_name))].length,unit:'athletes',cls:'blue'},
+  ];
+  document.getElementById('vald-grp-cards').innerHTML=cards.map(c=>`
+    <div class="stat-card ${c.cls}">
+      <div class="sc-label">${c.label}</div>
+      <div class="sc-val ${c.cls}">${c.val}</div>
+      <div class="sc-sub">${c.unit}</div>
+    </div>`).join('');
+
+  // Group log table
+  const allAthletes=[...new Set([...grpCmj,...grpNord].map(r=>r.athlete_name))].sort();
+  document.getElementById('vald-grp-table').innerHTML=allAthletes.map(name=>{
+    const cmj=latestCmj[name],nord=latestNord[name];
+    const na=nord?((nord.left_peak_force_n||0)+(nord.right_peak_force_n||0))/2:null;
+    const nasym=nord&&Math.max(nord.left_peak_force_n||0,nord.right_peak_force_n||0)>0?(1-Math.min(nord.left_peak_force_n||0,nord.right_peak_force_n||0)/Math.max(nord.left_peak_force_n||0,nord.right_peak_force_n||0))*100:null;
+    const epfAsym=cmj?.eccentric_peak_force_asymmetry_pct;
+    const date=cmj?.test_date||nord?.test_date||'—';
+    return`<tr>
+      <td style="font-weight:600;color:var(--uf-blue)">${name}</td>
+      <td class="mono">${date}</td>
+      <td class="mono">${na!=null?na.toFixed(1):'—'}</td>
+      <td class="mono ${nasym!=null?(nasym<10?'ok':nasym<15?'warn':'danger'):''}">${nasym!=null?nasym.toFixed(2)+'%':'—'}</td>
+      <td class="mono ${cmj?.jump_height_cm?'acc':''}">${cmj?.jump_height_cm!=null?cmj.jump_height_cm.toFixed(1):'—'}</td>
+      <td class="mono">${cmj?.rsi_modified!=null?cmj.rsi_modified.toFixed(2):'—'}</td>
+      <td class="mono ${epfAsym!=null?(epfAsym<10?'ok':epfAsym<15?'warn':'danger'):''}">${epfAsym!=null?epfAsym.toFixed(2)+'%':'—'}</td>
+    </tr>`;
+  }).join('');
+};
+
+
 // ── LEADERBOARDS ────────────────────────────────────────────────── 
 const LB_CATS=[{id:'maxvel',lbl:'Max Velocity',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},{id:'hsr',lbl:'Total HSR (m)',fn:p=>p.totalHSR>0?p.totalHSR:null,fmt:v=>Math.round(v).toLocaleString()+' m'},{id:'sessions',lbl:'Session Count',fn:p=>p.sessions.length,fmt:v=>v+' sessions'},{id:'acwr',lbl:'ACWR Distance',fn:p=>p.latD>0?p.latD:null,fmt:v=>v.toFixed(2)}];
 let lbActive=LB_CATS[0];
@@ -1080,134 +1259,10 @@ window.openPM=function(name){
 window.closePM=function(e,force=false){if(force||e?.target===e?.currentTarget)document.getElementById('pm-overlay').classList.remove('open');};
 window.navToGPS=function(name){navTo('gps');setTimeout(()=>{setGPSView('player');setTimeout(()=>{const s=document.getElementById('gps-sel');if(s){s.value=name;renderGPS();}},80);},80);};
 
-// ── VALD DATA ─────────────────────────────────────────────────────────────
-let cmjData=[], nordData=[], cmjSort={col:'jump_height_cm',dir:'desc'}, nordSort={col:'lsi_pct',dir:'asc'};
 
-async function loadVALD(){
-  const [{data:cmj},{data:nord}]=await Promise.all([
-    SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns').order('test_date',{ascending:false}),
-    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false})
-  ]);
-
-  cmjData=(cmj||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
-nordData=(nord||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
-
-  // Populate date selectors
-  const cmjDates=[...new Set(cmjData.map(r=>r.test_date))].sort().reverse();
-  const nordDates=[...new Set(nordData.map(r=>r.test_date))].sort().reverse();
-  const cmjSel=document.getElementById('cmj-date-sel');
-  const nordSel=document.getElementById('nord-date-sel');
-  cmjDates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;cmjSel.appendChild(o);});
-  nordDates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;nordSel.appendChild(o);});
-
-  renderCMJ();
-  renderNord();
-}
-
-window.sortCMJ=function(col){if(cmjSort.col===col)cmjSort.dir=cmjSort.dir==='asc'?'desc':'asc';else{cmjSort.col=col;cmjSort.dir='desc';}renderCMJ();};
-window.sortNord=function(col){if(nordSort.col===col)nordSort.dir=nordSort.dir==='asc'?'desc':'asc';else{nordSort.col=col;nordSort.dir='desc';}renderNord();};
-
-window.renderCMJ=function(){
-  const date=document.getElementById('cmj-date-sel').value;
-  const pos=document.getElementById('cmj-pos-sel').value;
-  let rows=cmjData.filter(r=>r.test_date===date&&(pos==='All'||r.pos===pos));
-
-  // Sort
-  rows.sort((a,b)=>{
-    const av=a[cmjSort.col]??-Infinity, bv=b[cmjSort.col]??-Infinity;
-    if(cmjSort.col==='name') return cmjSort.dir==='asc'?a.athlete_name.localeCompare(b.athlete_name):b.athlete_name.localeCompare(a.athlete_name);
-    return cmjSort.dir==='desc'?bv-av:av-bv;
-  });
-
-  document.getElementById('cmj-count').textContent=`${rows.length} athletes`;
-
-  // Spring baseline per athlete (earliest test date)
-  const springBaseline={};
-  cmjData.forEach(r=>{
-    if(!springBaseline[r.athlete_name]||r.test_date<springBaseline[r.athlete_name].date){
-      springBaseline[r.athlete_name]={date:r.test_date,jh:r.jump_height_cm};
-    }
-  });
-
-  // Stats
-  const valid=rows.filter(r=>r.jump_height_cm!=null);
-  const avgJH=valid.length?(valid.reduce((s,r)=>s+r.jump_height_cm,0)/valid.length).toFixed(1):'—';
-  const maxJH=valid.length?Math.max(...valid.map(r=>r.jump_height_cm)).toFixed(1):'—';
-  const avgRSI=rows.filter(r=>r.rsi_modified!=null).length?(rows.filter(r=>r.rsi_modified!=null).reduce((s,r)=>s+r.rsi_modified,0)/rows.filter(r=>r.rsi_modified!=null).length).toFixed(1):'—';
-  const avgPF=rows.filter(r=>r.peak_force_n!=null).length?(rows.filter(r=>r.peak_force_n!=null).reduce((s,r)=>s+r.peak_force_n,0)/rows.filter(r=>r.peak_force_n!=null).length).toFixed(0):'—';
-
-  document.getElementById('cmj-stats').innerHTML=`
-    <div class="stat-card acc"><div class="sc-label">Avg Jump Height</div><div class="sc-val acc">${avgJH}</div><div class="sc-sub">centimeters</div></div>
-    <div class="stat-card blue"><div class="sc-label">Max Jump Height</div><div class="sc-val blue">${maxJH}</div><div class="sc-sub">centimeters</div></div>
-    <div class="stat-card ok"><div class="sc-label">Avg RSI-Modified</div><div class="sc-val ok">${avgRSI}</div><div class="sc-sub">reactive strength</div></div>
-    <div class="stat-card orange"><div class="sc-label">Avg Peak Force</div><div class="sc-val orange">${avgPF}</div><div class="sc-sub">newtons</div></div>`;
-
-  document.getElementById('cmj-table').innerHTML=rows.map(r=>{
-    const base=springBaseline[r.athlete_name];
-    const vsSpring=base&&base.jh&&r.jump_height_cm&&base.date!==r.test_date?((r.jump_height_cm-base.jh)/base.jh*100).toFixed(1):null;
-    const vsCls=vsSpring==null?'':(+vsSpring>=0?'ok':'danger');
-    return`<tr>
-      <td style="font-weight:600;color:var(--uf-blue)">${r.athlete_name}</td>
-      <td>${pill('info',r.pos)}</td>
-      <td style="font-size:10px;color:var(--text3)">${r.unit}</td>
-      <td class="mono">${r.test_date}</td>
-      <td class="mono ${r.jump_height_cm?'acc':''}">${r.jump_height_cm!=null?r.jump_height_cm.toFixed(1):'—'}</td>
-      <td class="mono">${r.rsi_modified!=null?r.rsi_modified.toFixed(2):'—'}</td>
-      <td class="mono">${r.peak_force_n!=null?Math.round(r.peak_force_n).toLocaleString():'—'}</td>
-      <td class="mono">${r.peak_power_w!=null?r.peak_power_w.toFixed(1):'—'}</td>
-      <td class="mono">${r.concentric_impulse_ns!=null?r.concentric_impulse_ns.toFixed(1):'—'}</td>
-      <td class="mono">${r.eccentric_decel_impulse_ns!=null?r.eccentric_decel_impulse_ns.toFixed(1):'—'}</td>
-      <td class="mono ${vsCls}">${vsSpring!=null?(+vsSpring>=0?'+':'')+vsSpring+'%':'—'}</td>
-    </tr>`;
-  }).join('');
-};
-
-window.renderNord=function(){
-  const date=document.getElementById('nord-date-sel').value;
-  const pos=document.getElementById('nord-pos-sel').value;
-  let rows=nordData.filter(r=>r.test_date===date&&(pos==='All'||r.pos===pos));
-
-  rows.sort((a,b)=>{
-    if(nordSort.col==='name') return nordSort.dir==='asc'?a.athlete_name.localeCompare(b.athlete_name):b.athlete_name.localeCompare(a.athlete_name);
-    const av=a[nordSort.col]??-Infinity, bv=b[nordSort.col]??-Infinity;
-    return nordSort.dir==='desc'?bv-av:av-bv;
-  });
-
-  document.getElementById('nord-count').textContent=`${rows.length} athletes`;
-
-  const valid=rows.filter(r=>r.lsi_pct!=null);
-  const avgLSI=valid.length?(valid.reduce((s,r)=>s+r.lsi_pct,0)/valid.length).toFixed(1):'—';
-  const flagged=valid.filter(r=>r.lsi_pct<90).length;
-  const avgL=rows.filter(r=>r.left_peak_force_n!=null).length?(rows.filter(r=>r.left_peak_force_n!=null).reduce((s,r)=>s+r.left_peak_force_n,0)/rows.filter(r=>r.left_peak_force_n!=null).length).toFixed(0):'—';
-  const avgR=rows.filter(r=>r.right_peak_force_n!=null).length?(rows.filter(r=>r.right_peak_force_n!=null).reduce((s,r)=>s+r.right_peak_force_n,0)/rows.filter(r=>r.right_peak_force_n!=null).length).toFixed(0):'—';
-
-  document.getElementById('nord-stats').innerHTML=`
-    <div class="stat-card ok"><div class="sc-label">Avg LSI %</div><div class="sc-val ok">${avgLSI}</div><div class="sc-sub">limb symmetry index</div></div>
-    <div class="stat-card danger"><div class="sc-label">Flagged &lt;90% LSI</div><div class="sc-val danger">${flagged}</div><div class="sc-sub">asymmetry concern</div></div>
-    <div class="stat-card blue"><div class="sc-label">Avg Left Force</div><div class="sc-val blue">${avgL}</div><div class="sc-sub">newtons</div></div>
-    <div class="stat-card orange"><div class="sc-label">Avg Right Force</div><div class="sc-val orange">${avgR}</div><div class="sc-sub">newtons</div></div>`;
-
-  document.getElementById('nord-table').innerHTML=rows.map(r=>{
-    const lsiCls=r.lsi_pct==null?'':r.lsi_pct>=90?'ok':r.lsi_pct>=80?'warn':'danger';
-    const flag=r.lsi_pct!=null&&r.lsi_pct<90;
-    return`<tr>
-      <td style="font-weight:600;color:var(--uf-blue)">${r.athlete_name}</td>
-      <td>${pill('info',r.pos)}</td>
-      <td style="font-size:10px;color:var(--text3)">${r.unit}</td>
-      <td class="mono">${r.test_date}</td>
-      <td class="mono">${r.left_peak_force_n!=null?Math.round(r.left_peak_force_n).toLocaleString():'—'}</td>
-      <td class="mono">${r.right_peak_force_n!=null?Math.round(r.right_peak_force_n).toLocaleString():'—'}</td>
-      <td class="mono ${lsiCls}">${r.lsi_pct!=null?r.lsi_pct.toFixed(1)+'%':'—'}</td>
-      <td>${flag?pill('danger','FLAG'):pill('ok','OK')}</td>
-    </tr>`;
-  }).join('');
-};
 
 // ── INIT ──────────────────────────────────────────────────────────
-if(PLAYERS.length===0){
-  document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data found. Raw rows fetched: ${raw?.length||0}. Check catapult_sessions RLS policy allows authenticated reads.</div>`;
-  throw 0;
-}
+
 setGPSView('team');
 </script>
 </body>
