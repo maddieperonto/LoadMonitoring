@@ -1158,10 +1158,7 @@ window.renderNord=function(){
 
 // ── INIT ──────────────────────────────────────────────────────────
 console.log('[DEBUG] PLAYERS built:', PLAYERS.length);
-if(PLAYERS.length===0){
-  document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data found. Raw rows fetched: ${raw?.length||0}. Check catapult_sessions RLS policy allows authenticated reads.</div>`;
-  throw 0;
-}
+
 setGPSView('team');
 </script>
 </body>
