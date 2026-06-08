@@ -175,9 +175,14 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
       if (is.null(trials) || length(trials) == 0) return(NA_real_)
       if (!is.data.frame(trials)) return(NA_real_)
       if (!"results" %in% names(trials)) return(NA_real_)
-      all_names <- unique(unlist(lapply(trials$results, function(r) if(is.data.frame(r)) sapply(as.character(r$resultId), function(id) rd_lookup[[id]]%||%"") else c())))
-      asym_names <- all_names[grepl("asym", all_names, ignore.case=TRUE)]
-      if(length(asym_names)>0) cat("[VALD Sync] Asymmetry metrics in trials:", paste(asym_names, collapse=", "), "\n")
+      if(!is.null(trials) && is.data.frame(trials) && "results" %in% names(trials)) {
+    res1 <- trials$results[[1]]
+    if(is.data.frame(res1)) {
+      cat("[VALD Sync] Trial result columns:", paste(names(res1), collapse=", "), "\n")
+      epf_rows <- res1[grepl("eccentric peak force", sapply(as.character(res1$resultId), function(id) rd_lookup[[id]]%||%""), ignore.case=TRUE),]
+      if(nrow(epf_rows)>0) cat("[VALD Sync] EPF rows:", jsonlite::toJSON(epf_rows, auto_unbox=TRUE), "\n")
+    }
+  }
       for (i in seq_len(nrow(trials))) {
         res <- trials$results[[i]]
         if (is.null(res) || !is.data.frame(res)) next
