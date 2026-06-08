@@ -666,7 +666,7 @@ console.log('[DEBUG] spWks:', spWks, 'suWks:', suWks, 'suProjWks:', suProjWks, '
 // Periodized projection: peak at Su W10-W11 (115% spring avg), taper to Fa W1 (108%)
 function lmProjLoad(spAvg, wkLabel) {
   if (wkLabel.startsWith('Fa')) return Math.round(spAvg * 1.08);
-  const n = parseInt(wkLabel.slice(3));
+  const n = parseInt(wkLabel.replace('Su W',''));
   if (!wkLabel.startsWith('Su')) return null;
   // Real summer weeks — no projection
   if (n <= lastSuN) return null;
