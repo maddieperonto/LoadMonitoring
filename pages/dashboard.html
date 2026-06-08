@@ -877,7 +877,7 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
     .limit(200);
   const nordRows=(nordAsymm.data||[]);
   const latestNord={};
-  nordRows.forEach(r=>{if(!latestNord[r.athlete_name])latestNord[r.athlete_name]=r;});
+  nordRows.forEach(r=>{const n=normName(r.athlete_name);if(!latestNord[n])latestNord[n]={...r,athlete_name:n};});
   const topAsymm=Object.values(latestNord).filter(r=>r.lsi_pct!=null&&r.lsi_pct<100).sort((a,b)=>a.lsi_pct-b.lsi_pct).slice(0,5);
   document.getElementById('dash-nord-asymm').innerHTML=topAsymm.length
     ?topAsymm.map((r,i)=>`<div class="risk-row"><div style="font-family:var(--font-d);font-size:16px;font-weight:800;width:22px;text-align:center;color:${i===0?'#B91C1C':i===1?'#92400E':'var(--text3)'}">${i+1}</div><div class="avatar" style="background:rgba(220,38,38,.1);color:#B91C1C">${ini(r.athlete_name)}</div><div class="rnb"><div class="rname">${r.athlete_name}</div><div class="rpos">${r.test_date}</div></div>${pill(r.lsi_pct<80?'danger':r.lsi_pct<90?'warn':'ok',r.lsi_pct.toFixed(1)+'%')}</div>`).join('')
