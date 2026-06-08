@@ -279,7 +279,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   </div>
   <div class="two-col">
     <div class="panel"><div class="panel-title"><i class="ti ti-run" style="color:var(--uf-orange)"></i>Top High Speed Distance (m)</div><div id="dash-hsr"></div></div>
-    <div class="panel"><div class="panel-title"><i class="ti ti-arrows-horizontal" style="color:var(--acc5)"></i>Highest Nord Asymmetry %</div><div id="dash-nord-asymm"></div></div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-arrows-horizontal" style="color:var(--acc5)"></i>Highest Nord Asymmetry</div><div class="placeholder-state" style="min-height:100px;border:1px dashed var(--border2)"><div class="placeholder-sub" style="font-size:11px">VALD data pending automation</div></div></div>
   </div>
   <div class="panel">
     <div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR Trend — Distance</div>
@@ -392,7 +392,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <div><div style="font-size:13px;font-weight:600" id="lm-chart-title">Team weekly average</div><div style="font-size:11px;color:var(--text3);font-family:var(--font-m)">spring → summer → fall projection</div></div>
         <div class="lm-leg" id="lm-legend"></div>
       </div>
-      <div class="lm-phase-tags"><span>Spring (Jan–Apr)</span><span>Summer (May–Jul)</span><span style="color:var(--uf-orange)">Fall Camp (Aug+)</span></div>
+      <div class="lm-phase-tags"><span>Spring 2026 (Jan–Apr)</span><span>Summer 2026 (May–Jul)</span><span style="color:var(--uf-orange)">Fall Camp proj. (Aug)</span></div>
       <div class="chart-wrap h220"><canvas id="lm-team-chart"></canvas></div>
     </div>
     <div class="panel" style="margin-bottom:0">
@@ -569,45 +569,22 @@ document.getElementById('sidebar-username').textContent=me.full_name;
 document.getElementById('logout-btn').onclick=async()=>{await SB.auth.signOut();location.href='./login.html';};
 
 // ── PHASE ─────────────────────────────────────────────────────────
-function parseDate(d){
-  if(!d)return null;
-  const p=d.split('/');
-  if(p.length===3)return new Date(+p[2],+p[0]-1,+p[1]);
-  return new Date(d);
-}
-const PH={
-  fs:new Date(2025,9,1),  fe:new Date(2025,10,29),
-  ss:new Date(2026,0,23), se:new Date(2026,3,11),
-  us:new Date(2026,4,13), ue:new Date(2026,6,29),
-  cs:new Date(2026,7,5)
-};
-function phase(d){
-  const dt=parseDate(d);if(!dt)return null;
-  if(dt>=PH.fs&&dt<=PH.fe)return'Fa';
-  if(dt>=PH.ss&&dt<=PH.se)return'Sp';
-  if(dt>=PH.us&&dt<=PH.ue)return'Su';
-  return null;
-}
+const PH={ss:'2025-01-23',se:'2025-04-11',us:'2025-05-13',ue:'2025-07-29',fs:'2025-08-05'};
+function phase(d){if(d>=PH.ss&&d<=PH.se)return'Sp';if(d>=PH.us&&d<=PH.ue)return'Su';if(d>=PH.fs)return'Fa';return null;}
 function phWk(d){
   const ph=phase(d);if(!ph)return null;
-  const base=ph==='Fa'?PH.fs:ph==='Sp'?PH.ss:PH.us;
-  const days=Math.floor((parseDate(d)-base)/86400000);
+  const base=new Date((ph==='Sp'?PH.ss:ph==='Su'?PH.us:PH.fs)+'T00:00:00');
+  const days=Math.floor((new Date(d+'T00:00:00')-base)/86400000);
   return`${ph} W${Math.floor(days/7)+1}`;
 }
 
 // ── FETCH ─────────────────────────────────────────────────────────
-let raw=[], page=0, done=false;
-while(!done){
-  const {data:chunk,error:eR2}=await SB.from('catapult_sessions')
+const [{data:raw,error:eR},{data:aths}]=await Promise.all([
+  SB.from('catapult_sessions')
     .select('athlete_name,session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_b2_3_efforts,decel_b2_3_efforts')
-    .order('session_date',{ascending:true})
-    .range(page*1000,(page+1)*1000-1);
-  if(eR2||!chunk||chunk.length===0)done=true;
-  else{raw=[...raw,...chunk];if(chunk.length<1000)done=true;page++;}
-}
-const eR=null;
-const {data:aths}=await SB.from('athletes').select('name,position');
-
+    .order('session_date',{ascending:true}),
+  SB.from('athletes').select('name,position')
+]);
 if(eR){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ ${eR.message}</div>`;throw 0;}
 console.log('[DEBUG] raw sessions fetched:', raw?.length, '| athletes fetched:', aths?.length);
 console.log('[DEBUG] sample raw row:', raw?.[0]);
@@ -652,10 +629,38 @@ const allPhWks=[...new Set(raw.map(r=>phWk(r.session_date)).filter(Boolean))].so
 const spWks=allPhWks.filter(w=>w.startsWith('Sp'));
 const suWks=allPhWks.filter(w=>w.startsWith('Su'));
 const faWks=allPhWks.filter(w=>w.startsWith('Fa'));
+
+// GPS charts: Spring W1–W12 + Summer W1–current (no Fall 2025)
+const gpsChartWks=[...spWks,...suWks];
+
+// Load Monitor: Spring W1–W12 + Summer W1–W12 (project remaining) + Fa W1 (fall camp)
 const lastSuN=suWks.length?parseInt(suWks[suWks.length-1].slice(3)):0;
-const suProjWks=Array.from({length:Math.max(0,10-lastSuN)},(_,i)=>`Su W${lastSuN+i+1}`);
-const faProjWks=['Fa W1','Fa W2','Fa W3','Fa W4'];
+const suProjWks=Array.from({length:Math.max(0,12-lastSuN)},(_,i)=>`Su W${lastSuN+i+1}`);
+const fcProjWks=['Fa W1']; // just fall camp week 1
 const allLMWks=[...spWks,...suWks,...suProjWks];
+
+// Periodized projection: peak at Su W10-W11 (115% spring avg), taper to Fa W1 (108%)
+function lmProjLoad(spAvg, wkLabel) {
+  if (wkLabel.startsWith('Fa')) return Math.round(spAvg * 1.08);
+  const n = parseInt(wkLabel.slice(3));
+  if (!wkLabel.startsWith('Su')) return null;
+  // Real summer weeks — no projection
+  if (n <= lastSuN) return null;
+  // Project remaining summer weeks with peak at W10-W11
+  const totalSuWks = 12;
+  const peakWk = 10;
+  if (n <= peakWk) {
+    // Ramp up from current to peak
+    const startPct = 1.05;
+    const peakPct  = 1.15;
+    const t = (n - lastSuN) / (peakWk - lastSuN);
+    return Math.round(spAvg * (startPct + (peakPct - startPct) * t));
+  } else {
+    // Taper from peak toward fall camp
+    const t = (n - peakWk) / (totalSuWks - peakWk + 1);
+    return Math.round(spAvg * (1.15 - (1.15 - 1.08) * t));
+  }
+}
 
 // ── ACWR HELPER ───────────────────────────────────────────────────
 function calcACWR(arr){return arr.map((_,i)=>{const w=arr.slice(Math.max(0,i-3),i+1).filter(v=>v!=null&&v>0);const ch=w.reduce((a,b)=>a+b,0)/Math.max(1,w.length);return ch>0?+(arr[i]/ch).toFixed(3):0;});}
@@ -664,7 +669,8 @@ function wkTot(sessions,field,wk){return sessions.filter(s=>s.wk===wk).reduce((t
 // ── BUILD PLAYERS ─────────────────────────────────────────────────
 const PLAYERS=Object.values(byP).map(p=>{
   const pos=lkPos(p.name),unit=lkUnit(p.name);
-  function totArr(f){return allPhWks.map(wk=>wkTot(p.sessions,f,wk)||null);}
+  // GPS arrays use gpsChartWks (Spring + current Summer only)
+  function totArr(f){return gpsChartWks.map(wk=>wkTot(p.sessions,f,wk)||null);}
   const dA=totArr('dist'),aA=totArr('accel'),lA=totArr('load'),hA=totArr('hsr');
   const dACWR=calcACWR(dA.filter(v=>v!=null));
   const aACWR=calcACWR(aA.filter(v=>v!=null));
@@ -686,6 +692,7 @@ const PLAYERS=Object.values(byP).map(p=>{
   if(latA>1.5)flags.push({t:'ACWR A&D High',c:'r'});
   else if(latA>1.3)flags.push({t:'ACWR A&D Caution',c:'y'});
   const risk=flags.some(f=>f.c==='r')?'high':flags.length?'mod':'low';
+  // LM arrays use allLMWks (Spring + Summer real + Summer projected)
   const allLMLoad=allLMWks.map(wk=>wkTot(p.sessions,'load',wk)||null);
   const allLMDist=allLMWks.map(wk=>wkTot(p.sessions,'dist',wk)||null);
   const allLMHSR=allLMWks.map(wk=>wkTot(p.sessions,'hsr',wk)||null);
@@ -702,8 +709,7 @@ const PLAYERS=Object.values(byP).map(p=>{
 }).filter(p=>p.sessions.length>0).sort((a,b)=>a.name.localeCompare(b.name));
 
 // ── TOPBAR ────────────────────────────────────────────────────────
-const now=new Date();
-const today=`${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}/${now.getFullYear()}`;
+const today=new Date().toISOString().slice(0,10);
 const curPh=phase(today);
 const phLbl=curPh==='Sp'?'Spring Ball':curPh==='Su'?'Summer':curPh==='Fa'?'Fall Camp':'Off Season';
 document.getElementById('tb-season').textContent=`${PLAYERS.length} Athletes · ${phLbl}`;
@@ -733,9 +739,9 @@ function acChart(id,ac,ch,wks,la,lb){mk(id,{type:'line',data:{labels:wks,dataset
 function acwrChart(id,acwrs,wks){const ptC=acwrs.map(v=>v?acwrColor(v):C.grid);mk(id,{type:'line',data:{labels:wks,datasets:[{data:Array(wks.length).fill(1.3),borderColor:'rgba(22,163,74,.5)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},{data:Array(wks.length).fill(1.5),borderColor:'rgba(217,119,6,.5)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},{data:Array(wks.length).fill(0.8),borderColor:'rgba(22,163,74,.5)',borderDash:[5,3],pointRadius:0,fill:false,borderWidth:1.5},{label:'ACWR',data:acwrs,borderColor:C.acc,backgroundColor:'rgba(250,70,22,0.05)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:ptC,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5}]},options:{...CD,scales:{x:{ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}},y:{min:0.3,max:2.2,ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}}}}});}
 
 // ── TEAM ACWR COMPUTATION ─────────────────────────────────────────
-function teamWkTot(field){const m={};raw.forEach(r=>{const wk=phWk(r.session_date);if(!wk)return;m[wk]=(m[wk]||0)+(+r[field]||0);});return allPhWks.map(wk=>m[wk]?m[wk]/PLAYERS.length:null);}
+function teamWkTot(field){const m={};raw.forEach(r=>{const wk=phWk(r.session_date);if(!wk)return;m[wk]=(m[wk]||0)+(+r[field]||0);});return gpsChartWks.map(wk=>m[wk]?m[wk]/PLAYERS.length:null);}
 const tDA=teamWkTot('total_distance'),tAA=teamWkTot('accel_b2_3_efforts');
-const validWks=allPhWks.filter((_,i)=>tDA[i]!=null);
+const validWks=gpsChartWks.filter((_,i)=>tDA[i]!=null);
 const tDACWR=calcACWR(tDA.filter(v=>v!=null)),tAACWR=calcACWR(tAA.filter(v=>v!=null));
 const latTD=tDACWR[tDACWR.length-1]??0,latTA=tAACWR[tAACWR.length-1]??0;
 
@@ -773,7 +779,7 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
 ['cmp-a','cmp-b'].forEach((id,i)=>{const s=document.getElementById(id);PLAYERS.forEach((p,j)=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;if(i===1&&j===1)o.selected=true;s.appendChild(o);});});
 
 // ── DASHBOARD ─────────────────────────────────────────────────────
-(async function renderDashboard(){
+(function renderDashboard(){
   const high=PLAYERS.filter(p=>p.risk==='high').length,mod=PLAYERS.filter(p=>p.risk==='mod').length;
   document.getElementById('tb-high').textContent=`${high} High Risk`;
   document.getElementById('tb-mod').textContent=`${mod} Moderate`;
@@ -790,32 +796,6 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
   document.getElementById('dash-high-risk').innerHTML=riskPs.length?riskPs.map(p=>`<div class="risk-row"><div class="avatar" style="background:rgba(220,38,38,.1);color:#B91C1C">${ini(p.name)}</div><div class="rnb"><div class="rname" onclick="navTo('injury')" style="cursor:pointer">${p.name}</div><div class="flags">${p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div></div>${pill('danger','HIGH')}</div>`).join('')+(moreH>0?`<div onclick="navTo('injury')" style="text-align:center;padding:8px 0;font-family:var(--font-m);font-size:11px;color:#B91C1C;font-weight:600;cursor:pointer">+${moreH} more</div>`:''): '<div style="color:var(--text3);font-size:12px;padding:12px 0">No high risk athletes</div>';
   const topH=[...PLAYERS].filter(p=>p.totalHSR>0).sort((a,b)=>b.totalHSR-a.totalHSR).slice(0,5);
   document.getElementById('dash-hsr').innerHTML=topH.map((p,i)=>`<div class="risk-row"><div style="font-family:var(--font-d);font-size:16px;font-weight:800;width:22px;text-align:center;color:${i===0?'#B45309':i===1?'#94a3b8':i===2?'#cd7c3e':'var(--text3)'}">${i+1}</div><div class="avatar" style="background:rgba(0,48,135,.1);color:var(--uf-blue)">${ini(p.name)}</div><div class="rnb"><div class="rname" onclick="navToGPS('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer" onmouseover="this.style.color='var(--uf-orange)'" onmouseout="this.style.color='var(--uf-blue)'">${p.name}</div><div class="rpos">${p.pos} · all sessions</div></div>${pill('ok',Math.round(p.totalHSR).toLocaleString()+' m')}</div>`).join('');
-  // Nord asymmetry panel
-  const nordAsymm = await SB.from('nordbord_tests')
-    .select('athlete_name,test_date,lsi_pct,left_peak_force_n,right_peak_force_n')
-    .not('lsi_pct','is',null)
-    .gt('left_peak_force_n',0)
-    .gt('right_peak_force_n',0)
-    .order('test_date',{ascending:false})
-    .limit(200);
-  const nordRows = (nordAsymm.data||[]);
-  const latestNord = {};
-  nordRows.forEach(r=>{
-    if(!latestNord[r.athlete_name]) latestNord[r.athlete_name]=r;
-  });
-  const topAsymm = Object.values(latestNord)
-    .filter(r=>r.lsi_pct!=null&&r.lsi_pct<100)
-    .sort((a,b)=>a.lsi_pct-b.lsi_pct)
-    .slice(0,5);
-  document.getElementById('dash-nord-asymm').innerHTML = topAsymm.length
-    ? topAsymm.map((r,i)=>`
-      <div class="risk-row">
-        <div style="font-family:var(--font-d);font-size:16px;font-weight:800;width:22px;text-align:center;color:${i===0?'#B91C1C':i===1?'#92400E':'var(--text3)'}">${i+1}</div>
-        <div class="avatar" style="background:rgba(220,38,38,.1);color:#B91C1C">${ini(r.athlete_name)}</div>
-        <div class="rnb"><div class="rname">${r.athlete_name}</div><div class="rpos">${r.test_date}</div></div>
-        ${pill(r.lsi_pct<80?'danger':r.lsi_pct<90?'warn':'ok', r.lsi_pct.toFixed(1)+'%')}
-      </div>`).join('')
-    : '<div style="color:var(--text3);font-size:12px;padding:12px 0">No asymmetry data</div>';
 })();
 
 // ── ROSTER ────────────────────────────────────────────────────────
@@ -875,7 +855,7 @@ window.renderGPSGroup=function(){
   const grp=PLAYERS.filter(p=>p.pos===pos);
   if(!grp.length){document.getElementById('gps-group-stats').innerHTML='<div style="color:var(--text3);padding:20px">No data for this position.</div>';return;}
   document.getElementById('gps-group-badge').textContent=`${pos} · ${grp.length} athletes`;
-  function grpWk(f){return allPhWks.map(wk=>{const v=grp.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.reduce((t,x)=>t+x[f],0)/Math.max(1,s.length);}).filter(v=>v>0);return v.length?v.reduce((a,b)=>a+b)/v.length:null;});}
+  function grpWk(f){return gpsChartWks.map(wk=>{const v=grp.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.reduce((t,x)=>t+x[f],0)/Math.max(1,s.length);}).filter(v=>v>0);return v.length?v.reduce((a,b)=>a+b)/v.length:null;});}
   const gD=grpWk('dist'),gA=grpWk('accel');
   const gDf=gD.filter(v=>v!=null),gAf=gA.filter(v=>v!=null);
   const vWks=allPhWks.filter((_,i)=>gD[i]!=null);
@@ -916,18 +896,35 @@ function renderLMTeamChart(){
   const MCFG={load:{arr:p=>p.allLoads,label:'Team avg player load',color:C.blue,unit:''},dist:{arr:p=>p.allDist,label:'Avg distance (m)',color:'#4a7fd4',unit:'m'},hsrd:{arr:p=>p.allHSR,label:'Avg HSRD (m)',color:C.green,unit:'m'},accel:{arr:p=>p.allAccel,label:'Avg accel efforts',color:C.yellow,unit:''},decel:{arr:p=>p.allDecel,label:'Avg decel efforts',color:'#9b59b6',unit:''},acwr:{arr:null,label:'Team ACWR',color:C.acc,unit:''}};
   const cfg=MCFG[lmMetric]||MCFG.load;
   const realCount=spWks.length+suWks.length;
-  const allLbls=[...allLMWks,...faProjWks];
-  let primData;
-  if(lmMetric==='acwr'){const la=allLMWks.map((_,i)=>{const v=fp.map(p=>p.allLoads[i]).filter(v=>v!=null);return v.length?v.reduce((a,b)=>a+b)/v.length:null;});const ac2=calcACWR(la.filter(v=>v!=null));primData=[...Array(Math.max(0,realCount-ac2.length)).fill(null),...ac2,...Array(allLMWks.length-realCount+faProjWks.length).fill(null)];}
-  else{const avgs=allLMWks.map((_,i)=>{const v=fp.map(p=>cfg.arr(p)[i]).filter(v=>v!=null);return v.length?+(v.reduce((a,b)=>a+b)/v.length).toFixed(1):null;});primData=[...avgs,...faProjWks.map(()=>null)];}
+  const allLbls=[...allLMWks,...fcProjWks];
   const spAvgT=Math.round(fp.reduce((a,p)=>a+p.spAvg,0)/fp.length);
+  let primData;
+  if(lmMetric==='acwr'){
+    const la=allLMWks.map((_,i)=>{const v=fp.map(p=>p.allLoads[i]).filter(v=>v!=null);return v.length?v.reduce((a,b)=>a+b)/v.length:null;});
+    const ac2=calcACWR(la.filter(v=>v!=null));
+    primData=[...Array(Math.max(0,realCount-ac2.length)).fill(null),...ac2,...Array(allLMWks.length-realCount+fcProjWks.length).fill(null)];
+  } else {
+    const avgs=allLMWks.map((_,i)=>{const v=fp.map(p=>cfg.arr(p)[i]).filter(v=>v!=null);return v.length?+(v.reduce((a,b)=>a+b)/v.length).toFixed(1):null;});
+    primData=[...avgs,...fcProjWks.map(()=>null)];
+  }
   const baseline=allLbls.map(()=>spAvgT);
-  const projData=allLbls.map((_,i)=>i>=realCount&&i<allLMWks.length?(primData[realCount-1]??spAvgT)*(0.85+i*0.02):i>=allLMWks.length?(fp.reduce((a,p)=>a+(p.fallProj[i-allLMWks.length]??0),0)/fp.length):null);
-  const barColors=allLbls.map((_,i)=>i<spWks.length?'rgba(0,48,135,0.2)':i<realCount?C.blue:i<allLMWks.length?'rgba(250,70,22,0.25)':'transparent');
+  // Projection: use lmProjLoad for remaining summer + fall camp
+  const projData=allLbls.map((_,i,arr)=>{
+    const wk=arr[i];
+    if(i<realCount) return null; // real data, no projection line needed
+    return lmProjLoad(spAvgT, wk);
+  });
+  // Bar colors: spring=light blue, summer real=blue, summer proj=orange tint, fall camp=transparent
+  const barColors=allLbls.map((_,i)=>
+    i<spWks.length?'rgba(0,48,135,0.25)':
+    i<realCount?C.blue:
+    i<allLMWks.length?'rgba(250,70,22,0.15)':
+    'transparent'
+  );
   if(lmTC){lmTC.destroy();lmTC=null;}
   const el=document.getElementById('lm-team-chart');if(!el)return;
   document.getElementById('lm-chart-title').textContent=cfg.label;
-  document.getElementById('lm-legend').innerHTML=[{label:cfg.label,color:cfg.color,dash:false},{label:'Periodized proj.',color:C.acc,dash:true},{label:'Spring baseline',color:'rgba(0,48,135,0.35)',dash:true}].map(d=>`<span class="lm-leg">${d.dash?`<span class="lm-leg-dash" style="border-color:${d.color}"></span>`:`<span class="lm-leg-sq" style="background:${d.color}"></span>`}${d.label}</span>`).join('');
+  document.getElementById('lm-legend').innerHTML=[{label:cfg.label,color:cfg.color,dash:false},{label:'Periodized proj. (115% peak)',color:C.acc,dash:true},{label:'Spring baseline',color:'rgba(0,48,135,0.35)',dash:true}].map(d=>`<span class="lm-leg">${d.dash?`<span class="lm-leg-dash" style="border-color:${d.color}"></span>`:`<span class="lm-leg-sq" style="background:${d.color}"></span>`}${d.label}</span>`).join('');
   lmTC=new Chart(el,{type:'bar',data:{labels:allLbls,datasets:[{label:cfg.label,data:primData,backgroundColor:barColors,borderRadius:3,order:3},{label:'Spring baseline',data:baseline,type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},{label:'Fall projection',data:projData,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,fill:false,order:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}${cfg.unit}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9,family:'DM Mono'},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10,family:'DM Mono'}}}}}});
 }
 function renderLMACWR(){
@@ -961,10 +958,14 @@ window.selLMPlayer=function(i){
   const z=lmZone(p.acwr);
   document.getElementById('lm-detail-card').innerHTML=`<div class="lm-dh"><div><div class="lm-dn">${p.name}</div><div class="lm-dm">${p.pos} · ${p.unit} · Spring avg: ${p.spAvg}</div></div><span class="pill ${z.cls}" style="font-size:13px;padding:5px 14px">ACWR ${p.acwr} — ${z.label}</span></div><div class="lm-detail-stats"><div class="lm-ds"><div class="dl">Player load</div><div class="dv">${p.cl||'—'}</div></div><div class="lm-ds"><div class="dl">% of spring</div><div class="dv" style="color:${p.spPct>=80?C.green:C.yellow}">${p.spPct}%</div></div><div class="lm-ds"><div class="dl">ACWR (4wk)</div><div class="dv" style="color:${z.color}">${p.acwr}</div></div><div class="lm-ds"><div class="dl">HSRD</div><div class="dv">${p.ch2?Math.round(p.ch2)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Total dist</div><div class="dv">${p.cd?Math.round(p.cd)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Max velo</div><div class="dv" style="color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1)+' mph':'—'}</div></div><div class="lm-ds"><div class="dl">Accel</div><div class="dv">${p.ca||'—'}</div></div><div class="lm-ds"><div class="dl">Decel</div><div class="dv">${p.cde||'—'}</div></div><div class="lm-ds"><div class="dl">End summer proj</div><div class="dv" style="color:${p.endSumPct>=95?C.green:p.endSumPct>=80?C.yellow:C.red}">${p.endSumPct}%</div></div><div class="lm-ds"><div class="dl">Fall W1 proj</div><div class="dv" style="color:${p.fallW1Pct>=105?C.green:p.fallW1Pct>=95?C.yellow:C.red}">${p.fallW1Pct}%</div></div></div><div style="position:relative;height:200px"><canvas id="lm-player-chart"></canvas></div>`;
   if(lmPC){lmPC.destroy();lmPC=null;}
-  const allL2=[...allLMWks,...faProjWks];const rc2=spWks.length+suWks.length;
-  const bc2=allL2.map((_,i)=>i<spWks.length?'rgba(0,48,135,0.2)':i<rc2?C.blue:i<allLMWks.length?'rgba(250,70,22,0.25)':'transparent');
+  const allL2=[...allLMWks,...fcProjWks];const rc2=spWks.length+suWks.length;
+  const bc2=allL2.map((_,i)=>i<spWks.length?'rgba(0,48,135,0.25)':i<rc2?C.blue:i<allLMWks.length?'rgba(250,70,22,0.15)':'transparent');
   const lb2=allL2.map((_,i)=>i<allLMWks.length?(p.allLoads[i]??null):null);
-  const fl2=allL2.map((_,i)=>{if(i===allLMWks.length-1)return p.allLoads[allLMWks.length-1];if(i>=allLMWks.length)return p.fallProj[i-allLMWks.length]??null;return null;});
+  const fl2=allL2.map((_,i)=>{
+    const wk=allL2[i];
+    if(i<rc2) return null;
+    return lmProjLoad(p.spAvg, wk);
+  });
   const el2=document.getElementById('lm-player-chart');if(!el2)return;
   lmPC=new Chart(el2,{type:'bar',data:{labels:allL2,datasets:[{label:'Load',data:lb2,backgroundColor:bc2,borderRadius:3,order:3},{label:'Spring baseline',data:allL2.map(()=>p.spAvg),type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},{label:'Fall projection',data:fl2,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,fill:false,order:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10}}}}}});
   setTimeout(()=>sec.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
@@ -1041,8 +1042,8 @@ async function loadVALD(){
     SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false})
   ]);
 
-  cmjData=(cmj||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
-  nordData=(nord||[]).map(r=>({...r,pos:lkPos(r.athlete_name),unit:lkUnit(r.athlete_name)}));
+  cmjData=(cmj||[]).map(r=>({...r,pos:lookPos(r.athlete_name),unit:lookUnit(r.athlete_name)}));
+  nordData=(nord||[]).map(r=>({...r,pos:lookPos(r.athlete_name),unit:lookUnit(r.athlete_name)}));
 
   // Populate date selectors
   const cmjDates=[...new Set(cmjData.map(r=>r.test_date))].sort().reverse();
@@ -1157,7 +1158,10 @@ window.renderNord=function(){
 
 // ── INIT ──────────────────────────────────────────────────────────
 console.log('[DEBUG] PLAYERS built:', PLAYERS.length);
-
+if(PLAYERS.length===0){
+  document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data found. Raw rows fetched: ${raw?.length||0}. Check catapult_sessions RLS policy allows authenticated reads.</div>`;
+  throw 0;
+}
 setGPSView('team');
 </script>
 </body>
