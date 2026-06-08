@@ -569,7 +569,6 @@ document.getElementById('sidebar-username').textContent=me.full_name;
 document.getElementById('logout-btn').onclick=async()=>{await SB.auth.signOut();location.href='./login.html';};
 
 // ── PHASE ─────────────────────────────────────────────────────────
-// ── PHASE ─────────────────────────────────────────────────────────
 function parseDate(d){
   if(!d)return null;
   const p=d.split('/');
@@ -577,9 +576,9 @@ function parseDate(d){
   return new Date(d);
 }
 const PH={
-  fs:new Date(2025,9,1),  fe:new Date(2025,10,29),
-  ss:new Date(2026,0,23), se:new Date(2026,3,11),
-  us:new Date(2026,4,13), ue:new Date(2026,6,29),
+  fs:new Date(2025,9,1), fe:new Date(2025,10,29),
+  ss:new Date(2026,0,23),se:new Date(2026,3,11),
+  us:new Date(2026,4,13),ue:new Date(2026,6,29),
   cs:new Date(2026,7,5)
 };
 function phase(d){
@@ -597,13 +596,18 @@ function phWk(d){
 }
 
 // ── FETCH ─────────────────────────────────────────────────────────
-const [{data:raw,error:eR},{data:aths}]=await Promise.all([
-  SB.from('catapult_sessions')
+let raw=[], _page=0, _done=false;
+while(!_done){
+  const {data:chunk,error:eR2}=await SB.from('catapult_sessions')
     .select('athlete_name,session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_b2_3_efforts,decel_b2_3_efforts')
-    .order('session_date',{ascending:true}),
-  SB.from('athletes').select('name,position')
-]);
-if(eR){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ ${eR.message}</div>`;throw 0;}
+    .order('session_date',{ascending:true})
+    .range(_page*1000,(_page+1)*1000-1);
+  if(eR2||!chunk||chunk.length===0)_done=true;
+  else{raw=[...raw,...chunk];if(chunk.length<1000)_done=true;_page++;}
+}
+const eR=null;
+const {data:aths}=await SB.from('athletes').select('name,position');
+if(!raw.length){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data returned from Supabase.</div>`;throw 0;}
 console.log('[DEBUG] raw sessions fetched:', raw?.length, '| athletes fetched:', aths?.length);
 console.log('[DEBUG] sample raw row:', raw?.[0]);
 console.log('[DEBUG] sample ath row:', aths?.[0]);
@@ -727,9 +731,10 @@ const PLAYERS=Object.values(byP).map(p=>{
 }).filter(p=>p.sessions.length>0).sort((a,b)=>a.name.localeCompare(b.name));
 
 // ── TOPBAR ────────────────────────────────────────────────────────
-const today=new Date().toISOString().slice(0,10);
+const now=new Date();
+const today=`${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}/${now.getFullYear()}`;
 const curPh=phase(today);
-const phLbl=curPh==='Sp'?'Spring Ball':curPh==='Su'?'Summer':curPh==='Fa'?'Fall Camp':'Off Season';
+const phLbl=curPh==='Fa'?'Fall 2025':curPh==='Sp'?'Spring Ball 2026':curPh==='Su'?'Summer 2026':'Off Season';
 document.getElementById('tb-season').textContent=`${PLAYERS.length} Athletes · ${phLbl}`;
 
 // ── CHART/RENDER HELPERS ──────────────────────────────────────────
@@ -1176,7 +1181,10 @@ window.renderNord=function(){
 
 // ── INIT ──────────────────────────────────────────────────────────
 console.log('[DEBUG] PLAYERS built:', PLAYERS.length);
-
+if(PLAYERS.length===0){
+  document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data found. Raw rows fetched: ${raw?.length||0}. Check catapult_sessions RLS policy allows authenticated reads.</div>`;
+  throw 0;
+}
 setGPSView('team');
 </script>
 </body>
