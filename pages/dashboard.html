@@ -425,7 +425,6 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   <div id="vald-individual-view">
     <div class="sel-row" style="margin-bottom:16px">
       <select class="data-sel" id="vald-athlete-sel" onchange="renderVALDIndividual()" style="min-width:240px"></select>
-      <span class="tbb info" id="vald-test-date">—</span>
     </div>
     <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px" id="vald-ind-cards"></div>
     <div class="two-col" style="margin-bottom:14px">
@@ -1066,7 +1065,6 @@ window.renderVALDIndividual=function(){
   const latestCmj=cmj[0]||null;
   const latestNord=nord[0]||null;
   const latestDate=latestCmj?.test_date||latestNord?.test_date||'—';
-  document.getElementById('vald-test-date').textContent=`Latest: ${latestDate}`;
 
   // Metric cards
   const nordAvg=latestNord?((latestNord.left_peak_force_n||0)+(latestNord.right_peak_force_n||0))/2:null;
@@ -1108,16 +1106,13 @@ window.renderVALDIndividual=function(){
     }]
   },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Ecc Peak Force (N): ${ctx.raw.toFixed(1)}`}}},scales:{x:{ticks:{color:C.tick,font:{size:12,family:'DM Mono'}}},y:{ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}}}}});
 
-  // Testing log — all tests for this athlete
-  const allTests=[];
-  const nordByDate={};nordData.filter(r=>r.athlete_name===name).forEach(r=>{if(!nordByDate[r.test_date])nordByDate[r.test_date]=r;});
-  cmjData.filter(r=>r.athlete_name===name).forEach(r=>{
-    allTests.push({date:r.test_date,cmj:r,nord:nordByDate[r.test_date]||null});
-  });
-  Object.keys(nordByDate).forEach(d=>{
-    if(!allTests.find(t=>t.date===d)) allTests.push({date:d,cmj:null,nord:nordByDate[d]});
-  });
-  allTests.sort((a,b)=>b.date.localeCompare(a.date));
+  // Testing log — separate row per CMJ test and per NordBord test
+  const allCmjTests=cmjData.filter(r=>r.athlete_name===name);
+  const allNordTests=nordData.filter(r=>r.athlete_name===name);
+  const allTests=[
+    ...allCmjTests.map(r=>({date:r.test_date,type:'CMJ',cmj:r,nord:null})),
+    ...allNordTests.map(r=>({date:r.test_date,type:'NordBord',cmj:null,nord:r}))
+  ].sort((a,b)=>b.date.localeCompare(a.date));
 
   const nordAvgFn=n=>n?((n.left_peak_force_n||0)+(n.right_peak_force_n||0))/2:null;
   const nordAsymmFn=n=>n&&Math.max(n.left_peak_force_n||0,n.right_peak_force_n||0)>0?
@@ -1128,7 +1123,7 @@ window.renderVALDIndividual=function(){
     const epfAsym=t.cmj?.eccentric_peak_force_asymmetry_pct;
     return`<tr>
       <td style="font-weight:600">${name}</td>
-      <td class="mono">${t.date}</td>
+      <td class="mono">${t.date} ${pill(t.type==='CMJ'?'acc':'info',t.type)}</td>
       <td class="mono">${na!=null?na.toFixed(1):'—'}</td>
       <td class="mono ${nasym!=null?(nasym<10?'ok':nasym<15?'warn':'danger'):''}">${nasym!=null?nasym.toFixed(2)+'%':'—'}</td>
       <td class="mono ${t.cmj?.jump_height_cm?'acc':''}">${t.cmj?.jump_height_cm!=null?t.cmj.jump_height_cm.toFixed(1):'—'}</td>
