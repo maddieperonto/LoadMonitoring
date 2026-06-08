@@ -932,9 +932,11 @@ function renderLMTeamChart(){
   }
   const baseline=allLbls.map(()=>spAvgT);
   // Projection: use lmProjLoad for remaining summer + fall camp
+  // Include last real week as starting point so line connects to bars
   const projData=allLbls.map((_,i,arr)=>{
     const wk=arr[i];
-    if(i<realCount) return null; // real data, no projection line needed
+    if(i<realCount-1) return null; // null before last real week
+    if(i===realCount-1) return primData[realCount-1]; // connect from last real bar
     return lmProjLoad(spAvgT, wk);
   });
   // Bar colors: spring=light blue, summer real=blue, summer proj=orange tint, fall camp=transparent
