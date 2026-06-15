@@ -170,49 +170,8 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
   if (!is.null(fd_df) && nrow(fd_df) > 0) {
     cat("[VALD Sync] Fetching trials for", nrow(fd_df), "tests...\n")
 
-    # Helper: extract metric from trials by keyword
-    get_trial_metric <- function(trials, keywords, limb_filter=NULL) {
-      if (is.null(trials) || length(trials) == 0) return(NA_real_)
-      if (!is.data.frame(trials)) return(NA_real_)
-      if (!"results" %in% names(trials)) return(NA_real_)
-      for (i in seq_len(nrow(trials))) {
-        res <- trials$results[[i]]
-        if (is.null(res) || !is.data.frame(res)) next
-        for (j in seq_len(nrow(res))) {
-          rid <- as.character(res$resultId[j])
-          rname <- tolower(rd_lookup[[rid]] %||% "")
-          if (!any(sapply(keywords, function(k) grepl(k, rname, fixed=TRUE)))) next
-          if (!is.null(limb_filter)) {
-            limb_val <- if("limb" %in% names(res)) tolower(res$limb[j]) else ""
-            if (!grepl(tolower(limb_filter), limb_val, fixed=TRUE)) next
-          }
-          return(as.numeric(res$value[j]))
-        }
-      }
-      NA_real_
-    }
-
-    get_trial_metric_limb <- function(trials, keywords, limb_filter) {
-  if (is.null(trials) || length(trials) == 0) return(NA_real_)
-  if (!is.data.frame(trials)) return(NA_real_)
-  if (!"results" %in% names(trials)) return(NA_real_)
-  for (i in seq_len(nrow(trials))) {
-    res <- trials$results[[i]]
-    if (is.null(res) || !is.data.frame(res)) next
-    limb_col <- if("limb" %in% names(res)) tolower(res$limb) else rep("", nrow(res))
-    for (j in seq_len(nrow(res))) {
-      if (!grepl(tolower(limb_filter), limb_col[j], fixed=TRUE)) next
-      rid <- as.character(res$resultId[j])
-      rname <- tolower(rd_lookup[[rid]] %||% "")
-      if (any(sapply(keywords, function(k) grepl(k, rname, fixed=TRUE)))) {
-        return(as.numeric(res$value[j]))
-      }
-    }
-  }
-  NA_real_
-}
-
     CMJ_TYPES <- c("CMJ", "CMJA", "CMJL", "SJ", "SJA", "DJ", "DJA", "IMTP", "HOP")
+
     trial_data <- lapply(seq_len(nrow(fd_df)), function(i) {
       tid   <- fd_df$testId[i]
       ttype <- toupper(fd_df$testType[i])
@@ -227,34 +186,65 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
     })
     cat("[VALD Sync] Trials fetched.\n")
 
-    cmj_rows <- fd_df |>
-      mutate(
-        jump_height_cm             = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("jump height (flight time)"))),
-        peak_force_n               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak force"))),
-        peak_power_w               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("peak power / bm", "peak power"))),
-        rsi_modified               = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("rsi-modified", "rsi modified", "reactive strength"))),
-        concentric_impulse_ns      = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("concentric impulse"))),
-        eccentric_decel_impulse_ns = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric decel"))),
-        eccentric_decel_rfd_bm     = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric deceleration rfd / bm"))),
-        eccentric_peak_power_bm    = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak power / bm"))),
-        flight_time_contraction_time       = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("flight time:contraction time", "flighttime:contraction time"))),
-        eccentric_peak_force_left          = sapply(seq_len(n()), function(i) get_trial_metric_limb(trial_data[[i]], c("eccentric peak force"), "left")),
-        eccentric_peak_force_right         = sapply(seq_len(n()), function(i) get_trial_metric_limb(trial_data[[i]], c("eccentric peak force"), "right")),
-        eccentric_peak_force_asymmetry_pct = sapply(seq_len(n()), function(i) get_trial_metric(trial_data[[i]], c("eccentric peak force"), limb_filter="asym"))
-      ) |>
-      mutate(across(where(is.numeric), ~ ifelse(is.nan(.), NA_real_, .))) |>
-      select(vald_test_id, vald_profile_id, athlete_name, test_date,
-             jump_height_cm, peak_force_n, peak_power_w, rsi_modified,
-             concentric_impulse_ns, eccentric_decel_impulse_ns,
-             eccentric_decel_rfd_bm, eccentric_peak_power_bm,
-             flight_time_contraction_time, eccentric_peak_force_asymmetry_pct,
-             eccentric_peak_force_left, eccentric_peak_force_right) |>
-      filter(!is.na(test_date)) |>
-      group_by(vald_test_id) |>
-      slice_max(order_by = coalesce(jump_height_cm, 0), n = 1, with_ties = FALSE) |>
-      ungroup()
+    # ── Helper: extract a metric from ONE trial's results data frame ────────
+    get_metric_from_trial <- function(results_list, keywords, limb_filter = NULL) {
+      if (is.null(results_list) || !is.data.frame(results_list)) return(NA_real_)
+      res <- results_list
+      if (!is.data.frame(res) || nrow(res) == 0) return(NA_real_)
+      for (j in seq_len(nrow(res))) {
+        rid   <- as.character(res$resultId[j])
+        rname <- tolower(rd_lookup[[rid]] %||% "")
+        if (!any(sapply(keywords, function(k) grepl(k, rname, fixed = TRUE)))) next
+        if (!is.null(limb_filter)) {
+          limb_val <- if ("limb" %in% names(res)) tolower(res$limb[j]) else ""
+          if (!grepl(tolower(limb_filter), limb_val, fixed = TRUE)) next
+        }
+        return(as.numeric(res$value[j]))
+      }
+      NA_real_
+    }
 
-    cat("[VALD Sync]", nrow(cmj_rows), "ForceDecks rows to upsert.\n")
+    # ── Build one row per trial ─────────────────────────────────────────────
+    cmj_trial_rows <- lapply(seq_len(nrow(fd_df)), function(i) {
+      ttype <- toupper(fd_df$testType[i])
+      if (!any(sapply(CMJ_TYPES, function(t) grepl(t, ttype, fixed = TRUE)))) return(NULL)
+
+      trials <- trial_data[[i]]
+      if (is.null(trials) || !is.data.frame(trials) || nrow(trials) == 0) return(NULL)
+
+      per_trial <- lapply(seq_len(nrow(trials)), function(t) {
+        res <- trials$results[[t]]  # the results data frame for this one trial
+
+        data.frame(
+          vald_test_id                       = as.character(fd_df$testId[i]),
+          vald_profile_id                    = as.character(fd_df$profileId[i]),
+          athlete_name                       = fd_df$athlete_name[i],
+          test_date                          = fd_df$test_date[i],
+          trial_number                       = t,
+          jump_height_cm                     = get_metric_from_trial(res, c("jump height (flight time)")),
+          peak_force_n                       = get_metric_from_trial(res, c("peak force")),
+          peak_power_w                       = get_metric_from_trial(res, c("peak power / bm", "peak power")),
+          rsi_modified                       = get_metric_from_trial(res, c("rsi-modified", "rsi modified", "reactive strength")),
+          concentric_impulse_ns              = get_metric_from_trial(res, c("concentric impulse")),
+          eccentric_decel_impulse_ns         = get_metric_from_trial(res, c("eccentric decel")),
+          eccentric_decel_rfd_bm             = get_metric_from_trial(res, c("eccentric deceleration rfd / bm")),
+          eccentric_peak_power_bm            = get_metric_from_trial(res, c("eccentric peak power / bm")),
+          flight_time_contraction_time       = get_metric_from_trial(res, c("flight time:contraction time", "flighttime:contraction time")),
+          eccentric_peak_force_asymmetry_pct = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "asym"),
+          eccentric_peak_force_left          = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "left"),
+          eccentric_peak_force_right         = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "right"),
+          stringsAsFactors = FALSE
+        )
+      })
+
+      do.call(rbind, per_trial)
+    })
+
+    cmj_rows <- do.call(rbind, Filter(Negate(is.null), cmj_trial_rows)) |>
+      mutate(across(where(is.numeric), ~ ifelse(is.nan(.), NA_real_, .))) |>
+      filter(!is.na(test_date))
+
+    cat("[VALD Sync]", nrow(cmj_rows), "CMJ trial rows to upsert.\n")
     sb_upsert("cmj_tests", cmj_rows)
   }
 } else {
