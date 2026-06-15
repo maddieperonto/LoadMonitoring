@@ -185,7 +185,7 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
         query    = list(),
         base_url = VALD_FD_BASE
       )
-      Sys.sleep(0.05)
+      Sys.sleep(0.25)
       tr
     })
     cat("[VALD Sync] Trials fetched.\n")
