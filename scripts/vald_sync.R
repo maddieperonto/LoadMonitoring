@@ -279,6 +279,13 @@ repeat {
 }
 nb_raw <- if (length(all_nb_rows) > 0) do.call(rbind, all_nb_rows) else NULL
 cat("[VALD Sync] Total NordBord tests fetched:", if (!is.null(nb_raw)) nrow(nb_raw) else 0, "\n")
+if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
+  cat("[VALD Sync] NordBord columns:", paste(names(nb_raw), collapse = ", "), "\n")
+  dup_counts <- table(nb_raw$testId)
+  cat("[VALD Sync] Rows per testId - min:", min(dup_counts), "max:", max(dup_counts), "\n")
+  cat("[VALD Sync] Sample row:\n")
+  print(head(nb_raw[nb_raw$testId == names(dup_counts)[which.max(dup_counts)], ], 5))
+}
 
 if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
   nb_df <- tryCatch({
