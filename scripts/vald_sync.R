@@ -314,7 +314,7 @@ if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
       ungroup()
 
     cat("[VALD Sync]", nrow(nord_rows), "NordBord rows to upsert.\n")
-    sb_upsert("nordbord_tests", nord_rows)
+    sb_upsert("nordbord_tests", nord_rows, on_conflict = "vald_test_id")
   }
 } else {
   cat("[VALD Sync] No new NordBord tests.\n")
