@@ -656,6 +656,27 @@ function normName(n){
   return NAME_MAP[u]||u;
 }
 
+// ── GPS ROSTER ─────────────────────────────────────────────────────
+const GPS_ROSTER = new Set([
+  'JAMARI LYONS','LJ MCCRAY','JOSEPH MBATCHOU','KAMRAN JAMES','CADEN JONES',
+  'KENDALL GUERVIL','MASON CLINTON','EMEKA UGORJI','JEREMIAH MCCLOUD','JALEN WIGGINS',
+  'DK KALU','EMMANUEL OYEBADEJO','BRENDAN BETT','FLETCHER WESTPHAL','TAVARIS DICE JR',
+  'HARRISON MOORE','DANIEL PIERRE LOUIS','KNIJEAH HARRIS','EAGAN BOYER','RODERICK KEARNEY',
+  'JAYLEN LLOYD','TY JACKSON','JASON ZANDAMELA-POPA','MARK FAIRCLOTH JR','TITUS BULLARD',
+  'CAM DOOLEY','TJ BULLARD','MALIK MORRIS','MYLES JOHNSON','HEZE KENT',
+  'BYRON LOUIS','BRYCE THORNTON','LACOTA DIPPRE','KAHLEIL JACKSON','MATTHEW KADE',
+  'JADAN BAUGH','AARON PHILO','DYLAN PURTER','AIDAN WARNER','DYLAN LEIGHTON',
+  'KELVIN JIMENEZ','ERIC SINGLETON JR','TRAMELL JONES JR','JADEN ROBINSON','MYLES GRAHAM',
+  'DAVIAN GROCE','JADEN EDGECOMBE','KAIDEN HALL','AARON CHILES','BRYCE LOVETT',
+  'VERNELL BROWN III','TJ ABRAMS','CJ HESTER','EVAN CHIECA','MICAH JONES',
+  'ONIS KONANBANNY','LUKE HARPRING','JUSTIN WILLIAMS','JAYDEN WOODS','BEN HANKS III',
+  'BRIAN CASE','ELIJAH OWENS','KJ FORD','JORDY LOWERY','KOFI ASARE',
+  'BAILEY STOCKTON','MARQUEZ DANIEL','KANYE CLARK','WILL GRIFFIN','ALFONZO ALLEN JR',
+  'WALTEZ CLARK','AMIR JACKSON','DJ COLEMAN','DALLAS WILSON','DRAKE STUBBS',
+  'LAGONZA HAYWARD','BRAYDEN SLADE','LONDON MONTGOMERY','JVARI FLOWERS','CJ BRONAUGH',
+  'VINCENT BROWN JR','EVAN PRYOR','MICAH MAYS JR','TJ SHANAHAN'
+]);
+
 // ── POSITION LOOKUP ───────────────────────────────────────────────
 const OFF=['QB','WR','RB','TE','OL'],DEF=['DL','LB','ILB','EDGE','CB','S'],STS=['K','P','ST'];
 const PM={},UM={};
@@ -735,7 +756,7 @@ function wkTot(sessions,field,wk){return sessions.filter(s=>s.wk===wk).reduce((t
 // ── BUILD PLAYERS ─────────────────────────────────────────────────
 // Only include athletes on current roster
 const rosterNames=new Set((aths||[]).map(a=>a.name.toUpperCase()));
-const byPFiltered=Object.fromEntries(Object.entries(byP).filter(([k])=>rosterNames.has(k)));
+const byPFiltered=Object.fromEntries(Object.entries(byP).filter(([k])=>rosterNames.has(k)&&GPS_ROSTER.has(k)));
 
 const PLAYERS=Object.values(byPFiltered).map(p=>{
   const pos=lkPos(p.name),unit=lkUnit(p.name);
