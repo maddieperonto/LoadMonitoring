@@ -1091,7 +1091,7 @@ async function loadVALD(){
   nordData=(nord||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
 
   // Populate athlete selector with athletes that have any VALD data
-  const allNames=[...new Set([...cmjData.map(r=>r.athlete_name),...nordData.map(r=>r.athlete_name)])].sort();
+  const allNames=[...new Set([...cmjData.map(r=>r.athlete_name),...nordData.map(r=>r.athlete_name)])].filter(n=>rosterNames.has(n)).sort();
   const sel=document.getElementById('vald-athlete-sel');
   sel.innerHTML='';
   allNames.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
