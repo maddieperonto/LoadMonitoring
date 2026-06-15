@@ -150,7 +150,7 @@ repeat {
   cat("[VALD Sync] Fetched page of", nrow(page_df), "tests. Total so far:", sum(sapply(all_fd_rows, nrow)), "\n")
   if (nrow(page_df) < 50) break
   current_from <- page_df$modifiedDateUtc[nrow(page_df)]
-  Sys.sleep(0.5)
+  Sys.sleep(0.25)
 }
 fd_raw <- if (length(all_fd_rows) > 0) do.call(rbind, all_fd_rows) else NULL
 cat("[VALD Sync] Total ForceDecks tests fetched:", if (!is.null(fd_raw)) nrow(fd_raw) else 0, "\n")
