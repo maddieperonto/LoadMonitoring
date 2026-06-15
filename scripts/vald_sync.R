@@ -64,16 +64,20 @@ vald_get <- function(path, query = list(), base_url) {
 }
 
 # ── Helper: upsert to Supabase ────────────────────────────────────────────
-sb_upsert <- function(table, rows) {
+sb_upsert <- function(table, rows, on_conflict = NULL) {
   if (is.null(rows) || nrow(rows) == 0) { cat("[Supabase] No rows for", table, "\n"); return(invisible(NULL)) }
-  resp <- request(paste0(SUPABASE_URL, "/rest/v1/", table)) |>
+  req <- request(paste0(SUPABASE_URL, "/rest/v1/", table)) |>
     req_method("POST") |>
     req_headers(
       apikey         = SUPABASE_SERVICE_KEY,
       Authorization  = paste("Bearer", SUPABASE_SERVICE_KEY),
       "Content-Type" = "application/json",
       Prefer         = "return=minimal,resolution=merge-duplicates"
-    ) |>
+    )
+  if (!is.null(on_conflict)) {
+    req <- req |> req_url_query(on_conflict = on_conflict)
+  }
+  resp <- req |>
     req_body_raw(jsonlite::toJSON(rows, na = "null", auto_unbox = TRUE), type = "application/json") |>
     req_error(is_error = function(resp) FALSE) |>
     req_perform()
@@ -245,7 +249,7 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
       filter(!is.na(test_date))
 
     cat("[VALD Sync]", nrow(cmj_rows), "CMJ trial rows to upsert.\n")
-    sb_upsert("cmj_tests", cmj_rows)
+    sb_upsert("cmj_tests", cmj_rows, on_conflict = "vald_test_id,trial_number")
   }
 } else {
   cat("[VALD Sync] No new ForceDecks tests.\n")
