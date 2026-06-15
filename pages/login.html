@@ -1,9 +1,3 @@
-<!-- ═══════════════════════════════════════════════════════════════════════
-     DATA SOURCE: Supabase (live fetch)
-     To swap real data: import your CSV exports using the Python scripts
-     in /scripts/ then run seed_data.sql replacements.
-     Table/column documentation: see /DATA_SOURCES.md
-     ═══════════════════════════════════════════════════════════════════════ -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,336 +8,107 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         :root {
-            --uf-orange:  #FA4616;
-            --uf-blue:    #003087;
-            --uf-navy:    #001F5B;
-            --bg:         #F5F5F5;
-            --surface:    #FFFFFF;
-            --text:       #1A1A1A;
-            --muted:      #6B7280;
-            --error-bg:   #fef2f2;
-            --error-border:#fecaca;
-            --error-text: #991b1b;
+            --uf-orange:#FA4616; --uf-blue:#003087; --uf-navy:#001F5B;
+            --bg:#F5F5F5; --surface:#FFFFFF; --text:#1A1A1A; --muted:#6B7280;
+            --error-bg:#fef2f2; --error-border:#fecaca; --error-text:#991b1b;
         }
-
-        html, body {
-            height: 100%;
-            font-family: 'Inter', sans-serif;
-            background-color: var(--uf-navy);
-            color: var(--text);
-        }
-
-        /* ── Layout ─────────────────────────────────────────────────────── */
-        .login-page {
-            min-height: 100vh;
-            display: grid;
-            grid-template-columns: 1fr 480px;
-        }
-
-        /* ── Left panel — branding ──────────────────────────────────────── */
+        html, body { height:100%; font-family:'Inter',sans-serif; background-color:var(--uf-navy); color:var(--text); }
+        .login-page { min-height:100vh; display:grid; grid-template-columns:1fr 480px; }
         .brand-panel {
-            background-color: var(--uf-navy);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: flex-start;
-            padding: 4rem 5rem;
-            position: relative;
-            overflow: hidden;
+            background-color:var(--uf-navy); display:flex; flex-direction:column;
+            justify-content:center; align-items:flex-start; padding:4rem 5rem;
+            position:relative; overflow:hidden;
         }
-
-        /* Decorative circle */
         .brand-panel::before {
-            content: '';
-            position: absolute;
-            bottom: -160px;
-            left: -160px;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            background: rgba(250, 70, 22, 0.08);
-            pointer-events: none;
+            content:''; position:absolute; bottom:-160px; left:-160px;
+            width:500px; height:500px; border-radius:50%;
+            background:rgba(250,70,22,0.08); pointer-events:none;
         }
         .brand-panel::after {
-            content: '';
-            position: absolute;
-            top: -80px;
-            right: -80px;
-            width: 320px;
-            height: 320px;
-            border-radius: 50%;
-            background: rgba(0, 48, 135, 0.5);
-            pointer-events: none;
+            content:''; position:absolute; top:-80px; right:-80px;
+            width:320px; height:320px; border-radius:50%;
+            background:rgba(0,48,135,0.5); pointer-events:none;
         }
-
-        .brand-logo {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 3rem;
-            font-weight: 700;
-            color: var(--uf-orange);
-            letter-spacing: 0.04em;
-            line-height: 1;
-            margin-bottom: 0.5rem;
-            position: relative;
-            z-index: 1;
+        .brand-logo { font-family:'Barlow Condensed',sans-serif; font-size:3rem; font-weight:700; color:var(--uf-orange); letter-spacing:0.04em; line-height:1; margin-bottom:0.5rem; position:relative; z-index:1; }
+        .brand-sub { font-family:'Barlow Condensed',sans-serif; font-size:1.1rem; font-weight:600; color:rgba(255,255,255,0.5); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:3rem; position:relative; z-index:1; }
+        .brand-headline { font-family:'Barlow Condensed',sans-serif; font-size:2.8rem; font-weight:700; color:#ffffff; line-height:1.1; max-width:380px; margin-bottom:1.5rem; position:relative; z-index:1; }
+        .brand-headline span { color:var(--uf-orange); }
+        .brand-desc { font-size:0.95rem; color:rgba(255,255,255,0.55); line-height:1.6; max-width:340px; position:relative; z-index:1; }
+        .brand-divider { width:48px; height:3px; background:var(--uf-orange); margin-bottom:1.5rem; position:relative; z-index:1; }
+        .form-panel { background-color:var(--surface); display:flex; flex-direction:column; justify-content:center; padding:3rem 3.5rem; }
+        .form-title { font-size:1.6rem; font-weight:700; color:var(--uf-navy); margin-bottom:0.375rem; }
+        .form-subtitle { font-size:0.875rem; color:var(--muted); margin-bottom:2.5rem; }
+        .form-group { margin-bottom:1.25rem; }
+        label { display:block; font-size:0.8rem; font-weight:600; color:var(--uf-navy); letter-spacing:0.04em; text-transform:uppercase; margin-bottom:0.5rem; }
+        input[type="text"], input[type="password"] {
+            width:100%; padding:0.75rem 1rem; font-family:'Inter',sans-serif; font-size:0.95rem;
+            color:var(--text); background:#F9FAFB; border:1.5px solid #E5E7EB; border-radius:8px;
+            outline:none; transition:border-color 0.15s ease, box-shadow 0.15s ease;
         }
-
-        .brand-sub {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: rgba(255,255,255,0.5);
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            margin-bottom: 3rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .brand-headline {
-            font-family: 'Barlow Condensed', sans-serif;
-            font-size: 2.8rem;
-            font-weight: 700;
-            color: #ffffff;
-            line-height: 1.1;
-            max-width: 380px;
-            margin-bottom: 1.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        .brand-headline span {
-            color: var(--uf-orange);
-        }
-
-        .brand-desc {
-            font-size: 0.95rem;
-            color: rgba(255,255,255,0.55);
-            line-height: 1.6;
-            max-width: 340px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .brand-divider {
-            width: 48px;
-            height: 3px;
-            background: var(--uf-orange);
-            margin-bottom: 1.5rem;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* ── Right panel — form ─────────────────────────────────────────── */
-        .form-panel {
-            background-color: var(--surface);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 3rem 3.5rem;
-        }
-
-        .form-title {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--uf-navy);
-            margin-bottom: 0.375rem;
-        }
-
-        .form-subtitle {
-            font-size: 0.875rem;
-            color: var(--muted);
-            margin-bottom: 2.5rem;
-        }
-
-        /* ── Form fields ────────────────────────────────────────────────── */
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--uf-navy);
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            margin-bottom: 0.5rem;
-        }
-
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            color: var(--text);
-            background: #F9FAFB;
-            border: 1.5px solid #E5E7EB;
-            border-radius: 8px;
-            outline: none;
-            transition: border-color 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        input:focus {
-            border-color: var(--uf-blue);
-            box-shadow: 0 0 0 3px rgba(0, 48, 135, 0.1);
-            background: #ffffff;
-        }
-
-        input::placeholder { color: #9CA3AF; }
-
-        /* ── Error message ──────────────────────────────────────────────── */
-        .error-msg {
-            display: none;
-            align-items: center;
-            gap: 0.6rem;
-            background: var(--error-bg);
-            border: 1px solid var(--error-border);
-            border-radius: 8px;
-            padding: 0.75rem 1rem;
-            color: var(--error-text);
-            font-size: 0.875rem;
-            margin-bottom: 1.25rem;
-        }
-
-        .error-msg.visible { display: flex; }
-        .error-msg svg { flex-shrink: 0; }
-
-        /* ── Submit button ──────────────────────────────────────────────── */
-        .btn-login {
-            width: 100%;
-            padding: 0.85rem;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: #ffffff;
-            background-color: var(--uf-orange);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.15s ease, transform 0.1s ease;
-            margin-top: 0.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-
-        .btn-login:hover:not(:disabled) {
-            background-color: #e03d10;
-        }
-
-        .btn-login:active:not(:disabled) {
-            transform: scale(0.99);
-        }
-
-        .btn-login:disabled {
-            opacity: 0.65;
-            cursor: not-allowed;
-        }
-
-        /* Button spinner */
-        .btn-spinner {
-            display: none;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.4);
-            border-top-color: #ffffff;
-            border-radius: 50%;
-            animation: spin 0.6s linear infinite;
-        }
-        .btn-login.loading .btn-spinner { display: block; }
-        .btn-login.loading .btn-label  { opacity: 0.8; }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ── Footer note ────────────────────────────────────────────────── */
-        .form-footer {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #F3F4F6;
-            font-size: 0.78rem;
-            color: var(--muted);
-            line-height: 1.5;
-        }
-
-        /* ── Responsive ─────────────────────────────────────────────────── */
-        @media (max-width: 900px) {
-            .login-page {
-                grid-template-columns: 1fr;
-            }
-            .brand-panel {
-                padding: 3rem 2rem 2.5rem;
-                align-items: center;
-                text-align: center;
-            }
-            .brand-headline { font-size: 2rem; max-width: 100%; }
-            .brand-desc     { max-width: 100%; }
-            .brand-divider  { margin-left: auto; margin-right: auto; }
-            .form-panel     { padding: 2.5rem 2rem; }
+        input:focus { border-color:var(--uf-blue); box-shadow:0 0 0 3px rgba(0,48,135,0.1); background:#ffffff; }
+        input::placeholder { color:#9CA3AF; }
+        .error-msg { display:none; align-items:center; gap:0.6rem; background:var(--error-bg); border:1px solid var(--error-border); border-radius:8px; padding:0.75rem 1rem; color:var(--error-text); font-size:0.875rem; margin-bottom:1.25rem; }
+        .error-msg.visible { display:flex; }
+        .btn-login { width:100%; padding:0.85rem; font-family:'Inter',sans-serif; font-size:0.95rem; font-weight:600; color:#ffffff; background-color:var(--uf-orange); border:none; border-radius:8px; cursor:pointer; transition:background 0.15s ease, transform 0.1s ease; margin-top:0.5rem; display:flex; align-items:center; justify-content:center; gap:0.5rem; }
+        .btn-login:hover:not(:disabled) { background-color:#e03d10; }
+        .btn-login:active:not(:disabled) { transform:scale(0.99); }
+        .btn-login:disabled { opacity:0.65; cursor:not-allowed; }
+        .btn-spinner { display:none; width:16px; height:16px; border:2px solid rgba(255,255,255,0.4); border-top-color:#ffffff; border-radius:50%; animation:spin 0.6s linear infinite; }
+        .btn-login.loading .btn-spinner { display:block; }
+        .btn-login.loading .btn-label  { opacity:0.8; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        .form-footer { margin-top:2rem; padding-top:1.5rem; border-top:1px solid #F3F4F6; font-size:0.78rem; color:var(--muted); line-height:1.5; }
+        @media (max-width:900px) {
+            .login-page { grid-template-columns:1fr; }
+            .brand-panel { padding:3rem 2rem 2.5rem; align-items:center; text-align:center; }
+            .brand-headline { font-size:2rem; max-width:100%; }
+            .brand-desc { max-width:100%; }
+            .brand-divider { margin-left:auto; margin-right:auto; }
+            .form-panel { padding:2.5rem 2rem; }
         }
     </style>
 </head>
 <body>
-
 <div class="login-page">
-
-    <!-- ── Left: Branding ──────────────────────────────────────────────── -->
     <div class="brand-panel">
         <div class="brand-logo">UF S&amp;C</div>
         <div class="brand-sub">Strength &amp; Conditioning</div>
         <div class="brand-divider"></div>
-        <h1 class="brand-headline">
-            Data-driven<br>athlete <span>performance</span>.
-        </h1>
-        <p class="brand-desc">
-            Real-time load management, force metrics, and injury risk
-            assessment for the University of Florida Football program.
-        </p>
+        <h1 class="brand-headline">Data-driven<br>athlete <span>performance</span>.</h1>
+        <p class="brand-desc">Real-time load management, force metrics, and injury risk assessment for the University of Florida Football program.</p>
     </div>
-
-    <!-- ── Right: Login form ───────────────────────────────────────────── -->
     <div class="form-panel">
         <h2 class="form-title">Sign in</h2>
-        <p class="form-subtitle">Use your UF S&amp;C staff credentials</p>
-
-        <!-- Error banner -->
+        <p class="form-subtitle">Enter your UF S&amp;C username and password</p>
         <div class="error-msg" id="error-msg" role="alert">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <span id="error-text">Invalid email or password. Please try again.</span>
+            <span id="error-text">Invalid username or password. Please try again.</span>
         </div>
-
         <form id="login-form" novalidate>
             <div class="form-group">
-                <label for="email">Email address</label>
-                <input type="email" id="email" name="email"
-                       placeholder="you@ufl.edu" autocomplete="email" required>
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username"
+                       placeholder="e.g. mperonto" autocomplete="username" required>
             </div>
-
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password"
                        placeholder="••••••••" autocomplete="current-password" required>
             </div>
-
             <button type="submit" class="btn-login" id="login-btn">
                 <div class="btn-spinner"></div>
                 <span class="btn-label">Sign in</span>
             </button>
         </form>
-
         <div class="form-footer">
             Access is restricted to authorized UF Football Strength &amp; Conditioning
-            staff. Contact your system administrator if you need an account or have
-            forgotten your credentials.
+            staff and athletes. Contact your system administrator if you need an account
+            or have forgotten your credentials.
         </div>
     </div>
 </div>
@@ -360,31 +125,24 @@
     const errorBox = document.getElementById('error-msg');
     const errorTxt = document.getElementById('error-text');
 
-    function setLoading(on) {
-        btn.disabled = on;
-        btn.classList.toggle('loading', on);
-    }
-
-    function showError(msg) {
-        errorTxt.textContent = msg;
-        errorBox.classList.add('visible');
-    }
-
-    function hideError() {
-        errorBox.classList.remove('visible');
-    }
+    function setLoading(on) { btn.disabled=on; btn.classList.toggle('loading',on); }
+    function showError(msg) { errorTxt.textContent=msg; errorBox.classList.add('visible'); }
+    function hideError()    { errorBox.classList.remove('visible'); }
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         hideError();
 
-        const email    = document.getElementById('email').value.trim();
+        const username = document.getElementById('username').value.trim().toLowerCase();
         const password = document.getElementById('password').value;
 
-        if (!email || !password) {
-            showError('Please enter your email and password.');
+        if (!username || !password) {
+            showError('Please enter your username and password.');
             return;
         }
+
+        // Convert username to internal email format
+        const email = `${username}@uf-ams.internal`;
 
         setLoading(true);
 
@@ -392,42 +150,51 @@
 
         if (error) {
             setLoading(false);
-            // Normalize Supabase error messages for end-users
             if (error.message.toLowerCase().includes('invalid')) {
-                showError('Invalid email or password. Please try again.');
-            } else if (error.message.toLowerCase().includes('email not confirmed')) {
-                showError('Please confirm your email address before signing in.');
+                showError('Invalid username or password. Please try again.');
             } else {
                 showError('Sign-in failed. Please try again or contact your administrator.');
             }
             return;
         }
 
-        // Success — redirect based on role
+        // Get role and redirect accordingly
+        const { data: { user } } = await supabase.auth.getUser();
         const { data: profile } = await supabase
             .from('profiles')
             .select('role')
-            .eq('id', (await supabase.auth.getUser()).data.user.id)
+            .eq('id', user.id)
             .single();
 
         const role = profile?.role;
-        if (role === 'athletic_trainer') {
+        if (role === 'athlete') {
+            window.location.href = './athlete.html';
+        } else if (['head_coach','sc_staff','athletic_trainer'].includes(role)) {
             window.location.href = './dashboard.html';
         } else {
-            window.location.href = './dashboard.html';
-    }
+            showError('Your account does not have access. Contact your administrator.');
+            await supabase.auth.signOut();
+            setLoading(false);
+        }
     });
 
-    // Clear error when user starts typing again
-    document.getElementById('email').addEventListener('input', hideError);
+    document.getElementById('username').addEventListener('input', hideError);
     document.getElementById('password').addEventListener('input', hideError);
 
-    // If already logged in, skip the login page
+    // If already logged in, redirect based on role
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
-        window.location.href = './dashboard.html';
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+        if (profile?.role === 'athlete') {
+            window.location.href = './athlete.html';
+        } else {
+            window.location.href = './dashboard.html';
+        }
     }
 </script>
-
 </body>
 </html>
