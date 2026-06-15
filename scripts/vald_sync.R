@@ -286,6 +286,21 @@ if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
   cat("[VALD Sync] Sample row:\n")
   print(head(nb_raw[nb_raw$testId == names(dup_counts)[which.max(dup_counts)], ], 5))
 }
+if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
+  sample_test_id <- nb_raw$testId[1]
+  cat("[VALD Sync] Testing NordBord trials endpoint for testId:", sample_test_id, "\n")
+  nb_trials_test <- vald_get(
+    paste0("/v2019q3/teams/", VALD_TEAM_ID, "/tests/", sample_test_id, "/trials"),
+    query = list(),
+    base_url = VALD_NORD_BASE
+  )
+  if (!is.null(nb_trials_test)) {
+    cat("[VALD Sync] NordBord trials response found. Structure:\n")
+    str(nb_trials_test)
+  } else {
+    cat("[VALD Sync] NordBord trials endpoint returned nothing (likely 404 - doesn't exist).\n")
+  }
+}
 
 if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
   nb_df <- tryCatch({
