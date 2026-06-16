@@ -203,14 +203,14 @@ document.getElementById('sidebar-name').textContent = athleteName;
 // Fetch athlete position
 const { data: athleteRow } = await SB.from('athletes')
   .select('position')
-  .eq('name', athleteName)
+  .ilike('name', athleteName)
   .single();
 if (athleteRow) document.getElementById('sidebar-pos').textContent = athleteRow.position;
 
 // Fetch GPS sessions for this athlete (current year)
 const { data: sessions } = await SB.from('catapult_sessions')
   .select('session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_b2_3_efforts,decel_b2_3_efforts')
-  .eq('athlete_name', athleteName)
+  .ilike('athlete_name', athleteName)
   .gte('session_date', '01/01/2026')
   .order('session_date', { ascending: false });
 
@@ -253,12 +253,12 @@ if (sel.options.length > 1) {
 const [{ data: cmj }, { data: nord }] = await Promise.all([
   SB.from('cmj_tests')
     .select('test_date,jump_height_cm,rsi_modified')
-    .eq('athlete_name', athleteName)
+    .ilike('athlete_name', athleteName)
     .gte('test_date', '2026-01-01')
     .order('test_date', { ascending: false }),
   SB.from('nordbord_tests')
     .select('test_date,left_peak_force_n,right_peak_force_n,lsi_pct')
-    .eq('athlete_name', athleteName)
+    .ilike('athlete_name', athleteName)
     .gte('test_date', '2026-01-01')
     .order('test_date', { ascending: false }),
 ]);
