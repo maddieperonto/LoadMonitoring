@@ -88,14 +88,71 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 .pill.acc{background:var(--uf-orange-pale,#FFF0EC);color:var(--uf-orange);border:1px solid rgba(250,70,22,.25)}
 .pill.info{background:var(--uf-blue-pale,#E8EEF8);color:var(--uf-blue);border:1px solid rgba(0,48,135,.2)}
 
+/* Change Password Button */
+.btn-change-pw{width:100%;padding:6px;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(255,255,255,0.07);color:var(--sidebar-text);border:1px solid var(--sidebar-border);border-radius:6px;cursor:pointer;transition:all .13s;margin-bottom:6px}
+.btn-change-pw:hover{background:rgba(0,48,135,0.3);color:#fff;border-color:rgba(255,255,255,0.2)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.visible{display:flex}
+.modal{background:var(--surface);border-radius:var(--r2);padding:28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.modal-title{font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.modal-group{margin-bottom:14px}
+.modal-group label{display:block;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);margin-bottom:5px}
+.modal-group input{width:100%;padding:9px 12px;font-family:var(--font-b);font-size:13px;color:var(--text);background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--r);outline:none}
+.modal-group input:focus{border-color:var(--uf-orange);box-shadow:0 0 0 3px rgba(250,70,22,.1)}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.btn-modal-save{flex:1;padding:10px;font-family:var(--font-d);font-size:13px;font-weight:700;background:var(--uf-orange);color:#fff;border:none;border-radius:var(--r);cursor:pointer}
+.btn-modal-save:hover{background:#e03d10}
+.btn-modal-cancel{flex:1;padding:10px;font-family:var(--font-d);font-size:13px;font-weight:700;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border2);border-radius:var(--r);cursor:pointer}
+.modal-error{font-size:12px;color:#B91C1C;margin-top:8px;display:none}
+.modal-success{font-size:12px;color:#15803D;margin-top:8px;display:none}
+
 /* Spinner */
 .uf-spinner-wrap{display:flex;justify-content:center;align-items:center;min-height:200px}
 .uf-spinner{width:36px;height:36px;border:3px solid #e5e7eb;border-top-color:var(--uf-orange);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .empty-state{text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px}
+.btn-change-pw{width:100%;padding:6px;font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:rgba(255,255,255,0.07);color:var(--sidebar-text);border:1px solid var(--sidebar-border);border-radius:6px;cursor:pointer;transition:all .13s;margin-bottom:6px}
+.btn-change-pw:hover{background:rgba(0,48,135,0.3);color:#fff;border-color:rgba(255,255,255,0.2)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.visible{display:flex}
+.modal{background:var(--surface);border-radius:var(--r2);padding:28px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.modal-title{font-family:var(--font-d);font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px}
+.modal-sub{font-size:12px;color:var(--text3);margin-bottom:20px}
+.modal-group{margin-bottom:14px}
+.modal-group label{display:block;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);margin-bottom:5px}
+.modal-group input{width:100%;padding:9px 12px;font-family:var(--font-b);font-size:13px;color:var(--text);background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--r);outline:none}
+.modal-group input:focus{border-color:var(--uf-orange);box-shadow:0 0 0 3px rgba(250,70,22,.1)}
+.modal-actions{display:flex;gap:10px;margin-top:20px}
+.btn-modal-save{flex:1;padding:10px;font-family:var(--font-d);font-size:13px;font-weight:700;background:var(--uf-orange);color:#fff;border:none;border-radius:var(--r);cursor:pointer}
+.btn-modal-save:hover{background:#e03d10}
+.btn-modal-cancel{flex:1;padding:10px;font-family:var(--font-d);font-size:13px;font-weight:700;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border2);border-radius:var(--r);cursor:pointer}
+.modal-error{font-size:12px;color:#B91C1C;margin-top:8px;display:none}
+.modal-success{font-size:12px;color:#15803D;margin-top:8px;display:none}
 </style>
 </head>
 <body>
+  <!-- Change Password Modal -->
+<div class="modal-overlay" id="pw-modal">
+  <div class="modal">
+    <div class="modal-title">Change Password</div>
+    <div class="modal-sub">Your new password will be saved for account recovery.</div>
+    <div class="modal-group">
+      <label>New Password</label>
+      <input type="password" id="pw-new" placeholder="Enter new password">
+    </div>
+    <div class="modal-group">
+      <label>Confirm New Password</label>
+      <input type="password" id="pw-confirm" placeholder="Confirm new password">
+    </div>
+    <div class="modal-error" id="pw-error"></div>
+    <div class="modal-success" id="pw-success"></div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" id="pw-cancel">Cancel</button>
+      <button class="btn-modal-save" id="pw-save">Save Password</button>
+    </div>
+  </div>
+</div>
 <div class="app">
 
 <!-- Sidebar -->
@@ -115,6 +172,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="sidebar-athlete-pos" id="sidebar-pos"></div>
   </div>
   <div class="nav-user">
+    <button class="btn-change-pw" id="change-pw-btn">Change Password</button>
     <button class="btn-logout-side" id="logout-btn">Sign Out</button>
   </div>
 </div>
@@ -287,6 +345,54 @@ document.getElementById('vald-table').innerHTML = valdRows.length
       </tr>`;
     }).join('')
   : '<tr><td colspan="7" class="empty-state">No testing data found for this year.</td></tr>';
+
+  // Change password modal
+document.getElementById('change-pw-btn').addEventListener('click', () => {
+  document.getElementById('pw-modal').classList.add('visible');
+  document.getElementById('pw-new').value = '';
+  document.getElementById('pw-confirm').value = '';
+  document.getElementById('pw-error').style.display = 'none';
+  document.getElementById('pw-success').style.display = 'none';
+});
+
+document.getElementById('pw-cancel').addEventListener('click', () => {
+  document.getElementById('pw-modal').classList.remove('visible');
+});
+
+document.getElementById('pw-save').addEventListener('click', async () => {
+  const newPw = document.getElementById('pw-new').value;
+  const confirmPw = document.getElementById('pw-confirm').value;
+  const errEl = document.getElementById('pw-error');
+  const sucEl = document.getElementById('pw-success');
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+
+  if (!newPw || newPw.length < 6) {
+    errEl.textContent = 'Password must be at least 6 characters.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (newPw !== confirmPw) {
+    errEl.textContent = 'Passwords do not match.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const { error: authErr } = await SB.auth.updateUser({ password: newPw });
+  if (authErr) {
+    errEl.textContent = 'Failed to update password. Please try again.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  await SB.from('profiles')
+    .update({ temporary_password: newPw })
+    .eq('id', session.user.id);
+
+  sucEl.textContent = 'Password updated successfully!';
+  sucEl.style.display = 'block';
+  setTimeout(() => document.getElementById('pw-modal').classList.remove('visible'), 2000);
+});
 </script>
 </body>
 </html>
