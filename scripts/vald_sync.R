@@ -248,8 +248,48 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
       mutate(across(where(is.numeric), ~ ifelse(is.nan(.), NA_real_, .))) |>
       filter(!is.na(test_date))
 
-    cat("[VALD Sync]", nrow(cmj_rows), "CMJ trial rows to upsert.\n")
-    sb_upsert("cmj_tests", cmj_rows, on_conflict = "vald_test_id,trial_number")
+    # Normalize athlete names to match roster
+    name_map <- c(
+      "Aaron Philo"="AARON PHILO","Alec Clark"="ALEC CLARK",
+      "Alfonzo Allen"="ALFONZO ALLEN JR","AUSTIN \"ACE\" CIONGOLI"="AUSTIN CIONGOLI",
+      "Bailey Stockton"="BAILEY STOCKTON","Ben Hanks Jr."="BEN HANKS III",
+      "Brian Case"="BRIAN CASE","Byron Louis"="BYRON LOUIS",
+      "Cam'Ron Dooley"="CAM DOOLEY","Carter Milliron"="CARTER MILLIRON",
+      "Charles Emanuel III"="CHARLES EMANUEL III","Cj  Hester"="CJ HESTER",
+      "CJ Bronaugh "="CJ BRONAUGH","Cormani McClain"="CORMANI MCCLAIN",
+      "Dallas Wilson"="DALLAS WILSON","Davian Groce"="DAVIAN GROCE",
+      "Drake Stubbs"="DRAKE STUBBS","Dylan Leighton"="DYLAN LEIGHTON",
+      "Dylan Purter"="DYLAN PURTER","Elijah Owens"="ELIJAH OWENS",
+      "Eric Parks"="ERIC PARKS","Eric Singleton"="ERIC SINGLETON JR",
+      "Erich Seager"="ERICH SEAGER","Evan Chieca"="EVAN CHIECA",
+      "Hezekiah Kent"="HEZE KENT","Hunter Solwold"="HUNTER SOLWOLD",
+      "J'Vari Flowers"="J'VARI FLOWERS","Jadan Baugh"="JADAN BAUGH",
+      "Jaden Edgecombe"="JADEN EDGECOMBE","Jayden Woods"="JAYDEN WOODS",
+      "Jordy Lowery"="JORDY LOWERY","Justin Williams"="JUSTIN WILLIAMS",
+      "Kaiden Hall"="KAIDEN HALL","Kelvin Jimenez"="KELVIN JIMENEZ",
+      "KJ Ford"="KJ FORD","Kofi Asare"="KOFI ASARE",
+      "Lacota Dippre"="LACOTA DIPPRE","Lagonza Hayward"="LAGONZA HAYWARD",
+      "Liam Padron"="LIAM PADRON","Lincoln Anderson"="LINCOLN ANDERSON",
+      "London Montgomery"="LONDON MONTGOMERY","Malik Morris"="MALIK MORRIS",
+      "Marquez Daniel"="MARQUEZ DANIEL","Mason Jordan"="MASON JORDAN",
+      "Matthew Kade"="MATTHEW KADE","Micah Jones"="MICAH JONES",
+      "Micah Mays"="MICAH MAYS JR","Miller Fealy"="MILLER FEALY",
+      "Myles Johnson"="MYLES JOHNSON","Nicholas Inglis"="NICK INGLIS",
+      "Onis Konanbanny"="ONIS KONANBANNY","Patrick Durkin"="PATRICK DURKIN",
+      "Thaddeus TJ Bullard Jr."="TJ BULLARD","Titus Bullard"="TITUS BULLARD",
+      "TJ Abrams"="TJ ABRAMS","Tramell Jones"="TRAMELL JONES JR",
+      "Ty Jackson"="TY JACKSON","Vernell Brown"="VERNELL BROWN III",
+      "Vincent Brown"="VINCENT BROWN JR","Waltez Clark"="WALTEZ CLARK",
+      "William Griffin"="WILL GRIFFIN","Eric Singleton Jr"="ERIC SINGLETON JR",
+      "Micah Mays Jr"="MICAH MAYS JR"
+    )
+    cmj_rows$athlete_name <- ifelse(
+      cmj_rows$athlete_name %in% names(name_map),
+      name_map[cmj_rows$athlete_name],
+      toupper(cmj_rows$athlete_name)
+    )
+    cat("[VALD Sync]", nrow(cmj_rows), "ForceDecks rows to upsert.\n")
+    sb_upsert("cmj_tests", cmj_rows)
   }
 } else {
   cat("[VALD Sync] No new ForceDecks tests.\n")
@@ -313,8 +353,13 @@ if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
       slice_max(order_by = coalesce(left_peak_force_n, 0), n = 1, with_ties = FALSE) |>
       ungroup()
 
+    nord_rows$athlete_name <- ifelse(
+      nord_rows$athlete_name %in% names(name_map),
+      name_map[nord_rows$athlete_name],
+      toupper(nord_rows$athlete_name)
+    )
     cat("[VALD Sync]", nrow(nord_rows), "NordBord rows to upsert.\n")
-    sb_upsert("nordbord_tests", nord_rows, on_conflict = "vald_test_id")
+    sb_upsert("nordbord_tests", nord_rows)
   }
 } else {
   cat("[VALD Sync] No new NordBord tests.\n")
