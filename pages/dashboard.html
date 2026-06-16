@@ -824,18 +824,6 @@ function wkTot(sessions,field,wk){return sessions.filter(s=>s.wk===wk).reduce((t
 const rosterNames=new Set((aths||[]).map(a=>a.name.toUpperCase()));
 const byPFiltered=Object.fromEntries(Object.entries(byP).filter(([k])=>rosterNames.has(normName(k))&&GPS_ROSTER.has(normName(k))));
 
-console.log('[DEBUG] byPFiltered keys:', Object.keys(byPFiltered).sort());
-console.log('[DEBUG] byPFiltered count:', Object.keys(byPFiltered).length);
-
-console.log('[DEBUG] GPS missing from byP:', [...GPS_ROSTER].filter(n=>!Object.keys(byP).includes(n)));
-console.log('[DEBUG] byP GPS athletes not in filter:', Object.keys(byP).filter(k=>GPS_ROSTER.has(k)&&!rosterNames.has(k)||rosterNames.has(k)&&!GPS_ROSTER.has(k)));
-
-const gpsFiltered=Object.keys(byP).filter(k=>GPS_ROSTER.has(k)&&!rosterNames.has(k));
-const rosterFiltered=Object.keys(byP).filter(k=>rosterNames.has(k)&&!GPS_ROSTER.has(k));
-console.log('[DEBUG] In GPS not in roster:', gpsFiltered);
-console.log('[DEBUG] In roster not in GPS:', rosterFiltered);
-console.log('[DEBUG] byP keys:', Object.keys(byP).sort());
-
 const PLAYERS=Object.values(byPFiltered).map(p=>{
   const pos=lkPos(p.name),unit=lkUnit(p.name);
   // GPS arrays use gpsChartWks (Spring + current Summer only)
