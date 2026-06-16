@@ -824,6 +824,9 @@ function wkTot(sessions,field,wk){return sessions.filter(s=>s.wk===wk).reduce((t
 const rosterNames=new Set((aths||[]).map(a=>a.name.toUpperCase()));
 const byPFiltered=Object.fromEntries(Object.entries(byP).filter(([k])=>rosterNames.has(normName(k))&&GPS_ROSTER.has(normName(k))));
 
+console.log('[DEBUG] byPFiltered keys:', Object.keys(byPFiltered).sort());
+console.log('[DEBUG] byPFiltered count:', Object.keys(byPFiltered).length);
+
 const gpsFiltered=Object.keys(byP).filter(k=>GPS_ROSTER.has(k)&&!rosterNames.has(k));
 const rosterFiltered=Object.keys(byP).filter(k=>rosterNames.has(k)&&!GPS_ROSTER.has(k));
 console.log('[DEBUG] In GPS not in roster:', gpsFiltered);
