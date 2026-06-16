@@ -822,7 +822,7 @@ function wkTot(sessions,field,wk){return sessions.filter(s=>s.wk===wk).reduce((t
 // ── BUILD PLAYERS ─────────────────────────────────────────────────
 // Only include athletes on current roster
 const rosterNames=new Set((aths||[]).map(a=>a.name.toUpperCase()));
-const byPFiltered=Object.fromEntries(Object.entries(byP).filter(([k])=>rosterNames.has(k)&&GPS_ROSTER.has(k)));
+const byPFiltered=Object.fromEntries(Object.entries(byP).filter(([k])=>rosterNames.has(normName(k))&&GPS_ROSTER.has(normName(k))));
 
 const PLAYERS=Object.values(byPFiltered).map(p=>{
   const pos=lkPos(p.name),unit=lkUnit(p.name);
