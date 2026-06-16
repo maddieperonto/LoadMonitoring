@@ -827,6 +827,9 @@ const byPFiltered=Object.fromEntries(Object.entries(byP).filter(([k])=>rosterNam
 console.log('[DEBUG] byPFiltered keys:', Object.keys(byPFiltered).sort());
 console.log('[DEBUG] byPFiltered count:', Object.keys(byPFiltered).length);
 
+console.log('[DEBUG] GPS missing from byP:', [...GPS_ROSTER].filter(n=>!Object.keys(byP).includes(n)));
+console.log('[DEBUG] byP GPS athletes not in filter:', Object.keys(byP).filter(k=>GPS_ROSTER.has(k)&&!rosterNames.has(k)||rosterNames.has(k)&&!GPS_ROSTER.has(k)));
+
 const gpsFiltered=Object.keys(byP).filter(k=>GPS_ROSTER.has(k)&&!rosterNames.has(k));
 const rosterFiltered=Object.keys(byP).filter(k=>rosterNames.has(k)&&!GPS_ROSTER.has(k));
 console.log('[DEBUG] In GPS not in roster:', gpsFiltered);
