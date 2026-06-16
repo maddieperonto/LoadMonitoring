@@ -386,9 +386,10 @@ document.getElementById('pw-save').addEventListener('click', async () => {
   }
 
   const { data: { user: currentUser } } = await SB.auth.getUser();
-  await SB.from('profiles')
+  const { error: profErr } = await SB.from('profiles')
     .update({ temporary_password: newPw })
     .eq('id', currentUser.id);
+  console.log('[DEBUG] profile update:', currentUser.id, profErr);
 
   sucEl.textContent = 'Password updated successfully!';
   sucEl.style.display = 'block';
