@@ -644,7 +644,7 @@ function phWk(d){
 let raw=[], _page=0, _done=false;
 while(!_done){
   const {data:chunk,error:eR2}=await SB.from('catapult_sessions')
-    .select('athlete_name,session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_b2_3_efforts,decel_b2_3_efforts')
+    .select('athlete_name,session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts')
     .order('session_date',{ascending:true})
     .range(_page*1000,(_page+1)*1000-1);
   if(eR2||!chunk||chunk.length===0)_done=true;
@@ -807,7 +807,7 @@ raw.forEach(r=>{
     date:r.session_date,ph:phase(r.session_date),wk,
     load:+r.total_player_load||0,dist:+r.total_distance||0,
     hsr:(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0),
-    maxV:+r.max_velocity||0,accel:+r.accel_b2_3_efforts||0,decel:+r.decel_b2_3_efforts||0
+    maxV:+r.max_velocity||0,accel:+r.accel_total_efforts||0,decel:+r.decel_total_efforts||0
   });
 });
 
@@ -937,7 +937,7 @@ function acwrChart(id,acwrs,wks){const ptC=acwrs.map(v=>v?acwrColor(v):C.grid);m
 
 // ── TEAM ACWR COMPUTATION ─────────────────────────────────────────
 function teamWkTot(field){const m={};raw.forEach(r=>{const wk=phWk(r.session_date);if(!wk)return;m[wk]=(m[wk]||0)+(+r[field]||0);});return gpsChartWks.map(wk=>m[wk]?m[wk]/PLAYERS.length:null);}
-const tDA=teamWkTot('total_distance'),tAA=teamWkTot('accel_b2_3_efforts');
+const tDA=teamWkTot('total_distance'),tAA=teamWkTot('accel_total_efforts');
 const validWks=gpsChartWks.filter((_,i)=>tDA[i]!=null);
 const tDACWR=calcACWR(tDA.filter(v=>v!=null)),tAACWR=calcACWR(tAA.filter(v=>v!=null));
 const latTD=tDACWR[tDACWR.length-1]??0,latTA=tAACWR[tAACWR.length-1]??0;
