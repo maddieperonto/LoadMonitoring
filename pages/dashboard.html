@@ -803,6 +803,7 @@ raw.forEach(r=>{
   const k=normName(r.athlete_name);
   if(!byP[k])byP[k]={name:k,sessions:[]};
   const wk=phWk(r.session_date);if(!wk)return;
+  if((+r.total_distance||0)===0)return; 
   byP[k].sessions.push({
     date:r.session_date,ph:phase(r.session_date),wk,
     load:+r.total_player_load||0,dist:+r.total_distance||0,
