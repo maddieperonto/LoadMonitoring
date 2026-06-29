@@ -359,7 +359,11 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel (mph)</th><th>Avg Dist (m)</th><th>Avg A&amp;D</th><th>Avg HSR (m)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-weekly"></tbody></table></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-users"></i>Full Team GPS Roster</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Pos</th><th>Unit</th><th>Latest Dist (m)</th><th>Max Vel (mph)</th><th>Accel/Decel</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-roster"></tbody></table></div>
+      <div class="sel-row" style="margin-bottom:12px">
+        <select class="data-sel" id="gps-team-date-sel" onchange="renderGPSTeamRoster()"></select>
+        <span id="gps-team-roster-badge" class="tbb info">— athletes</span>
+      </div>
+      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Dist (m)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-roster"></tbody></table></div>
     </div>
   </div>
   <div id="gps-individual-view" style="display:none">
@@ -376,8 +380,8 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Weekly GPS Summary</div>
       <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Dist (m)</th><th>Max Vel (mph)</th><th>A&amp;D</th><th>HSR (m)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-table"></tbody></table></div>
     </div>
-    <div class="panel"><div class="panel-title"><i class="ti ti-users"></i>Full Team Roster</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Pos</th><th>Latest Dist (m)</th><th>Max Vel (mph)</th><th>A&amp;D</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-roster-table"></tbody></table></div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Session History</div>
+      <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Week</th><th>Player Load</th><th>Dist (m)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (m)</th></tr></thead><tbody id="gps-session-history"></tbody></table></div>
     </div>
   </div>
   <div id="gps-group-view" style="display:none">
@@ -402,7 +406,11 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Group ACWR — Accel &amp; Decel</div><div class="chart-wrap h180"><canvas id="grp-acwr-accel"></canvas></div></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-users"></i>Position Group Roster</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Latest Dist (m)</th><th>Max Vel (mph)</th><th>A&amp;D</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-grp-roster"></tbody></table></div>
+      <div class="sel-row" style="margin-bottom:12px">
+        <select class="data-sel" id="gps-grp-date-sel" onchange="renderGPSGrpRoster()"></select>
+        <span id="gps-grp-roster-badge" class="tbb info">— athletes</span>
+      </div>
+      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Player Load</th><th>Dist (m)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-grp-roster"></tbody></table></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Group Weekly GPS Summary</div>
       <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel</th><th>Avg Dist (m)</th><th>Avg A&amp;D</th><th>Avg HSR (m)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-group-table"></tbody></table></div>
@@ -1022,7 +1030,103 @@ function filterRoster(q=''){
 document.getElementById('roster-search').addEventListener('input',function(){filterRoster(this.value.toLowerCase());});
 filterRoster();
 
+// ── GPS DATE ROSTER HELPERS ────────────────────────────────────────
+function populateGPSDateSel(selId, sessions){
+  const dates=[...new Set(sessions.map(s=>s.date))].sort().reverse();
+  const sel=document.getElementById(selId);
+  if(!sel)return;
+  sel.innerHTML='';
+  dates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
+}
+
+window.renderGPSTeamRoster=function(){
+  const date=document.getElementById('gps-team-date-sel').value;
+  if(!date)return;
+  const rows=[];
+  PLAYERS.forEach(p=>{
+    const s=p.sessions.find(x=>x.date===date);
+    if(!s)return;
+    rows.push({p,s});
+  });
+  document.getElementById('gps-team-roster-badge').textContent=`${rows.length} athletes`;
+  document.getElementById('gps-team-roster').innerHTML=rows.sort((a,b)=>b.s.dist-a.s.dist).map(({p,s})=>{
+    const st=acwrSt(p.latD);
+    return`<tr>
+      <td style="font-weight:600;cursor:pointer;color:var(--uf-blue)" onclick="openPM('${p.name.replace(/'/g,"\\'")}');">${p.name}</td>
+      <td>${pill('info',p.pos)}</td>
+      <td style="font-size:10px;color:var(--text3)">${p.unit}</td>
+      <td class="mono">${s.load.toFixed(1)}</td>
+      <td class="mono">${Math.round(s.dist).toLocaleString()}</td>
+      <td class="mono acc">${s.maxV>0?s.maxV.toFixed(2):'—'}</td>
+      <td class="mono">${s.accel}</td>
+      <td class="mono">${s.decel}</td>
+      <td class="mono">${Math.round(s.hsr).toLocaleString()}</td>
+      <td class="mono ${acwrSt(p.latD).cls==='ok'?'ok':acwrSt(p.latD).cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td>
+      <td class="mono ${acwrSt(p.latA).cls==='ok'?'ok':acwrSt(p.latA).cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td>
+      <td>${pill(st.cls,st.lbl)}</td>
+    </tr>`;
+  }).join('');
+};
+
+window.renderGPSGrpRoster=function(){
+  const pos=document.getElementById('gps-group-sel').value;
+  const date=document.getElementById('gps-grp-date-sel').value;
+  if(!date)return;
+  const grp=PLAYERS.filter(p=>p.pos===pos);
+  const rows=[];
+  grp.forEach(p=>{
+    const s=p.sessions.find(x=>x.date===date);
+    if(!s)return;
+    rows.push({p,s});
+  });
+  document.getElementById('gps-grp-roster-badge').textContent=`${rows.length} athletes`;
+  document.getElementById('gps-grp-roster').innerHTML=rows.sort((a,b)=>b.s.dist-a.s.dist).map(({p,s})=>{
+    const st=acwrSt(p.latD);
+    return`<tr>
+      <td style="font-weight:600">${p.name}</td>
+      <td class="mono">${s.load.toFixed(1)}</td>
+      <td class="mono">${Math.round(s.dist).toLocaleString()}</td>
+      <td class="mono acc">${s.maxV>0?s.maxV.toFixed(2):'—'}</td>
+      <td class="mono">${s.accel}</td>
+      <td class="mono">${s.decel}</td>
+      <td class="mono">${Math.round(s.hsr).toLocaleString()}</td>
+      <td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td>
+      <td class="mono ${acwrSt(p.latA).cls==='ok'?'ok':acwrSt(p.latA).cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td>
+      <td>${pill(st.cls,st.lbl)}</td>
+    </tr>`;
+  }).join('');
+};
+
 // ── GPS TEAM ──────────────────────────────────────────────────────
+window.renderGPSGrpRoster=function(){
+  const pos=document.getElementById('gps-group-sel').value;
+  const date=document.getElementById('gps-grp-date-sel').value;
+  if(!date)return;
+  const grp=PLAYERS.filter(p=>p.pos===pos);
+  const rows=[];
+  grp.forEach(p=>{
+    const s=p.sessions.find(x=>x.date===date);
+    if(!s)return;
+    rows.push({p,s});
+  });
+  document.getElementById('gps-grp-roster-badge').textContent=`${rows.length} athletes`;
+  document.getElementById('gps-grp-roster').innerHTML=rows.sort((a,b)=>b.s.dist-a.s.dist).map(({p,s})=>{
+    const st=acwrSt(p.latD);
+    return`<tr>
+      <td style="font-weight:600">${p.name}</td>
+      <td class="mono">${s.load.toFixed(1)}</td>
+      <td class="mono">${Math.round(s.dist).toLocaleString()}</td>
+      <td class="mono acc">${s.maxV>0?s.maxV.toFixed(2):'—'}</td>
+      <td class="mono">${s.accel}</td>
+      <td class="mono">${s.decel}</td>
+      <td class="mono">${Math.round(s.hsr).toLocaleString()}</td>
+      <td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td>
+      <td class="mono ${acwrSt(p.latA).cls==='ok'?'ok':acwrSt(p.latA).cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td>
+      <td>${pill(st.cls,st.lbl)}</td>
+    </tr>`;
+  }).join('');
+};
+
 function renderGPSTeam(){
   const ds=acwrSt(latTD),as2=acwrSt(latTA);
   const avgMV=PLAYERS.filter(p=>p.latMaxV>0).reduce((s,p)=>s+p.latMaxV,0)/Math.max(1,PLAYERS.filter(p=>p.latMaxV>0).length);
@@ -1039,8 +1143,12 @@ function renderGPSTeam(){
     const amv=(()=>{const v=PLAYERS.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();
     return`<tr><td class="mono">${wk}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${amv}</td><td class="mono">${Math.round(tDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono">${Math.round((tDf[i]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(tDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(tDch[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono">${Math.round(tAch[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;
   }).join('');
-  document.getElementById('gps-team-roster').innerHTML=[...PLAYERS].sort((a,b)=>b.latD-a.latD).map(p=>{const st=acwrSt(p.latD);const s=p.latest;return`<tr><td style="font-weight:600;cursor:pointer;color:var(--uf-blue)" onclick="openPM('${p.name.replace(/'/g,"\\'")}');">${p.name}</td><td>${pill('info',p.pos)}</td><td style="font-size:10px;color:var(--text3)">${p.unit}</td><td class="mono">${s?Math.round(s.dist).toLocaleString():'—'}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</td><td class="mono">${s?(s.accel+s.decel):'—'}</td><td class="mono">${s?Math.round(s.hsr):'—'}</td><td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td><td class="mono ${acwrSt(p.latA).cls==='ok'?'ok':acwrSt(p.latA).cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
-}
+  // Populate team date selector
+  const allTeamDates=[...new Set(PLAYERS.flatMap(p=>p.sessions.map(s=>s.date)))].sort().reverse();
+  const teamDateSel=document.getElementById('gps-team-date-sel');
+  teamDateSel.innerHTML='';
+  allTeamDates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;teamDateSel.appendChild(o);});
+  renderGPSTeamRoster();}
 
 // ── GPS INDIVIDUAL ────────────────────────────────────────────────
 window.renderGPS=function(){
@@ -1059,8 +1167,18 @@ window.renderGPS=function(){
   acChart('gps-ac-accel',aF,aCh,validWks,'Acute A&D','Chronic A&D');
   acwrChart('gps-acwr-accel',p.aACWR,validWks);
   document.getElementById('gps-table').innerHTML=validWks.map((wk,i)=>{const d=p.dACWR[i]??0,a=p.aACWR[i]??0,st=acwrSt(d);const ws=p.sessions.filter(s=>s.wk===wk);const wMV=ws.length?Math.max(...ws.map(s=>s.maxV)):0;return`<tr><td class="mono">${wk}</td><td class="mono">${Math.round(dF[i]||0).toLocaleString()}</td><td class="mono acc">${wMV>0?wMV.toFixed(2):'—'}</td><td class="mono">${Math.round(aF[i]||0)}</td><td class="mono">${Math.round(ws.reduce((t,s)=>t+s.hsr,0)).toLocaleString()}</td><td class="mono">${Math.round(dF[i]||0).toLocaleString()}</td><td class="mono">${Math.round(dCh[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(aF[i]||0)}</td><td class="mono">${Math.round(aCh[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
-  document.getElementById('gps-roster-table').innerHTML=[...PLAYERS].sort((a,b)=>b.latD-a.latD).map(pl=>{const st=acwrSt(pl.latD);const ls=pl.latest;return`<tr><td style="font-weight:600;cursor:pointer;color:var(--uf-blue)" onclick="openPM('${pl.name.replace(/'/g,"\\'")}');">${pl.name}</td><td>${pill('info',pl.pos)}</td><td class="mono">${ls?Math.round(ls.dist).toLocaleString():'—'}</td><td class="mono acc">${pl.latMaxV>0?pl.latMaxV.toFixed(2):'—'}</td><td class="mono">${ls?(ls.accel+ls.decel):'—'}</td><td class="mono">${ls?Math.round(ls.hsr):'—'}</td><td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${pl.latD>0?pl.latD.toFixed(2):'—'}</td><td class="mono ${acwrSt(pl.latA).cls==='ok'?'ok':acwrSt(pl.latA).cls==='warn'?'warn':'danger'}">${pl.latA>0?pl.latA.toFixed(2):'—'}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
-};
+  // Show personal session history
+  const allSessions=[...p.sessions].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('gps-session-history').innerHTML=allSessions.map(s=>`<tr>
+    <td class="mono">${s.date}</td>
+    <td class="mono">${s.wk}</td>
+    <td class="mono">${s.load.toFixed(1)}</td>
+    <td class="mono">${Math.round(s.dist).toLocaleString()}</td>
+    <td class="mono acc">${s.maxV>0?s.maxV.toFixed(2):'—'}</td>
+    <td class="mono">${s.accel}</td>
+   <td class="mono">${s.decel}</td>
+   <td class="mono">${Math.round(s.hsr).toLocaleString()}</td>
+  </tr>`).join('');};
 
 // ── GPS GROUP ─────────────────────────────────────────────────────
 window.renderGPSGroup=function(){
@@ -1082,8 +1200,12 @@ window.renderGPSGroup=function(){
   acwrChart('grp-acwr-dist',gDACWR,vWks);
   acChart('grp-ac-accel',gAf,gAch,vWks,'Avg Acute A&D','Avg Chronic A&D');
   acwrChart('grp-acwr-accel',gAACWR,vWks);
-  document.getElementById('gps-grp-roster').innerHTML=grp.map(p=>{const st=acwrSt(p.latD);const s=p.latest;return`<tr><td style="font-weight:600">${p.name}</td><td class="mono">${s?Math.round(s.dist).toLocaleString():'—'}</td><td class="mono acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</td><td class="mono">${s?(s.accel+s.decel):'—'}</td><td class="mono">${s?Math.round(s.hsr):'—'}</td><td class="mono ${st.cls==='ok'?'ok':st.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</td><td class="mono ${acwrSt(p.latA).cls==='ok'?'ok':acwrSt(p.latA).cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
-  document.getElementById('gps-group-table').innerHTML=vWks.map((wk,i)=>{const d=gDACWR[i]??0,a=gAACWR[i]??0,st=acwrSt(d);const amv=(()=>{const v=grp.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();return`<tr><td class="mono">${wk}</td><td class="mono acc">${amv}</td><td class="mono">${Math.round(gDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(gAf[i]||0)}</td><td class="mono">${Math.round((gDf[i]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(gDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(gDch[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(gAf[i]||0)}</td><td class="mono">${Math.round(gAch[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
+  // Populate group date selector
+  const grpDates=[...new Set(grp.flatMap(p=>p.sessions.map(s=>s.date)))].sort().reverse();
+  const grpDateSel=document.getElementById('gps-grp-date-sel');
+  grpDateSel.innerHTML='';
+  grpDates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;grpDateSel.appendChild(o);});
+  renderGPSGrpRoster();  document.getElementById('gps-group-table').innerHTML=vWks.map((wk,i)=>{const d=gDACWR[i]??0,a=gAACWR[i]??0,st=acwrSt(d);const amv=(()=>{const v=grp.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();return`<tr><td class="mono">${wk}</td><td class="mono acc">${amv}</td><td class="mono">${Math.round(gDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(gAf[i]||0)}</td><td class="mono">${Math.round((gDf[i]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(gDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(gDch[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(gAf[i]||0)}</td><td class="mono">${Math.round(gAch[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;}).join('');
 };
 
 // ── LOAD MONITOR ──────────────────────────────────────────────────
