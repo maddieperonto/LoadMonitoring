@@ -1138,11 +1138,10 @@ function renderLMTeamChart(){
   if(lmTC){lmTC.destroy();lmTC=null;}
   const el=document.getElementById('lm-team-chart');if(!el)return;
   document.getElementById('lm-chart-title').textContent=cfg.label;
-  document.getElementById('lm-legend').innerHTML=[{label:cfg.label,color:cfg.color,dash:false},{label:'Periodized proj. (115% peak)',color:C.acc,dash:true},{label:'Spring baseline',color:'rgba(0,48,135,0.35)',dash:true}].map(d=>`<span class="lm-leg">${d.dash?`<span class="lm-leg-dash" style="border-color:${d.color}"></span>`:`<span class="lm-leg-sq" style="background:${d.color}"></span>`}${d.label}</span>`).join('');
+  document.getElementById('lm-legend').innerHTML=[{label:cfg.label,color:cfg.color,dash:false},{label:'Spring baseline',color:'rgba(0,48,135,0.35)',dash:true}].map(d=>`<span class="lm-leg">${d.dash?`<span class="lm-leg-dash" style="border-color:${d.color}"></span>`:`<span class="lm-leg-sq" style="background:${d.color}"></span>`}${d.label}</span>`).join('');
   lmTC=new Chart(el,{type:'bar',data:{labels:allLbls,datasets:[
     {label:cfg.label,data:primData,backgroundColor:barColors,borderRadius:3,order:3},
     {label:'Spring baseline',data:baseline,type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},
-    {label:'Periodized projection',data:projData,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:4,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:2,borderWidth:2.5,fill:false,order:0,spanGaps:false}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}${cfg.unit}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9,family:'DM Mono'},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10,family:'DM Mono'}}}}}});
 }
 function renderLMACWR(){
@@ -1181,17 +1180,11 @@ window.selLMPlayer=function(i){
   const z=lmZone(p.acwr);
   document.getElementById('lm-detail-card').innerHTML=`<div class="lm-dh"><div><div class="lm-dn">${p.name}</div><div class="lm-dm">${p.pos} · ${p.unit} · Spring avg: ${p.spAvg}</div></div><span class="pill ${z.cls}" style="font-size:13px;padding:5px 14px">ACWR ${p.acwr} — ${z.label}</span></div><div class="lm-detail-stats"><div class="lm-ds"><div class="dl">Player load</div><div class="dv">${p.cl||'—'}</div></div><div class="lm-ds"><div class="dl">% of spring</div><div class="dv" style="color:${p.spPct>=80?C.green:C.yellow}">${p.spPct}%</div></div><div class="lm-ds"><div class="dl">ACWR (4wk)</div><div class="dv" style="color:${z.color}">${p.acwr}</div></div><div class="lm-ds"><div class="dl">HSRD</div><div class="dv">${p.ch2?Math.round(p.ch2)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Total dist</div><div class="dv">${p.cd?Math.round(p.cd)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Max velo</div><div class="dv" style="color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1)+' mph':'—'}</div></div><div class="lm-ds"><div class="dl">Accel</div><div class="dv">${p.ca||'—'}</div></div><div class="lm-ds"><div class="dl">Decel</div><div class="dv">${p.cde||'—'}</div></div><div class="lm-ds"><div class="dl">End summer proj</div><div class="dv" style="color:${p.endSumPct>=95?C.green:p.endSumPct>=80?C.yellow:C.red}">${p.endSumPct}%</div></div><div class="lm-ds"><div class="dl">Fall W1 proj</div><div class="dv" style="color:${p.fallW1Pct>=105?C.green:p.fallW1Pct>=95?C.yellow:C.red}">${p.fallW1Pct}%</div></div></div><div style="position:relative;height:200px"><canvas id="lm-player-chart"></canvas></div>`;
   if(lmPC){lmPC.destroy();lmPC=null;}
-  const allL2=[...allLMWks,...fcProjWks];const rc2=spWks.length+suWks.length;
+  const allL2=[...allLMWks];const rc2=spWks.length+suWks.length;
   const bc2=allL2.map((_,i)=>i<spWks.length?'rgba(0,48,135,0.25)':i<rc2?C.blue:i<allLMWks.length?'rgba(250,70,22,0.15)':'transparent');
   const lb2=allL2.map((_,i)=>i<allLMWks.length?(p.allLoads[i]??null):null);
-  const fl2=allL2.map((_,i)=>{
-    const wk=allL2[i];
-    if(i<rc2-1) return null;
-    if(i===rc2-1) return lb2[rc2-1];
-    return lmProjLoad(p.spAvg,wk);
-  });
   const el3=document.getElementById('lm-player-chart');if(!el3)return;
-  lmPC=new Chart(el3,{type:'bar',data:{labels:allL2,datasets:[{label:'Load',data:lb2,backgroundColor:bc2,borderRadius:3,order:3},{label:'Spring baseline',data:allL2.map(()=>p.spAvg),type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},{label:'Projection',data:fl2,type:'line',borderColor:C.acc,borderDash:[6,4],pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,fill:false,order:0,spanGaps:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10}}}}}});
+  lmPC=new Chart(el3,{type:'bar',data:{labels:allL2,datasets:[{label:'Load',data:lb2,backgroundColor:bc2,borderRadius:3,order:3},{label:'Spring baseline',data:allL2.map(()=>p.spAvg),type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10}}}}}});
   setTimeout(()=>sec.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 };
 
