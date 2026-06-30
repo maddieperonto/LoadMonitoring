@@ -533,6 +533,17 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   <div id="vald-flags-view" style="display:none">
     <div class="panel">
       <div class="panel-title"><i class="ti ti-flag"></i>VALD Flags — Athletes Below Threshold</div>
+      <div class="sel-row" style="margin-bottom:14px">
+        <div>
+          <label style="display:block;font-family:var(--font-m);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">From</label>
+          <input type="date" id="vald-flags-from" class="data-sel" style="min-width:160px" onchange="renderVALDFlags()">
+        </div>
+        <div>
+          <label style="display:block;font-family:var(--font-m);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">To</label>
+          <input type="date" id="vald-flags-to" class="data-sel" style="min-width:160px" onchange="renderVALDFlags()">
+        </div>
+        <button onclick="document.getElementById('vald-flags-from').value='';document.getElementById('vald-flags-to').value='';renderVALDFlags();" style="align-self:flex-end;padding:8px 14px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--r);font-family:var(--font-d);font-size:12px;font-weight:600;cursor:pointer;color:var(--text2)">Clear</button>
+      </div>
       <div class="tbl-wrap">
         <table><thead><tr>
           <th>Athlete</th><th>Flag Type</th><th>Value</th><th>Test Date</th>
@@ -1447,13 +1458,21 @@ window.renderVALDIndividual=function(){
 };
 
 window.renderVALDFlags=function(){
-  console.log('[DEBUG] cmjData length:', cmjData.length, 'nordData length:', nordData.length);
-  // Get latest CMJ and NordBord per athlete
+  const fromDate=document.getElementById('vald-flags-from')?.value||null;
+  const toDate=document.getElementById('vald-flags-to')?.value||null;
+  function inRange(dateStr){
+    if(!fromDate&&!toDate)return true;
+    if(fromDate&&dateStr<fromDate)return false;
+    if(toDate&&dateStr>toDate)return false;
+    return true;
+  }
+
+  // Get latest CMJ and NordBord per athlete (calculations use FULL data, unfiltered)
   const latestCmj={},latestNord={};
   cmjData.forEach(r=>{if(!latestCmj[r.athlete_name])latestCmj[r.athlete_name]=r;});
   nordData.forEach(r=>{if(!latestNord[r.athlete_name])latestNord[r.athlete_name]=r;});
 
-  // Build personal CMJ history per athlete for std dev calc
+  // Build personal CMJ history per athlete for std dev calc (FULL data, unfiltered)
   const cmjHistory={};
   cmjData.forEach(r=>{
     if(!cmjHistory[r.athlete_name])cmjHistory[r.athlete_name]=[];
@@ -1523,14 +1542,17 @@ window.renderVALDFlags=function(){
   const order={danger:0,warn:1,nodata:2};
   flags.sort((a,b)=>order[a.severity]-order[b.severity]);
 
-  document.getElementById('vald-flags-table').innerHTML=flags.length
-    ?flags.map(f=>`<tr>
+  // Filter DISPLAY only by date range — does not affect calculations above
+  const displayFlags=flags.filter(f=>inRange(f.date));
+
+  document.getElementById('vald-flags-table').innerHTML=displayFlags.length
+    ?displayFlags.map(f=>`<tr>
         <td style="font-weight:600;color:var(--uf-blue)">${f.athlete}</td>
         <td>${pill(f.severity==='danger'?'danger':f.severity==='warn'?'warn':'info',f.type)}</td>
         <td class="mono ${f.severity==='danger'?'danger':f.severity==='warn'?'warn':''}">${f.value}</td>
         <td class="mono">${f.date}</td>
       </tr>`).join('')
-    :'<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No flags — all athletes within normal ranges.</td></tr>';
+    :'<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No flags match this date range.</td></tr>';
 };
 
 window.renderVALDGroup=function(){
