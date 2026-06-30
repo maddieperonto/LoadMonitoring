@@ -465,6 +465,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div style="display:flex;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;overflow:hidden">
       <button id="vald-btn-ind" onclick="setVALDView('individual')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:var(--uf-orange);color:#fff;cursor:pointer">Individual</button>
       <button id="vald-btn-grp" onclick="setVALDView('group')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Position Group</button>
+      <button id="vald-btn-flags" onclick="setVALDView('flags')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Flags</button>
     </div>
   </div>
 
@@ -527,6 +528,18 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     </div>
   </div>
 </div>
+
+<!-- FLAGS VIEW -->
+  <div id="vald-flags-view" style="display:none">
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-flag"></i>VALD Flags — Athletes Below Threshold</div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Athlete</th><th>Flag Type</th><th>Value</th><th>Test Date</th>
+        </tr></thead><tbody id="vald-flags-table"></tbody></table>
+      </div>
+    </div>
+  </div>
 
 <!-- LIFTING -->
 <div class="page" id="pg-lifting">
@@ -659,7 +672,7 @@ while(!_done){
   else{raw=[...raw,...chunk];if(chunk.length<1000)_done=true;_page++;}
 }
 const eR=null;
-const {data:aths}=await SB.from('athletes').select('name,position');
+const {data:aths}=await SB.from('athletes').select('name,position,weight_lbs');
 if(!raw.length){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data returned from Supabase.</div>`;throw 0;}
 
 // ── NAME NORMALIZATION ─────────────────────────────────────────────
@@ -1329,11 +1342,14 @@ window.setVALDView=function(v){
   valdView=v;
   document.getElementById('vald-individual-view').style.display=v==='individual'?'':'none';
   document.getElementById('vald-group-view').style.display=v==='group'?'':'none';
-  const bi=document.getElementById('vald-btn-ind'),bg=document.getElementById('vald-btn-grp');
+  document.getElementById('vald-flags-view').style.display=v==='flags'?'':'none';
+  const bi=document.getElementById('vald-btn-ind'),bg=document.getElementById('vald-btn-grp'),bf=document.getElementById('vald-btn-flags');
   bi.style.background=v==='individual'?'var(--uf-orange)':'transparent';bi.style.color=v==='individual'?'#fff':'var(--text3)';
   bg.style.background=v==='group'?'var(--uf-orange)':'transparent';bg.style.color=v==='group'?'#fff':'var(--text3)';
+  bf.style.background=v==='flags'?'var(--uf-orange)':'transparent';bf.style.color=v==='flags'?'#fff':'var(--text3)';
   if(v==='individual')renderVALDIndividual();
   if(v==='group')renderVALDGroup();
+  if(v==='flags')renderVALDFlags();
 };
 
 async function loadVALD(){
@@ -1428,6 +1444,92 @@ window.renderVALDIndividual=function(){
       <td class="mono ${epfAsym!=null?(epfAsym<10?'ok':epfAsym<15?'warn':'danger'):''}">${epfAsym!=null?epfAsym.toFixed(2)+'%':'—'}</td>
     </tr>`;
   }).join('');
+};
+
+window.renderVALDFlags=function(){
+  // Get latest CMJ and NordBord per athlete
+  const latestCmj={},latestNord={};
+  cmjData.forEach(r=>{if(!latestCmj[r.athlete_name])latestCmj[r.athlete_name]=r;});
+  nordData.forEach(r=>{if(!latestNord[r.athlete_name])latestNord[r.athlete_name]=r;});
+
+  // Build personal CMJ history per athlete for std dev calc
+  const cmjHistory={};
+  cmjData.forEach(r=>{
+    if(!cmjHistory[r.athlete_name])cmjHistory[r.athlete_name]=[];
+    cmjHistory[r.athlete_name].push(r);
+  });
+
+  function meanStd(arr){
+    const valid=arr.filter(v=>v!=null&&!isNaN(v));
+    if(valid.length<3)return null;
+    const mean=valid.reduce((a,b)=>a+b,0)/valid.length;
+    const variance=valid.reduce((a,b)=>a+(b-mean)**2,0)/valid.length;
+    return{mean,std:Math.sqrt(variance),n:valid.length};
+  }
+
+  const flags=[];
+  const allAthletes=[...new Set([...Object.keys(latestCmj),...Object.keys(latestNord)])];
+
+  allAthletes.forEach(name=>{
+    const weightRow=(athletesData||[]).find(a=>a.name===name);
+    const bodyweight=weightRow?.weight_lbs??null;
+
+    // Nord flags
+    const nord=latestNord[name];
+    if(nord){
+      const l=nord.left_peak_force_n,r=nord.right_peak_force_n;
+      if(l!=null&&r!=null&&Math.max(l,r)>0){
+        const asymm=(1-Math.min(l,r)/Math.max(l,r))*100;
+        if(asymm>20)flags.push({athlete:name,type:'Nord Asymmetry',severity:'danger',value:asymm.toFixed(1)+'%',date:nord.test_date});
+        else if(asymm>15)flags.push({athlete:name,type:'Nord Asymmetry',severity:'warn',value:asymm.toFixed(1)+'%',date:nord.test_date});
+
+        const avgForce=(l+r)/2;
+        if(bodyweight==null){
+          flags.push({athlete:name,type:'Nord Avg Force vs BW',severity:'nodata',value:'No Data',date:nord.test_date});
+        }else{
+          const threshold=220+bodyweight;
+          if(avgForce<threshold)flags.push({athlete:name,type:'Nord Avg Force vs BW',severity:'warn',value:avgForce.toFixed(1)+' N (need '+threshold.toFixed(0)+')',date:nord.test_date});
+        }
+      }
+    }
+
+    // CMJ flags — personal std dev
+    const cmj=latestCmj[name];
+    const hist=cmjHistory[name]||[];
+    if(cmj){
+      const metrics=[
+        {key:'jump_height_cm',label:'Jump Height'},
+        {key:'rsi_modified',label:'RSI-Modified'},
+        {key:'eccentric_decel_rfd_bm',label:'EDRFD'},
+      ];
+      metrics.forEach(m=>{
+        const histVals=hist.map(h=>h[m.key]);
+        const stats=meanStd(histVals);
+        const currentVal=cmj[m.key];
+        if(stats==null){
+          flags.push({athlete:name,type:m.label,severity:'nodata',value:'Insufficient Data',date:cmj.test_date});
+          return;
+        }
+        if(currentVal==null)return;
+        const zScore=(currentVal-stats.mean)/stats.std;
+        if(zScore<=-2)flags.push({athlete:name,type:m.label,severity:'danger',value:currentVal.toFixed(2)+' (avg '+stats.mean.toFixed(2)+')',date:cmj.test_date});
+        else if(zScore<=-1)flags.push({athlete:name,type:m.label,severity:'warn',value:currentVal.toFixed(2)+' (avg '+stats.mean.toFixed(2)+')',date:cmj.test_date});
+      });
+    }
+  });
+
+  // Sort: danger first, then warn, then nodata
+  const order={danger:0,warn:1,nodata:2};
+  flags.sort((a,b)=>order[a.severity]-order[b.severity]);
+
+  document.getElementById('vald-flags-table').innerHTML=flags.length
+    ?flags.map(f=>`<tr>
+        <td style="font-weight:600;color:var(--uf-blue)">${f.athlete}</td>
+        <td>${pill(f.severity==='danger'?'danger':f.severity==='warn'?'warn':'info',f.type)}</td>
+        <td class="mono ${f.severity==='danger'?'danger':f.severity==='warn'?'warn':''}">${f.value}</td>
+        <td class="mono">${f.date}</td>
+      </tr>`).join('')
+    :'<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No flags — all athletes within normal ranges.</td></tr>';
 };
 
 window.renderVALDGroup=function(){
