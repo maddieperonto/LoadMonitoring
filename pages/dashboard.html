@@ -881,8 +881,8 @@ const PLAYERS=Object.values(byPFiltered).map(p=>{
   const aACWR=calcACWR(aA.filter(v=>v!=null));
   const latD=dACWR[dACWR.length-1]??0,latA=aACWR[aACWR.length-1]??0;
   const latMaxV=[...p.sessions].reverse().find(s=>s.maxV>0)?.maxV??0;
-  const latestHSR=latest?.hsr??0;
   const latest=[...p.sessions].sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const latestHSR=latest?.hsr??0;
   const spLoads=spWks.map(wk=>wkTot(p.sessions,'load',wk)).filter(v=>v>0);
   const spAvg=spLoads.length?Math.round(spLoads.reduce((a,b)=>a+b)/spLoads.length):0;
   const curLoad=latest?.load??0;
@@ -1008,7 +1008,7 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
   const hsrTitleEl=document.querySelector('#dash-hsr')?.closest('.panel')?.querySelector('.panel-title');
   if(hsrTitleEl)hsrTitleEl.innerHTML=`<i class="ti ti-run"></i>HSR Totals — ${latestHDate}`;
   document.getElementById('dash-hsr').innerHTML=topH.map((p,i)=>`<div class="risk-row"><div style="font-family:var(--font-d);font-size:16px;font-weight:800;width:22px;text-align:center;color:${i===0?'#B45309':i===1?'#94a3b8':i===2?'#cd7c3e':'var(--text3)'}">${i+1}</div><div class="avatar" style="background:rgba(0,48,135,.1);color:var(--uf-blue)">${ini(p.name)}</div><div class="rnb"><div class="rname" onclick="navToGPS('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer" onmouseover="this.style.color='var(--uf-orange)'" onmouseout="this.style.color='var(--uf-blue)'">${p.name}</div><div class="rpos">${p.pos}</div></div>${pill('ok',Math.round(p.latestHSR).toLocaleString()+' m')}</div>`).join('');
-  
+
 // Nord asymmetry panel
   const nordAsymm=await SB.from('nordbord_tests')
     .select('athlete_name,test_date,lsi_pct,left_peak_force_n,right_peak_force_n')
