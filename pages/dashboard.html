@@ -1472,7 +1472,7 @@ window.renderVALDFlags=function(){
   const allAthletes=[...new Set([...Object.keys(latestCmj),...Object.keys(latestNord)])];
 
   allAthletes.forEach(name=>{
-    const weightRow=(athletesData||[]).find(a=>a.name===name);
+    const weightRow=(aths||[]).find(a=>a.name===name);
     const bodyweight=weightRow?.weight_lbs??null;
 
     // Nord flags
