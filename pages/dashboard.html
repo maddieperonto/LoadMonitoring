@@ -881,7 +881,11 @@ const PLAYERS=Object.values(byPFiltered).map(p=>{
   const aACWR=calcACWR(aA.filter(v=>v!=null));
   const latD=dACWR[dACWR.length-1]??0,latA=aACWR[aACWR.length-1]??0;
   const latMaxV=[...p.sessions].reverse().find(s=>s.maxV>0)?.maxV??0;
-  const latest=[...p.sessions].sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const latest=[...p.sessions].sort((a,b)=>{
+    const [am,ad,ay]=a.date.split('/').map(Number);
+    const [bm,bd,by]=b.date.split('/').map(Number);
+    return new Date(by,bm-1,bd) - new Date(ay,am-1,ad);
+  })[0];
   const latestHSR=latest?.hsr??0;
   const spLoads=spWks.map(wk=>wkTot(p.sessions,'load',wk)).filter(v=>v>0);
   const spAvg=spLoads.length?Math.round(spLoads.reduce((a,b)=>a+b)/spLoads.length):0;
