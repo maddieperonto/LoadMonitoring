@@ -1447,6 +1447,7 @@ window.renderVALDIndividual=function(){
 };
 
 window.renderVALDFlags=function(){
+  console.log('[DEBUG] cmjData length:', cmjData.length, 'nordData length:', nordData.length);
   // Get latest CMJ and NordBord per athlete
   const latestCmj={},latestNord={};
   cmjData.forEach(r=>{if(!latestCmj[r.athlete_name])latestCmj[r.athlete_name]=r;});
