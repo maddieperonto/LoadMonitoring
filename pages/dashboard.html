@@ -1092,6 +1092,7 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
     :'<div style="color:var(--text3);font-size:12px;padding:12px 0">No asymmetry data</div>';
 })();
 
+let cmjData=[],nordData=[],valdView='individual';
 // ── ROSTER ────────────────────────────────────────────────────────
 
 // Calculate VALD flag count for an athlete in last 30 days
@@ -1535,7 +1536,7 @@ window.selLMPlayer=function(i){
 };
 
 // ── VALD ──────────────────────────────────────────────────────────
-let cmjData=[],nordData=[],valdView='individual';
+
 
 window.setVALDView=function(v){
   valdView=v;
