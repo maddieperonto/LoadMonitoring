@@ -490,7 +490,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="tbl-wrap">
         <table><thead><tr>
           <th>Athlete</th><th>Test Date</th><th>Nord Force (N)</th>
-          <th>Nord Asymm %</th><th>Jump Ht (cm)</th><th>mRSI</th>
+          <th>Nord Asymm %</th><th>Jump Ht (in)</th><th>mRSI</th>
           <th>EDRFD</th>
         </tr></thead><tbody id="vald-log-table"></tbody></table>
       </div>
@@ -521,7 +521,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="tbl-wrap">
         <table><thead><tr>
           <th>Athlete</th><th>Test Date</th><th>Nord Force (N)</th>
-          <th>Nord Asymm %</th><th>Jump Ht (cm)</th><th>mRSI</th>
+          <th>Nord Asymm %</th><th>Jump Ht (in)</th><th>mRSI</th>
           <th>EDRFD</th>
         </tr></thead><tbody id="vald-grp-table"></tbody></table>
       </div>
@@ -1398,7 +1398,7 @@ window.renderVALDIndividual=function(){
     {label:'Nord R Max Force',val:latestNord?.right_peak_force_n!=null?latestNord.right_peak_force_n.toFixed(1):'—',unit:'N',cls:'blue'},
     {label:'Nord L Max Force',val:latestNord?.left_peak_force_n!=null?latestNord.left_peak_force_n.toFixed(1):'—',unit:'N',cls:'blue'},
     {label:'Nord Asymmetry',val:nordAsymm!=null?nordAsymm.toFixed(2)+'%':'—',unit:'',cls:nordAsymm!=null?(nordAsymm<10?'ok':nordAsymm<15?'warn':'danger'):'info'},
-    {label:'CMJ Jump Height',val:latestCmj?.jump_height_cm!=null?latestCmj.jump_height_cm.toFixed(1):'—',unit:'cm',cls:'acc'},
+    {label:'CMJ Jump Height',val:latestCmj?.jump_height_cm!=null?(latestCmj.jump_height_cm/2.54).toFixed(2)+'"':'—',unit:'in',cls:'acc'},
     {label:'mRSI (Modified RSI)',val:latestCmj?.rsi_modified!=null?latestCmj.rsi_modified.toFixed(2):'—',unit:'m/s',cls:'ok'},
   ];
   document.getElementById('vald-ind-cards').innerHTML=cards.map(c=>`
@@ -1450,7 +1450,7 @@ window.renderVALDIndividual=function(){
       <td class="mono">${t.date} ${pill(t.type==='CMJ'?'acc':'info',t.type)}</td>
       <td class="mono">${na!=null?na.toFixed(1):'—'}</td>
       <td class="mono ${nasym!=null?(nasym<10?'ok':nasym<15?'warn':'danger'):''}">${nasym!=null?nasym.toFixed(2)+'%':'—'}</td>
-      <td class="mono ${t.cmj?.jump_height_cm?'acc':''}">${t.cmj?.jump_height_cm!=null?t.cmj.jump_height_cm.toFixed(1):'—'}</td>
+      <td class="mono ${t.cmj?.jump_height_cm?'acc':''}">${t.cmj?.jump_height_cm!=null?(t.cmj.jump_height_cm/2.54).toFixed(2)+'"':'—'}</td>
       <td class="mono">${t.cmj?.rsi_modified!=null?t.cmj.rsi_modified.toFixed(2):'—'}</td>
       <td class="mono ${edrfd!=null?'acc':''}">${edrfd!=null?edrfd.toFixed(2):'—'}</td>
     </tr>`;
@@ -1580,7 +1580,7 @@ window.renderVALDGroup=function(){
   const cards=[
     {label:'Avg Nord Force',val:avgNord!=null?avgNord.toFixed(1):'—',unit:'N',cls:'blue'},
     {label:'Avg Nord Asymmetry',val:avgNordAsymm!=null?avgNordAsymm.toFixed(2)+'%':'—',unit:'',cls:avgNordAsymm!=null?(avgNordAsymm<10?'ok':avgNordAsymm<15?'warn':'danger'):'info'},
-    {label:'Avg Jump Height',val:avgJH!=null?avgJH.toFixed(1):'—',unit:'cm',cls:'acc'},
+   {label:'Avg Jump Height',val:avgJH!=null?(avgJH/2.54).toFixed(2)+'"':'—',unit:'in',cls:'acc'},
     {label:'Avg mRSI',val:avgRSI!=null?avgRSI.toFixed(2):'—',unit:'m/s',cls:'ok'},
     {label:'Avg EDRFD',val:avgEDRFD!=null?avgEDRFD.toFixed(2):'—',unit:'N/s/kg',cls:'ok'},
     {label:'Athletes Tested',val:[...new Set([...grpCmj,...grpNord].map(r=>r.athlete_name))].length,unit:'athletes',cls:'blue'},
@@ -1605,7 +1605,7 @@ window.renderVALDGroup=function(){
       <td class="mono">${date}</td>
       <td class="mono">${na!=null?na.toFixed(1):'—'}</td>
       <td class="mono ${nasym!=null?(nasym<10?'ok':nasym<15?'warn':'danger'):''}">${nasym!=null?nasym.toFixed(2)+'%':'—'}</td>
-      <td class="mono ${cmj?.jump_height_cm?'acc':''}">${cmj?.jump_height_cm!=null?cmj.jump_height_cm.toFixed(1):'—'}</td>
+      <td class="mono ${cmj?.jump_height_cm?'acc':''}">${cmj?.jump_height_cm!=null?(cmj.jump_height_cm/2.54).toFixed(2)+'"':'—'}</td>
       <td class="mono">${cmj?.rsi_modified!=null?cmj.rsi_modified.toFixed(2):'—'}</td>
       <td class="mono ${edrfd!=null?'acc':''}">${edrfd!=null?edrfd.toFixed(2):'—'}</td>
     </tr>`;
