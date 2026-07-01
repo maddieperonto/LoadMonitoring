@@ -491,7 +491,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <table><thead><tr>
           <th>Athlete</th><th>Test Date</th><th>Nord Force (N)</th>
           <th>Nord Asymm %</th><th>Jump Ht (cm)</th><th>mRSI</th>
-          <th>EPF Asymm %</th>
+          <th>EDRFD</th>
         </tr></thead><tbody id="vald-log-table"></tbody></table>
       </div>
     </div>
@@ -522,7 +522,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <table><thead><tr>
           <th>Athlete</th><th>Test Date</th><th>Nord Force (N)</th>
           <th>Nord Asymm %</th><th>Jump Ht (cm)</th><th>mRSI</th>
-          <th>EPF Asymm %</th>
+          <th>EDRFD</th>
         </tr></thead><tbody id="vald-grp-table"></tbody></table>
       </div>
     </div>
@@ -1365,7 +1365,7 @@ window.setVALDView=function(v){
 
 async function loadVALD(){
   const [{data:cmj},{data:nord}]=await Promise.all([
-  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_peak_force_asymmetry_pct').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)
+  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_decel_rfd_bm').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)
   ]);
   cmjData=(cmj||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
   nordData=(nord||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
@@ -1444,7 +1444,7 @@ window.renderVALDIndividual=function(){
 
   document.getElementById('vald-log-table').innerHTML=allTests.map(t=>{
     const na=nordAvgFn(t.nord),nasym=nordAsymmFn(t.nord);
-    const epfAsym=t.cmj?.eccentric_peak_force_asymmetry_pct;
+    const edrfd=t.cmj?.eccentric_decel_rfd_bm;
     return`<tr>
       <td style="font-weight:600">${name}</td>
       <td class="mono">${t.date} ${pill(t.type==='CMJ'?'acc':'info',t.type)}</td>
@@ -1452,7 +1452,7 @@ window.renderVALDIndividual=function(){
       <td class="mono ${nasym!=null?(nasym<10?'ok':nasym<15?'warn':'danger'):''}">${nasym!=null?nasym.toFixed(2)+'%':'—'}</td>
       <td class="mono ${t.cmj?.jump_height_cm?'acc':''}">${t.cmj?.jump_height_cm!=null?t.cmj.jump_height_cm.toFixed(1):'—'}</td>
       <td class="mono">${t.cmj?.rsi_modified!=null?t.cmj.rsi_modified.toFixed(2):'—'}</td>
-      <td class="mono ${epfAsym!=null?(epfAsym<10?'ok':epfAsym<15?'warn':'danger'):''}">${epfAsym!=null?epfAsym.toFixed(2)+'%':'—'}</td>
+      <td class="mono ${edrfd!=null?'acc':''}">${edrfd!=null?edrfd.toFixed(2):'—'}</td>
     </tr>`;
   }).join('');
 };
@@ -1573,16 +1573,16 @@ window.renderVALDGroup=function(){
   const nordAsymms=nordArr.map(r=>Math.max(r.left_peak_force_n||0,r.right_peak_force_n||0)>0?(1-Math.min(r.left_peak_force_n||0,r.right_peak_force_n||0)/Math.max(r.left_peak_force_n||0,r.right_peak_force_n||0))*100:null).filter(v=>v!=null);
   const jhs=cmjArr.map(r=>r.jump_height_cm).filter(v=>v!=null);
   const rsis=cmjArr.map(r=>r.rsi_modified).filter(v=>v!=null);
-  const epfAsymms=cmjArr.map(r=>r.eccentric_peak_force_asymmetry_pct).filter(v=>v!=null);
+  const edrfds=cmjArr.map(r=>r.eccentric_decel_rfd_bm).filter(v=>v!=null); 
 
-  const avgNord=avg(nordAvgs),avgNordAsymm=avg(nordAsymms),avgJH=avg(jhs),avgRSI=avg(rsis),avgEPF=avg(epfAsymms);
+  const avgNord=avg(nordAvgs),avgNordAsymm=avg(nordAsymms),avgJH=avg(jhs),avgRSI=avg(rsis),avgEDRFD=avg(edrfds);
 
   const cards=[
     {label:'Avg Nord Force',val:avgNord!=null?avgNord.toFixed(1):'—',unit:'N',cls:'blue'},
     {label:'Avg Nord Asymmetry',val:avgNordAsymm!=null?avgNordAsymm.toFixed(2)+'%':'—',unit:'',cls:avgNordAsymm!=null?(avgNordAsymm<10?'ok':avgNordAsymm<15?'warn':'danger'):'info'},
     {label:'Avg Jump Height',val:avgJH!=null?avgJH.toFixed(1):'—',unit:'cm',cls:'acc'},
     {label:'Avg mRSI',val:avgRSI!=null?avgRSI.toFixed(2):'—',unit:'m/s',cls:'ok'},
-    {label:'Avg EPF Asymmetry',val:avgEPF!=null?avgEPF.toFixed(2)+'%':'—',unit:'',cls:avgEPF!=null?(avgEPF<10?'ok':avgEPF<15?'warn':'danger'):'info'},
+    {label:'Avg EDRFD',val:avgEDRFD!=null?avgEDRFD.toFixed(2):'—',unit:'N/s/kg',cls:'ok'},
     {label:'Athletes Tested',val:[...new Set([...grpCmj,...grpNord].map(r=>r.athlete_name))].length,unit:'athletes',cls:'blue'},
   ];
   document.getElementById('vald-grp-cards').innerHTML=cards.map(c=>`
@@ -1598,7 +1598,7 @@ window.renderVALDGroup=function(){
     const cmj=latestCmj[name],nord=latestNord[name];
     const na=nord?((nord.left_peak_force_n||0)+(nord.right_peak_force_n||0))/2:null;
     const nasym=nord&&Math.max(nord.left_peak_force_n||0,nord.right_peak_force_n||0)>0?(1-Math.min(nord.left_peak_force_n||0,nord.right_peak_force_n||0)/Math.max(nord.left_peak_force_n||0,nord.right_peak_force_n||0))*100:null;
-    const epfAsym=cmj?.eccentric_peak_force_asymmetry_pct;
+    const edrfd=cmj?.eccentric_decel_rfd_bm;
     const date=cmj?.test_date||nord?.test_date||'—';
     return`<tr>
       <td style="font-weight:600;color:var(--uf-blue)">${name}</td>
@@ -1607,7 +1607,7 @@ window.renderVALDGroup=function(){
       <td class="mono ${nasym!=null?(nasym<10?'ok':nasym<15?'warn':'danger'):''}">${nasym!=null?nasym.toFixed(2)+'%':'—'}</td>
       <td class="mono ${cmj?.jump_height_cm?'acc':''}">${cmj?.jump_height_cm!=null?cmj.jump_height_cm.toFixed(1):'—'}</td>
       <td class="mono">${cmj?.rsi_modified!=null?cmj.rsi_modified.toFixed(2):'—'}</td>
-      <td class="mono ${epfAsym!=null?(epfAsym<10?'ok':epfAsym<15?'warn':'danger'):''}">${epfAsym!=null?epfAsym.toFixed(2)+'%':'—'}</td>
+      <td class="mono ${edrfd!=null?'acc':''}">${edrfd!=null?edrfd.toFixed(2):'—'}</td>
     </tr>`;
   }).join('');
 };
