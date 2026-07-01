@@ -1043,7 +1043,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
     document.getElementById('pg-'+pg)?.classList.add('active');
     document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
     document.getElementById('content-area').scrollTop=0;
-    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:renderLeaderboards,injury:renderInjury,compare:renderCompare,vald:loadVALD};
+    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:renderLeaderboards,injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();}};
     if(map[pg])setTimeout(map[pg],60);
   });
 });
@@ -1096,6 +1096,7 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
 
 // Calculate VALD flag count for an athlete in last 30 days
 function valdFlagCount30(name){
+  if(!cmjData.length&&!nordData.length)return 0;
   const now=new Date();
   const cutoff=new Date(now.getTime()-30*24*60*60*1000).toISOString().split('T')[0];
   let count=0;
@@ -1154,7 +1155,6 @@ function filterRoster(q=''){
 }
 
 document.getElementById('roster-search').addEventListener('input',function(){filterRoster(this.value.toLowerCase());});
-filterRoster();
 
 window.openRosterAthlete=async function(name){
   document.getElementById('roster-grid-view').style.display='none';
