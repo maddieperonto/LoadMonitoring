@@ -215,7 +215,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
             <tr>
               <th>Date</th>
               <th>Type</th>
-              <th>Jump Height (cm)</th>
+              <th>Jump Height (in)</th>
               <th>mRSI</th>
               <th>Nord Left Force (N)</th>
               <th>Nord Right Force (N)</th>
@@ -365,7 +365,7 @@ document.getElementById('vald-table').innerHTML = valdRows.length
       return `<tr>
         <td class="mono">${r.date}</td>
         <td><span class="pill ${r.type==='CMJ'?'acc':'info'}">${r.type}</span></td>
-        <td class="mono ${r.jh ? 'acc' : ''}">${r.jh != null ? r.jh.toFixed(1) : '—'}</td>
+        <td class="mono ${r.jh ? 'acc' : ''}">${r.jh != null ? (r.jh / 2.54).toFixed(2)+'"' : '—'}</td>
         <td class="mono">${r.rsi != null ? r.rsi.toFixed(2) : '—'}</td>
         <td class="mono">${r.lf != null ? r.lf.toFixed(1) : '—'}</td>
         <td class="mono">${r.rf != null ? r.rf.toFixed(1) : '—'}</td>
