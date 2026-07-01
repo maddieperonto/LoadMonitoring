@@ -1494,7 +1494,7 @@ window.renderVALDFlags=function(){
     const weightRow=(aths||[]).find(a=>a.name===name);
     const bodyweight=weightRow?.weight_lbs??null;
 
-    // Nord flags
+   // Nord flags
     const nord=latestNord[name];
     if(nord){
       const l=nord.left_peak_force_n,r=nord.right_peak_force_n;
@@ -1504,9 +1504,7 @@ window.renderVALDFlags=function(){
         else if(asymm>15)flags.push({athlete:name,type:'Nord Asymmetry',severity:'warn',value:asymm.toFixed(1)+'%',date:nord.test_date});
 
         const avgForce=(l+r)/2;
-        if(bodyweight==null){
-          flags.push({athlete:name,type:'Nord Avg Force vs BW',severity:'nodata',value:'No Data',date:nord.test_date});
-        }else{
+        if(bodyweight!=null){
           const threshold=220+bodyweight;
           if(avgForce<threshold)flags.push({athlete:name,type:'Nord Avg Force vs BW',severity:'warn',value:avgForce.toFixed(1)+' N (need '+threshold.toFixed(0)+')',date:nord.test_date});
         }
@@ -1526,10 +1524,7 @@ window.renderVALDFlags=function(){
         const histVals=hist.map(h=>h[m.key]);
         const stats=meanStd(histVals);
         const currentVal=cmj[m.key];
-        if(stats==null){
-          flags.push({athlete:name,type:m.label,severity:'nodata',value:'Insufficient Data',date:cmj.test_date});
-          return;
-        }
+        if(stats==null) return;
         if(currentVal==null)return;
         const zScore=(currentVal-stats.mean)/stats.std;
         if(zScore<=-2)flags.push({athlete:name,type:m.label,severity:'danger',value:currentVal.toFixed(2)+' (avg '+stats.mean.toFixed(2)+')',date:cmj.test_date});
