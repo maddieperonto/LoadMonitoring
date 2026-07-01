@@ -191,9 +191,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel">
       <div class="panel-title"><i class="ti ti-satellite"></i>GPS — Session Data</div>
       <div class="sel-row">
-        <select class="data-sel" id="session-sel" onchange="renderSession()">
-          <option value="">Select a session...</option>
-        </select>
+        <select class="data-sel" id="session-sel" onchange="renderSession()"></select>
       </div>
       <div class="stat-row" id="session-stats">
         <div class="empty-state" style="grid-column:1/-1">Select a session above to view your stats.</div>
@@ -272,7 +270,7 @@ const { data: sessions } = await SB.from('catapult_sessions')
   .gte('session_date', '01/01/2026')
   .order('session_date', { ascending: false });
 
-// Populate session dropdown
+// Populate session dropdown and auto-select most recent
 const sel = document.getElementById('session-sel');
 (sessions || []).forEach(s => {
   const o = document.createElement('option');
@@ -281,6 +279,10 @@ const sel = document.getElementById('session-sel');
   o.dataset.json = JSON.stringify(s);
   sel.appendChild(o);
 });
+if (sel.options.length > 0) {
+  sel.selectedIndex = 0;
+  renderSession();
+}
 
 window.renderSession = function() {
   const sel = document.getElementById('session-sel');
