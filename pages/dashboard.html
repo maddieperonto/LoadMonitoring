@@ -332,8 +332,46 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 
 <!-- ROSTER -->
 <div class="page" id="pg-roster">
-  <input class="roster-search" id="roster-search" type="text" placeholder="Search name, position, unit…">
-  <div class="roster-grid" id="roster-grid"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></div>
+  <!-- Grid view -->
+  <div id="roster-grid-view">
+    <input class="roster-search" id="roster-search" type="text" placeholder="Search name, position, unit…">
+    <div class="roster-grid" id="roster-grid"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></div>
+  </div>
+  <!-- Athlete detail view -->
+  <div id="roster-athlete-view" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
+      <button onclick="closeRosterAthlete()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface);border:1.5px solid var(--border2);border-radius:var(--r);font-family:var(--font-d);font-size:12px;font-weight:700;cursor:pointer;color:var(--text2)"><i class="ti ti-arrow-left"></i> Back to Roster</button>
+      <div>
+        <div id="roster-ath-name" style="font-family:var(--font-d);font-size:22px;font-weight:800;color:var(--text)"></div>
+        <div id="roster-ath-pos" style="font-family:var(--font-m);font-size:10px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase"></div>
+      </div>
+    </div>
+    <!-- GPS Section -->
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-satellite"></i>GPS — Session Data</div>
+      <div class="sel-row" style="margin-bottom:12px">
+        <select class="data-sel" id="roster-session-sel" style="min-width:200px"></select>
+      </div>
+      <div class="stat-row" id="roster-session-stats" style="grid-template-columns:repeat(6,1fr)"></div>
+      <div style="margin-top:16px">
+        <div class="panel-title" style="margin-bottom:8px;border:none;padding:0"><i class="ti ti-history"></i>Last 5 Sessions</div>
+        <div class="tbl-wrap">
+          <table><thead><tr>
+            <th>Date</th><th>Player Load</th><th>Distance (m)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (m)</th>
+          </tr></thead><tbody id="roster-recent-sessions"></tbody></table>
+        </div>
+      </div>
+    </div>
+    <!-- VALD Section -->
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-bolt"></i>Testing — CMJ &amp; NordBord</div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Date</th><th>Type</th><th>Jump Height (in)</th><th>mRSI</th><th>Nord Left Force (N)</th><th>Nord Right Force (N)</th><th>Nord Asymmetry %</th>
+        </tr></thead><tbody id="roster-vald-table"></tbody></table>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- GPS -->
@@ -1055,15 +1093,165 @@ function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.option
 })();
 
 // ── ROSTER ────────────────────────────────────────────────────────
+
+// Calculate VALD flag count for an athlete in last 30 days
+function valdFlagCount30(name){
+  const now=new Date();
+  const cutoff=new Date(now.getTime()-30*24*60*60*1000).toISOString().split('T')[0];
+  let count=0;
+  // Nord flags
+  const nord=nordData.filter(r=>r.athlete_name===name&&r.test_date>=cutoff)[0];
+  if(nord){
+    const l=nord.left_peak_force_n,r=nord.right_peak_force_n;
+    if(l!=null&&r!=null&&Math.max(l,r)>0){
+      const asymm=(1-Math.min(l,r)/Math.max(l,r))*100;
+      if(asymm>15)count++;
+      const weightRow=(aths||[]).find(a=>a.name===name);
+      const bw=weightRow?.weight_lbs??null;
+      if(bw!=null&&(l+r)/2<220+bw)count++;
+    }
+  }
+  // CMJ flags
+  const cmjHist=cmjData.filter(r=>r.athlete_name===name);
+  const latestCmj=cmjData.filter(r=>r.athlete_name===name&&r.test_date>=cutoff)[0];
+  if(latestCmj&&cmjHist.length>=3){
+    const metrics=['jump_height_cm','rsi_modified','eccentric_decel_rfd_bm'];
+    metrics.forEach(key=>{
+      const vals=cmjHist.map(h=>h[key]).filter(v=>v!=null&&!isNaN(v));
+      if(vals.length<3)return;
+      const mean=vals.reduce((a,b)=>a+b)/vals.length;
+      const std=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length);
+      const cur=latestCmj[key];
+      if(cur!=null&&std>0&&(cur-mean)/std<=-1)count++;
+    });
+  }
+  return count;
+}
+
 function filterRoster(q=''){
-  const filtered=PLAYERS.filter(p=>p.name.toLowerCase().includes(q)||p.pos.toLowerCase().includes(q)||p.unit.toLowerCase().includes(q));
-  document.getElementById('roster-grid').innerHTML=filtered.map(p=>{
-    const st=acwrSt(p.latD),bc=p.risk==='high'?'rc-high':p.risk==='mod'?'rc-warn-card':'';
-    return`<div class="roster-card ${bc}" onclick="openPM('${p.name.replace(/'/g,"\\'")}')"><div class="rc-top"><div><div class="rc-name">${p.name}</div><div class="rc-pos">${p.pos} · ${p.unit}</div></div>${pill(st.cls,st.lbl)}</div>${p.flags.length?`<div class="flags">${p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div>`:''}<div class="rc-stats"><div class="rc-stat"><div class="rc-stat-val">${p.latD>0?p.latD.toFixed(2):'—'}</div><div class="rc-stat-lbl">ACWR Dist</div></div><div class="rc-stat"><div class="rc-stat-val">${p.latMaxV>0?p.latMaxV.toFixed(1):'—'}</div><div class="rc-stat-lbl">Max Vel (mph)</div></div><div class="rc-stat"><div class="rc-stat-val">${p.latA>0?p.latA.toFixed(2):'—'}</div><div class="rc-stat-lbl">ACWR A&D</div></div><div class="rc-stat"><div class="rc-stat-val">${p.sessions.length}</div><div class="rc-stat-lbl">Sessions</div></div></div></div>`;
+  const allRoster=(aths||[]).filter(a=>
+    a.name.toLowerCase().includes(q)||
+    a.position.toLowerCase().includes(q)
+  );
+  document.getElementById('roster-grid').innerHTML=allRoster.map(a=>{
+    const p=PLAYERS.find(x=>x.name===a.name);
+    const acwr=p?p.latD:0;
+    const maxV=p?p.latMaxV:0;
+    const flagCount=valdFlagCount30(a.name);
+    const st=p?acwrSt(acwr):{cls:'info',lbl:'No Data'};
+    return`<div class="roster-card" onclick="openRosterAthlete('${a.name.replace(/'/g,"\\'")}')">
+      <div class="rc-top">
+        <div><div class="rc-name">${a.name}</div><div class="rc-pos">${a.position}</div></div>
+        ${pill(st.cls,st.lbl)}
+      </div>
+      <div class="rc-stats">
+        <div class="rc-stat"><div class="rc-stat-val acc">${maxV>0?maxV.toFixed(1):'—'}</div><div class="rc-stat-lbl">Max Vel (mph)</div></div>
+        <div class="rc-stat"><div class="rc-stat-val ${flagCount>0?'danger':'ok'}">${flagCount}</div><div class="rc-stat-lbl">VALD Flags (30d)</div></div>
+        <div class="rc-stat"><div class="rc-stat-val ${acwr>0?(acwr>1.3?'warn':'ok'):'info'}">${acwr>0?acwr.toFixed(2):'—'}</div><div class="rc-stat-lbl">ACWR Dist</div></div>
+      </div>
+    </div>`;
   }).join('');
 }
+
 document.getElementById('roster-search').addEventListener('input',function(){filterRoster(this.value.toLowerCase());});
 filterRoster();
+
+window.openRosterAthlete=async function(name){
+  document.getElementById('roster-grid-view').style.display='none';
+  document.getElementById('roster-athlete-view').style.display='';
+  document.getElementById('roster-ath-name').textContent=name;
+  const ath=(aths||[]).find(a=>a.name===name);
+  document.getElementById('roster-ath-pos').textContent=ath?ath.position:'';
+
+  // GPS sessions
+  const{data:sessions}=await SB.from('catapult_sessions')
+    .select('session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts')
+    .ilike('athlete_name',name)
+    .gt('total_distance',0)
+    .order('session_date',{ascending:false});
+
+  const sorted=(sessions||[]).sort((a,b)=>{
+    const[am,ad,ay]=a.session_date.split('/').map(Number);
+    const[bm,bd,by]=b.session_date.split('/').map(Number);
+    return new Date(by,bm-1,bd)-new Date(ay,am-1,ad);
+  });
+
+  const sel=document.getElementById('roster-session-sel');
+  sel.innerHTML='';
+  sorted.forEach(s=>{
+    const o=document.createElement('option');
+    o.value=s.session_date;
+    o.textContent=s.session_date;
+    o.dataset.json=JSON.stringify(s);
+    sel.appendChild(o);
+  });
+
+  function renderRosterSession(){
+    const opt=sel.options[sel.selectedIndex];
+    if(!opt||!opt.dataset.json)return;
+    const s=JSON.parse(opt.dataset.json);
+    const hsr=(+s.velocity_band4_distance||0)+(+s.velocity_band5_distance||0);
+    document.getElementById('roster-session-stats').innerHTML=`
+      <div class="stat-card acc"><div class="sc-label">Player Load</div><div class="sc-val acc">${(+s.total_player_load||0).toFixed(0)}</div><div class="sc-sub">AU</div></div>
+      <div class="stat-card blue"><div class="sc-label">Total Distance</div><div class="sc-val blue">${Math.round(+s.total_distance||0).toLocaleString()}</div><div class="sc-sub">meters</div></div>
+      <div class="stat-card ok"><div class="sc-label">HSR</div><div class="sc-val ok">${Math.round(hsr).toLocaleString()}</div><div class="sc-sub">meters</div></div>
+      <div class="stat-card info"><div class="sc-label">Max Velocity</div><div class="sc-val info">${(+s.max_velocity||0).toFixed(2)}</div><div class="sc-sub">mph</div></div>
+      <div class="stat-card warn"><div class="sc-label">Accel Efforts</div><div class="sc-val warn">${+s.accel_total_efforts||0}</div><div class="sc-sub">≥2 m/s²</div></div>
+      <div class="stat-card purple"><div class="sc-label">Decel Efforts</div><div class="sc-val purple">${+s.decel_total_efforts||0}</div><div class="sc-sub">≤-2 m/s²</div></div>`;
+  }
+
+  sel.addEventListener('change',renderRosterSession);
+  if(sel.options.length>0){sel.selectedIndex=0;renderRosterSession();}
+
+  // Last 5 sessions
+  document.getElementById('roster-recent-sessions').innerHTML=sorted.slice(0,5).map(s=>{
+    const hsr=(+s.velocity_band4_distance||0)+(+s.velocity_band5_distance||0);
+    return`<tr>
+      <td class="mono">${s.session_date}</td>
+      <td class="mono">${(+s.total_player_load||0).toFixed(1)}</td>
+      <td class="mono">${Math.round(+s.total_distance||0).toLocaleString()}</td>
+      <td class="mono acc">${(+s.max_velocity||0).toFixed(2)}</td>
+      <td class="mono">${+s.accel_total_efforts||0}</td>
+      <td class="mono">${+s.decel_total_efforts||0}</td>
+      <td class="mono">${Math.round(hsr).toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+
+  // VALD data
+  const[{data:cmj},{data:nord}]=await Promise.all([
+    SB.from('cmj_tests').select('test_date,jump_height_cm,rsi_modified').ilike('athlete_name',name).order('test_date',{ascending:false}),
+    SB.from('nordbord_tests').select('test_date,left_peak_force_n,right_peak_force_n,lsi_pct').ilike('athlete_name',name).order('test_date',{ascending:false})
+  ]);
+
+  const valdRows=[
+    ...(cmj||[]).map(r=>({date:r.test_date,type:'CMJ',jh:r.jump_height_cm,rsi:r.rsi_modified,lf:null,rf:null,asym:null})),
+    ...(nord||[]).map(r=>{
+      const lf=r.left_peak_force_n,rf=r.right_peak_force_n;
+      const asym=lf&&rf&&Math.max(lf,rf)>0?(1-Math.min(lf,rf)/Math.max(lf,rf))*100:null;
+      return{date:r.test_date,type:'NordBord',jh:null,rsi:null,lf,rf,asym};
+    }),
+  ].sort((a,b)=>b.date.localeCompare(a.date));
+
+  document.getElementById('roster-vald-table').innerHTML=valdRows.length
+    ?valdRows.map(r=>{
+      const asymCls=r.asym==null?'':r.asym<10?'ok':r.asym<20?'warn':'danger';
+      return`<tr>
+        <td class="mono">${r.date}</td>
+        <td>${pill(r.type==='CMJ'?'acc':'info',r.type)}</td>
+        <td class="mono ${r.jh?'acc':''}">${r.jh!=null?(r.jh/2.54).toFixed(2)+'"':'—'}</td>
+        <td class="mono">${r.rsi!=null?r.rsi.toFixed(2):'—'}</td>
+        <td class="mono">${r.lf!=null?r.lf.toFixed(1):'—'}</td>
+        <td class="mono">${r.rf!=null?r.rf.toFixed(1):'—'}</td>
+        <td class="mono ${asymCls}">${r.asym!=null?r.asym.toFixed(1)+'%':'—'}</td>
+      </tr>`;
+    }).join('')
+    :'<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text3)">No VALD data found.</td></tr>';
+};
+
+window.closeRosterAthlete=function(){
+  document.getElementById('roster-athlete-view').style.display='none';
+  document.getElementById('roster-grid-view').style.display='';
+};
 
 // ── GPS DATE ROSTER HELPERS ────────────────────────────────────────
 function populateGPSDateSel(selId, sessions){
