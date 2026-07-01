@@ -1134,7 +1134,13 @@ function filterRoster(q=''){
   const allRoster=(aths||[]).filter(a=>
     a.name.toLowerCase().includes(q)||
     a.position.toLowerCase().includes(q)
-  );
+  ).sort((a,b)=>{
+    const aHasData=!!PLAYERS.find(x=>x.name===a.name);
+    const bHasData=!!PLAYERS.find(x=>x.name===b.name);
+    if(aHasData&&!bHasData)return -1;
+    if(!aHasData&&bHasData)return 1;
+    return a.name.localeCompare(b.name);
+  });
   document.getElementById('roster-grid').innerHTML=allRoster.map(a=>{
     const p=PLAYERS.find(x=>x.name===a.name);
     const acwr=p?p.latD:0;
