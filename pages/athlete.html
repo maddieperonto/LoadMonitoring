@@ -270,9 +270,7 @@ const { data: sessions } = await SB.from('catapult_sessions')
   .gte('session_date', '01/01/2026')
   .order('session_date', { ascending: false });
 
-document.getElementById('session-sel').addEventListener('change', renderSession);
-
-// Populate session dropdown and auto-select most recent
+// Populate session dropdown
 const sel = document.getElementById('session-sel');
 (sessions || []).forEach(s => {
   const o = document.createElement('option');
@@ -281,12 +279,8 @@ const sel = document.getElementById('session-sel');
   o.dataset.json = JSON.stringify(s);
   sel.appendChild(o);
 });
-if (sel.options.length > 0) {
-  sel.selectedIndex = 0;
-  renderSession();
-}
 
-window.renderSession = function() {
+function renderSession() {
   const sel = document.getElementById('session-sel');
   const opt = sel.options[sel.selectedIndex];
   if (!opt || !opt.dataset.json) {
@@ -303,11 +297,12 @@ window.renderSession = function() {
     <div class="stat-card warn"><div class="sc-label">Accel Efforts</div><div class="sc-val warn">${+s.accel_b2_3_efforts||0}</div><div class="sc-sub">efforts</div></div>
     <div class="stat-card purple"><div class="sc-label">Decel Efforts</div><div class="sc-val purple">${+s.decel_b2_3_efforts||0}</div><div class="sc-sub">efforts</div></div>
   `;
-};
+}
 
-// Auto-select most recent session
-if (sel.options.length > 1) {
-  sel.selectedIndex = 1;
+// Add event listener and auto-select most recent session
+sel.addEventListener('change', renderSession);
+if (sel.options.length > 0) {
+  sel.selectedIndex = 0;
   renderSession();
 }
 
