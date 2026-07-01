@@ -270,9 +270,16 @@ const { data: sessions } = await SB.from('catapult_sessions')
   .gte('session_date', '01/01/2026')
   .order('session_date', { ascending: false });
 
+// Sort sessions by actual date descending
+const sortedSessions = (sessions || []).sort((a, b) => {
+  const [am,ad,ay] = a.session_date.split('/').map(Number);
+  const [bm,bd,by] = b.session_date.split('/').map(Number);
+  return new Date(by,bm-1,bd) - new Date(ay,am-1,ad);
+});
+
 // Populate session dropdown
 const sel = document.getElementById('session-sel');
-(sessions || []).forEach(s => {
+sortedSessions.forEach(s => {
   const o = document.createElement('option');
   o.value = s.session_date;
   o.textContent = s.session_date;
