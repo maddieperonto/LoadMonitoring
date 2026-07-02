@@ -1635,9 +1635,13 @@ function renderLMACWR(){
   const counts=zones.map(z=>fp.filter(p=>lmZone(p.acwr).key===z).length);
   const total=fp.length||1;
   const avgAcwr=fp.length?(fp.reduce((a,p)=>a+p.acwr,0)/fp.length).toFixed(2):'—';
-  document.getElementById('lm-acwr-avg').textContent=avgAcwr;
-  document.getElementById('lm-acwr-avg').style.color=fp.length?lmZone(+avgAcwr).color:'var(--text2)';
-  document.getElementById('lm-zone-bars').innerHTML=zones.map((z,i)=>`<div class="lm-zone-row"><div class="lm-zone-dot" style="background:${zc[i]}"></div><div class="lm-zone-name">${zl[i]}</div><div class="lm-zone-bar-wrap"><div class="lm-zone-bar-fill" style="width:${Math.round(counts[i]/total*100)}%;background:${zc[i]}"></div></div><div class="lm-zone-count">${counts[i]}</div></div>`).join('');
+  if(document.getElementById('lm-acwr-avg')){
+    document.getElementById('lm-acwr-avg').textContent=avgAcwr;
+    document.getElementById('lm-acwr-avg').style.color=fp.length?lmZone(+avgAcwr).color:'var(--text2)';
+  }
+  if(document.getElementById('lm-zone-bars')){
+    document.getElementById('lm-zone-bars').innerHTML=zones.map((z,i)=>`<div class="lm-zone-row"><div class="lm-zone-dot" style="background:${zc[i]}"></div><div class="lm-zone-name">${zl[i]}</div><div class="lm-zone-bar-wrap"><div class="lm-zone-bar-fill" style="width:${Math.round(counts[i]/total*100)}%;background:${zc[i]}"></div></div><div class="lm-zone-count">${counts[i]}</div></div>`).join('');
+  }
   if(lmAC){lmAC.destroy();lmAC=null;}
   const el2=document.getElementById('lm-acwr-donut');if(!el2)return;
   lmAC=new Chart(el2,{type:'doughnut',data:{labels:zl,datasets:[{data:counts.map(c=>c||0.001),backgroundColor:zc,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw<0.01?0:ctx.raw}`}}}}});
