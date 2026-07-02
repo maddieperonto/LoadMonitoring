@@ -52,17 +52,7 @@ vald_get <- function(path, query = list(), base_url) {
     req_headers(Accept = "application/json") |>
     req_error(is_error = function(resp) FALSE)
   if (length(query) > 0) req <- req |> req_url_query(!!!query)
-
-  resp <- tryCatch(
-    req_perform(req),
-    error = function(e) {
-      cat("[VALD Sync DEBUG] req_perform failed for", path, "\n")
-      cat("[VALD Sync DEBUG] Error:", conditionMessage(e), "\n")
-      NULL
-    }
-  )
-  if (is.null(resp)) return(NULL)
-
+  resp <- req_perform(req)
   status <- resp_status(resp)
   if (status == 204) { cat("[VALD Sync] 204 No Content for", path, "\n"); return(NULL) }
   if (status != 200) {
@@ -70,18 +60,7 @@ vald_get <- function(path, query = list(), base_url) {
     warning("[VALD Sync] ", path, " returned ", status, ": ", body)
     return(NULL)
   }
-  parsed <- tryCatch(
-    resp_body_json(resp, simplifyVector = TRUE),
-    error = function(e) {
-      raw_body <- tryCatch(resp_body_string(resp), error = function(e2) "(could not read body)")
-      cat("[VALD Sync DEBUG] JSON parse failed for", path, "\n")
-      cat("[VALD Sync DEBUG] Error:", conditionMessage(e), "\n")
-      cat("[VALD Sync DEBUG] Raw body (first 2000 chars):\n")
-      cat(substr(raw_body, 1, 2000), "\n")
-      NULL
-    }
-  )
-  parsed
+  resp_body_json(resp, simplifyVector = TRUE)
 }
 
 # ── Helper: upsert to Supabase ────────────────────────────────────────────
@@ -149,8 +128,7 @@ if (!is.null(rd_raw) && length(rd_raw) > 0) {
     rd_lookup[[as.character(rd_df$resultId[i])]] <- tolower(as.character(rd_df$resultName[i]))
   }
   cat("[VALD Sync]", length(rd_lookup), "result definitions loaded.\n")
-  cat("[VALD Sync DEBUG] All result names:\n")
-  cat(paste(sort(unique(unlist(rd_lookup))), collapse = "\n"), "\n")
+}
 
 # ── Step 4: ForceDecks tests ──────────────────────────────────────────────
 cat("[VALD Sync] Fetching ForceDecks tests...\n")
@@ -259,9 +237,6 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
           eccentric_peak_force_asymmetry_pct = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "asym"),
           eccentric_peak_force_left          = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "left"),
           eccentric_peak_force_right         = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "right"),
-          force_at_zero_velocity_n           = get_metric_from_trial(res, c("force at zero velocity")),
-          relative_peak_power_w_bm           = get_metric_from_trial(res, c("peak power / bm")),
-          countermovement_depth_cm           = get_metric_from_trial(res, c("countermovement depth")),
           stringsAsFactors = FALSE
         )
       })
