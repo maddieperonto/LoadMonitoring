@@ -203,6 +203,9 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 .lm-leg span{display:flex;align-items:center;gap:5px}
 .lm-leg-sq{width:8px;height:8px;border-radius:2px;flex-shrink:0}
 .lm-leg-dash{width:16px;height:2px;border-top:2px dashed;flex-shrink:0}
+.slru-tab{font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:6px 12px;border:1.5px solid var(--border2);border-radius:6px;background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .13s}
+.slru-tab.active{background:var(--uf-blue);color:#fff;border-color:var(--uf-blue)}
+.slru-tab:hover:not(.active){background:var(--uf-blue-pale);color:var(--uf-blue);border-color:var(--uf-blue)}
 .lm-phase-tags{display:flex;gap:24px;margin-bottom:8px;font-size:11px;font-family:var(--font-m);color:var(--text3)}
 .lm-phase-tags span::before{content:'— '}
 .pm-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:1rem}
@@ -468,21 +471,33 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <button class="lm-chip" onclick="setLMMetric('acwr',this)">ACWR</button>
     </div>
   </div>
-  <div class="lm-charts-row">
-    <div class="panel" style="margin-bottom:0">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-        <div><div style="font-size:13px;font-weight:600" id="lm-chart-title">Team weekly average</div><div style="font-size:11px;color:var(--text3);font-family:var(--font-m)">spring → summer → fall projection</div></div>
-        <div class="lm-leg" id="lm-legend"></div>
+  <!-- Summer Load Ramp Up -->
+  <div class="panel" style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div>
+        <div style="font-size:13px;font-weight:600">Summer Load Ramp Up</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-m)">Weekly totals vs fall camp projection</div>
       </div>
-      <div class="lm-phase-tags"><span>Spring 2026 (Jan–Apr)</span><span>Summer 2026 (May–Jul)</span><span style="color:var(--uf-orange)">Fall Camp proj. (Aug)</span></div>
-      <div class="chart-wrap h220"><canvas id="lm-team-chart"></canvas></div>
     </div>
-    <div class="panel" style="margin-bottom:0">
-      <div style="font-size:13px;font-weight:600;margin-bottom:4px">ACWR Distribution</div>
-      <div style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-bottom:12px">team snapshot · current period</div>
-      <div class="lm-donut-wrap"><canvas id="lm-acwr-donut"></canvas><div class="lm-donut-center"><div class="lm-dc-val" id="lm-acwr-avg">—</div><div class="lm-dc-label">team avg</div></div></div>
-      <div class="lm-zone-bars" id="lm-zone-bars"></div>
+    <!-- 10 Tab buttons -->
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px" id="slru-tabs">
+      <button class="slru-tab active" onclick="setSlruTab('pl-off')">Player Load OFF</button>
+      <button class="slru-tab" onclick="setSlruTab('pl-def')">Player Load DEF</button>
+      <button class="slru-tab" onclick="setSlruTab('hsd12-off')">HSD 12-16 OFF</button>
+      <button class="slru-tab" onclick="setSlruTab('hsd12-def')">HSD 12-16 DEF</button>
+      <button class="slru-tab" onclick="setSlruTab('hsd16-off')">HSD 16+ OFF</button>
+      <button class="slru-tab" onclick="setSlruTab('hsd16-def')">HSD 16+ DEF</button>
+      <button class="slru-tab" onclick="setSlruTab('accel-off')">Accels OFF</button>
+      <button class="slru-tab" onclick="setSlruTab('accel-def')">Accels DEF</button>
+      <button class="slru-tab" onclick="setSlruTab('decel-off')">Decels OFF</button>
+      <button class="slru-tab" onclick="setSlruTab('decel-def')">Decels DEF</button>
     </div>
+    <!-- Table -->
+    <div class="tbl-wrap" style="margin-bottom:16px">
+      <table id="slru-table"><thead><tr id="slru-thead"></tr></thead><tbody id="slru-tbody"></tbody></table>
+    </div>
+    <!-- Bar charts per position -->
+    <div id="slru-charts" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>
   </div>
   <div class="panel">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
@@ -1639,7 +1654,7 @@ function renderLMAll(){
   renderLMMetrics();
   renderLMPosFilters();
   renderLMRoster();
-  setTimeout(()=>{renderLMTeamChart();renderLMACWR();},100);
+  setTimeout(()=>{renderLMTeamChart();renderLMACWR();renderSlru();},100);
 }
 window.renderLoadMonitor=renderLMAll;
 window.selLMPlayer=function(i){
@@ -1919,6 +1934,188 @@ window.renderVALDGroup=function(){
   }).join('');
 };
 
+// ── SUMMER LOAD RAMP UP ───────────────────────────────────────────
+// Training week mapping (skips Su W7 off week)
+const SLRU_WK_MAP={
+  'Su W1':'W1','Su W2':'W2','Su W3':'W3','Su W4':'W4',
+  'Su W5':'W5','Su W6':'W6','Su W8':'W7'
+};
+const SLRU_PROJ_WKS=['W8','W9 Peak','W10 Taper'];
+const SLRU_ALL_WKS=['W1','W2','W3','W4','W5','W6','W7','W8','W9 Peak','W10 Taper'];
+
+// Static projection data from Excel
+const SLRU_DATA={
+  'pl-off':{
+    label:'Total Player Load',unit:'',
+    positions:['WR','RB','QB','TE','OL'],
+    campProj:{WR:3361,RB:3010,QB:2757,TE:3033,OL:2606},
+    proj:{WR:[2054.3,2455.6,2856.8,2184.7],RB:[1858.2,2208.3,2558.5,1956.5],QB:[1797.1,2070.3,2343.4,1792],TE:[1906.7,2242.4,2578,1971.5],OL:[1589,1902.1,2215.1,1693.9]}
+  },
+  'pl-def':{
+    label:'Total Player Load',unit:'',
+    positions:['CB','SAF','ILB','OLB','DL'],
+    campProj:{CB:2864,SAF:3075,ILB:2823,OLB:3123,DL:2325},
+    proj:{CB:[1810.1,2122.3,2434.4,1861.6],SAF:[1861.2,2237.5,2613.8,1998.8],ILB:[1771.8,2085.7,2399.5,1835],OLB:[1856.8,2255.7,2654.5,2030],DL:[1377.4,1676.8,1976.2,1511.2]}
+  },
+  'hsd12-off':{
+    label:'HSD 12-16 mph',unit:'y',
+    positions:['WR','RB','QB','TE','OL'],
+    campProj:{WR:2500,RB:2400,QB:2450,TE:2250,OL:550},
+    proj:{WR:[1641.7,1883.3,2125,1625],RB:[1580,1810,2040,1560],QB:[1494.2,1788.3,2082.5,1592.5],TE:[1504.2,1708.3,1912.5,1462.5],OL:[689.2,578.3,467.5,357.5]}
+  },
+  'hsd12-def':{
+    label:'HSD 12-16 mph',unit:'y',
+    positions:['CB','SAF','ILB','OLB','DL'],
+    campProj:{CB:2300,SAF:2450,ILB:2250,OLB:2200,DL:450},
+    proj:{CB:[1516.3,1735.7,1955,1495],SAF:[1545.5,1814,2082.5,1592.5],ILB:[1389.5,1651,1912.5,1462.5],OLB:[1372,1621,1870,1430],DL:[660.8,521.7,382.5,292.5]}
+  },
+  'hsd16-off':{
+    label:'HSD 16+ mph',unit:'y',
+    positions:['WR','RB','QB','TE','OL'],
+    campProj:{WR:1400,RB:950,QB:375,TE:475,OL:5},
+    proj:{WR:[523.3,856.7,1190,910],RB:[342.5,575,807.5,617.5],QB:[166.2,242.5,318.8,243.8],TE:[194.6,299.2,403.8,308.8],OL:[3.4,3.8,4.2,3.2]}
+  },
+  'hsd16-def':{
+    label:'HSD 16+ mph',unit:'y',
+    positions:['CB','SAF','ILB','OLB','DL'],
+    campProj:{CB:750,SAF:725,ILB:450,OLB:250,DL:35},
+    proj:{CB:[339.2,488.3,637.5,487.5],SAF:[312.1,464.2,616.2,471.2],ILB:[194.2,288.3,382.5,292.5],OLB:[130.8,171.7,212.5,162.5],DL:[26.6,28.2,29.8,22.8]}
+  },
+  'accel-off':{
+    label:'Accelerations',unit:'',
+    positions:['WR','RB','QB','TE','OL'],
+    campProj:{WR:456,RB:340,QB:197,TE:303,OL:122},
+    proj:{WR:[282.5,335.1,387.6,296.4],RB:[226.3,257.7,289,221],QB:[155.8,161.6,167.4,128.1],TE:[209.2,233.4,257.6,197],OL:[101.2,102.5,103.7,79.3]}
+  },
+  'accel-def':{
+    label:'Accelerations',unit:'',
+    positions:['CB','SAF','ILB','OLB','DL'],
+    campProj:{CB:355,SAF:370,ILB:308,OLB:292,DL:148},
+    proj:{CB:[233.9,267.8,301.8,230.8],SAF:[238.2,276.3,314.5,240.5],ILB:[193.9,227.9,261.8,200.2],OLB:[199.4,223.8,248.2,189.8],DL:[101.9,113.9,125.8,96.2]}
+  },
+  'decel-off':{
+    label:'Decelerations',unit:'',
+    positions:['WR','RB','QB','TE','OL'],
+    campProj:{WR:323,RB:230,QB:104,TE:225,OL:72},
+    proj:{WR:[198.2,236.4,274.6,210],RB:[171.8,183.7,195.5,149.5],QB:[96.1,92.3,88.4,67.6],TE:[150.4,170.8,191.2,146.2],OL:[60.4,60.8,61.2,46.8]}
+  },
+  'decel-def':{
+    label:'Decelerations',unit:'',
+    positions:['CB','SAF','ILB','OLB','DL'],
+    campProj:{CB:267,SAF:267,ILB:230,OLB:176,DL:88},
+    proj:{CB:[162.3,194.6,226.9,173.6],SAF:[169,198,226.9,173.6],ILB:[141.8,168.7,195.5,149.5],OLB:[129.9,139.7,149.6,114.4],DL:[61.6,68.2,74.8,57.2]}
+  }
+};
+
+// Position code mapping for Supabase data
+const SLRU_POS_MAP={'SAF':'S','OLB':'EDGE'};
+
+let slruActive='pl-off';
+
+window.setSlruTab=function(tab){
+  slruActive=tab;
+  document.querySelectorAll('.slru-tab').forEach((b,i)=>{
+    const tabs=['pl-off','pl-def','hsd12-off','hsd12-def','hsd16-off','hsd16-def','accel-off','accel-def','decel-off','decel-def'];
+    b.classList.toggle('active',tabs[i]===tab);
+  });
+  renderSlru();
+};
+
+function getSlruField(tabId){
+  if(tabId.startsWith('pl'))return'load';
+  if(tabId.startsWith('hsd12'))return'hsr12';
+  if(tabId.startsWith('hsd16'))return'hsr';
+  if(tabId.startsWith('accel'))return'accel';
+  if(tabId.startsWith('decel'))return'decel';
+  return'load';
+}
+
+function getSlruActual(positions,field){
+  // Get weekly totals per position from PLAYERS sessions
+  const result={};
+  positions.forEach(pos=>{
+    const dbPos=SLRU_POS_MAP[pos]||pos;
+    const posPlayers=PLAYERS.filter(p=>p.pos===dbPos);
+    result[pos]={};
+    // Map Su weeks to training weeks
+    Object.entries(SLRU_WK_MAP).forEach(([suWk,trainWk])=>{
+      const total=posPlayers.reduce((t,p)=>{
+        return t+p.sessions.filter(s=>s.wk===suWk).reduce((st,s)=>st+(s[field]||0),0);
+      },0);
+      result[pos][trainWk]=total>0?Math.round(total):null;
+    });
+  });
+  return result;
+}
+
+function renderSlru(){
+  const cfg=SLRU_DATA[slruActive];
+  const field=getSlruField(slruActive);
+  const actual=getSlruActual(cfg.positions,field);
+
+  // Build table header
+  document.getElementById('slru-thead').innerHTML=
+    `<th>Position</th>`+
+    SLRU_ALL_WKS.map((wk,i)=>`<th style="font-size:10px;${i>=7?'color:var(--text3);font-style:italic':''}">${wk}${i>=7?' (Proj)':''}</th>`).join('')+
+    `<th>Camp Proj</th>`+
+    SLRU_ALL_WKS.slice(0,7).map(wk=>`<th style="font-size:10px">% ${wk}</th>`).join('');
+
+  // Build table body
+  document.getElementById('slru-tbody').innerHTML=cfg.positions.map(pos=>{
+    const campProj=cfg.campProj[pos];
+    const projVals=cfg.proj[pos]; // W8,W9,W9Peak,W10Taper
+    const actualVals=actual[pos];
+
+    const allVals=SLRU_ALL_WKS.map((wk,i)=>{
+      if(i<7)return actualVals[wk]??null; // actual weeks W1-W7
+      return projVals[i-7]??null; // projected weeks W8-W10
+    });
+
+    const pcts=SLRU_ALL_WKS.slice(0,7).map(wk=>{
+      const v=actualVals[wk];
+      return v!=null&&campProj>0?Math.round(v/campProj*100):null;
+    });
+
+    return`<tr>
+      <td style="font-weight:700;color:var(--uf-blue)">${pos}</td>
+      ${allVals.map((v,i)=>{
+        const isProj=i>=7;
+        const isCurrent=SLRU_ALL_WKS[i]==='W7';
+        return`<td class="mono" style="${isProj?'color:var(--text3);font-style:italic':''}${isCurrent?';font-weight:700;color:var(--uf-orange)':''}">${v!=null?v.toLocaleString():'—'}</td>`;
+      }).join('')}
+      <td class="mono" style="font-weight:700;color:var(--uf-blue)">${campProj.toLocaleString()}</td>
+      ${pcts.map(p=>{
+        const cls=p==null?'':p>=90?'ok':p>=75?'warn':'danger';
+        return`<td class="mono ${cls}">${p!=null?p+'%':'—'}</td>`;
+      }).join('')}
+    </tr>`;
+  }).join('');
+
+  // Build bar charts per position
+  document.getElementById('slru-charts').innerHTML=cfg.positions.map(pos=>`
+    <div class="panel" style="margin-bottom:0">
+      <div style="font-family:var(--font-d);font-size:12px;font-weight:700;margin-bottom:8px">${pos} — % of Camp Proj</div>
+      <div class="chart-wrap h180"><canvas id="slru-chart-${pos}"></canvas></div>
+    </div>`).join('');
+
+  // Render each position bar chart
+  cfg.positions.forEach(pos=>{
+    const campProj=cfg.campProj[pos];
+    const projVals=cfg.proj[pos];
+    const actualVals=actual[pos];
+    const allVals=SLRU_ALL_WKS.map((wk,i)=>i<7?(actualVals[wk]??0):projVals[i-7]??0);
+    const pcts=allVals.map(v=>campProj>0?Math.round(v/campProj*100):0);
+    const colors=SLRU_ALL_WKS.map((_,i)=>i<7?C.blue:'rgba(0,48,135,0.25)');
+    mk(`slru-chart-${pos}`,{type:'bar',data:{
+      labels:SLRU_ALL_WKS,
+      datasets:[{data:pcts,backgroundColor:colors,borderRadius:3}]
+    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw}% of camp proj`}}},scales:{
+      x:{ticks:{color:C.tick,font:{size:9}},grid:{color:C.grid}},
+      y:{ticks:{color:C.tick,font:{size:9},callback:v=>v+'%'},grid:{color:C.grid},min:0,max:100}
+    }}});
+  });
+}
+window.renderSlru=renderSlru;
 
 // ── LEADERBOARDS ────────────────────────────────────────────────── 
 const LB_CATS=[
