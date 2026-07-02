@@ -60,7 +60,18 @@ vald_get <- function(path, query = list(), base_url) {
     warning("[VALD Sync] ", path, " returned ", status, ": ", body)
     return(NULL)
   }
-  resp_body_json(resp, simplifyVector = TRUE)
+  parsed <- tryCatch(
+    resp_body_json(resp, simplifyVector = TRUE),
+    error = function(e) {
+      raw_body <- tryCatch(resp_body_string(resp), error = function(e2) "(could not read body)")
+      cat("[VALD Sync DEBUG] JSON parse failed for", path, "\n")
+      cat("[VALD Sync DEBUG] Error:", conditionMessage(e), "\n")
+      cat("[VALD Sync DEBUG] Raw body (first 2000 chars):\n")
+      cat(substr(raw_body, 1, 2000), "\n")
+      NULL
+    }
+  )
+  parsed
 }
 
 # ── Helper: upsert to Supabase ────────────────────────────────────────────
