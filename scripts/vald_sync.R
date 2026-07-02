@@ -128,7 +128,8 @@ if (!is.null(rd_raw) && length(rd_raw) > 0) {
     rd_lookup[[as.character(rd_df$resultId[i])]] <- tolower(as.character(rd_df$resultName[i]))
   }
   cat("[VALD Sync]", length(rd_lookup), "result definitions loaded.\n")
-}
+  cat("[VALD Sync DEBUG] All result names:\n")
+  cat(paste(sort(unique(unlist(rd_lookup))), collapse = "\n"), "\n")
 
 # ── Step 4: ForceDecks tests ──────────────────────────────────────────────
 cat("[VALD Sync] Fetching ForceDecks tests...\n")
