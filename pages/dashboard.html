@@ -733,6 +733,15 @@ function phWk(d){
   const days=Math.floor((parseDate(d)-base)/86400000);
   return`${ph} W${Math.floor(days/7)+1}`;
 }
+function displayWk(wk){
+  if(!wk)return null;
+  if(wk.startsWith('Sp')||wk.startsWith('Fa'))return wk;
+  const n=parseInt(wk.replace('Su W',''));
+  if(n<=6)return`W${n}`;
+  if(n===7)return null;
+  const map={8:'W7',9:'W8',10:'W9 Peak',11:'W10 Taper'};
+  return map[n]||null;
+}
 
 // ── FETCH ─────────────────────────────────────────────────────────
 let raw=[], _page=0, _done=false;
