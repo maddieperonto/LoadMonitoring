@@ -2032,6 +2032,7 @@ function pctColor(pct){
 }
 
 function renderSlru(){
+  if(!document.getElementById('slru-charts'))return;
   const cfg=SLRU_DATA[slruActive];
   const field=getSlruField(slruActive);
   const currWk=getSlruCurrentWk(cfg.positions,field);
