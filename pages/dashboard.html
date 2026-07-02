@@ -969,6 +969,21 @@ function teamDailyACWR(field,days){
   });
 }
 
+// ── DAILY ACWR SETUP ──────────────────────────────────────────────
+const SU_START_MS=new Date(2026,4,11).getTime(); // May 11 2026
+const TODAY_MS=(()=>{
+  let latest=0;
+  Object.values(byP).forEach(p=>p.sessions.forEach(s=>{const ms=dateToMs(s.date);if(ms>latest)latest=ms;}));
+  return latest||Date.now();
+})();
+const DAILY_DAYS=dailyRange(SU_START_MS,TODAY_MS);
+const DAILY_LABELS=DAILY_DAYS.map(ms=>{
+  // Only label first day of each program week
+  const wk=phWk(new Date(ms).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}).replace(/\//g,'/'));
+  const prevWk=phWk(new Date(ms-86400000).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}).replace(/\//g,'/'));
+  return wk&&wk!==prevWk?wk:'';
+});
+
 // ── BUILD PLAYERS ─────────────────────────────────────────────────
 // Only include athletes on current roster
 const rosterNames=new Set((aths||[]).map(a=>a.name.toUpperCase()));
@@ -1063,21 +1078,6 @@ function acwrChart(id,acwrs,wks,daily=false){
     y:{min:0.3,max:2.2,ticks:{color:C.tick,font:{size:10}},grid:{color:C.grid}}
   }}});
 }
-
-// ── DAILY ACWR SETUP ──────────────────────────────────────────────
-const SU_START_MS=new Date(2026,4,11).getTime(); // May 11 2026
-const TODAY_MS=(()=>{
-  let latest=0;
-  Object.values(byP).forEach(p=>p.sessions.forEach(s=>{const ms=dateToMs(s.date);if(ms>latest)latest=ms;}));
-  return latest||Date.now();
-})();
-const DAILY_DAYS=dailyRange(SU_START_MS,TODAY_MS);
-const DAILY_LABELS=DAILY_DAYS.map(ms=>{
-  // Only label first day of each program week
-  const wk=phWk(new Date(ms).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}).replace(/\//g,'/'));
-  const prevWk=phWk(new Date(ms-86400000).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}).replace(/\//g,'/'));
-  return wk&&wk!==prevWk?wk:'';
-});
 
 // ── TEAM ACWR COMPUTATION ─────────────────────────────────────────
 function teamWkTot(field){const m={};raw.forEach(r=>{const wk=phWk(r.session_date);if(!wk)return;m[wk]=(m[wk]||0)+(+r[field]||0);});return gpsChartWks.map(wk=>m[wk]?m[wk]/PLAYERS.length:null);}
