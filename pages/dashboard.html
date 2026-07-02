@@ -1804,7 +1804,7 @@ window.renderVALDGroup=function(){
 
 
 // ── LEADERBOARDS ────────────────────────────────────────────────── 
-const LB_CATS=[{id:'maxvel',lbl:'Max Velocity',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},{id:'hsr',lbl:'Total HSR (m)',fn:p=>p.totalHSR>0?p.totalHSR:null,fmt:v=>Math.round(v).toLocaleString()+' m'},{id:'sessions',lbl:'Session Count',fn:p=>p.sessions.length,fmt:v=>v+' sessions'},{id:'acwr',lbl:'ACWR Distance',fn:p=>p.latD>0?p.latD:null,fmt:v=>v.toFixed(2)}];
+const LB_CATS=[{id:'maxvel',lbl:'Max Velocity',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},{id:'hsr',lbl:'Total HSR (m)',fn:p=>p.totalHSR>0?p.totalHSR:null,fmt:v=>Math.round(v).toLocaleString()+' m'},{id:'sessions',lbl:'Session Count',fn:p=>p.sessions.length,fmt:v=>v.toFixed(2)+' sessions'},{id:'acwr',lbl:'ACWR Distance',fn:p=>p.latD>0?p.latD:null,fmt:v=>v.toFixed(2)}];
 let lbActive=LB_CATS[0];
 window.renderLeaderboards=function(){
   document.getElementById('lb-tabs').innerHTML=LB_CATS.map(c=>`<div class="lb-tab ${c.id===lbActive.id?'active':''}" onclick="setLBCat('${c.id}')">${c.lbl}</div>`).join('');
