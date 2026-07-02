@@ -600,6 +600,17 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 
 <!-- LEADERBOARDS -->
 <div class="page" id="pg-leaderboards">
+  <div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap">
+    <div>
+      <label style="display:block;font-family:var(--font-m);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">From</label>
+      <input type="date" id="lb-from" class="data-sel" style="min-width:160px" onchange="renderLeaderboards()">
+    </div>
+    <div>
+      <label style="display:block;font-family:var(--font-m);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">To</label>
+      <input type="date" id="lb-to" class="data-sel" style="min-width:160px" onchange="renderLeaderboards()">
+    </div>
+    <button onclick="document.getElementById('lb-from').value='';document.getElementById('lb-to').value='';renderLeaderboards();" style="padding:8px 14px;background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--r);font-family:var(--font-d);font-size:12px;font-weight:600;cursor:pointer;color:var(--text2)">Clear</button>
+  </div>
   <div class="lb-tabs" id="lb-tabs"></div>
   <div class="two-col">
     <div class="panel" id="lb-panel-left"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></div>
@@ -1886,9 +1897,29 @@ const LB_CATS=[
   {id:'keiser',lbl:'Keiser Squat',fn:p=>null,fmt:v=>v+' lbs'},
 ];
 let lbActive=LB_CATS[0];
+
 window.renderLeaderboards=function(){
+  const fromDate=document.getElementById('lb-from')?.value||null;
+  const toDate=document.getElementById('lb-to')?.value||null;
+
+  // Filter players' sessions by date range for leaderboard calculations
+  const filteredPlayers=PLAYERS.map(p=>({
+    ...p,
+    sessions:p.sessions.filter(s=>{
+      if(!fromDate&&!toDate)return true;
+      const d=s.date.split('/');
+      const iso=`${d[2]}-${d[0].padStart(2,'0')}-${d[1].padStart(2,'0')}`;
+      if(fromDate&&iso<fromDate)return false;
+      if(toDate&&iso>toDate)return false;
+      return true;
+    })
+  })).map(p=>({
+    ...p,
+    latMaxV:[...p.sessions].reverse().find(s=>s.maxV>0)?.maxV??0,
+  }));
+
   document.getElementById('lb-tabs').innerHTML=LB_CATS.map(c=>`<div class="lb-tab ${c.id===lbActive.id?'active':''}" onclick="setLBCat('${c.id}')">${c.lbl}</div>`).join('');
-  const ranked=[...PLAYERS].map(p=>({p,v:lbActive.fn(p)})).filter(x=>x.v!=null).sort((a,b)=>b.v-a.v);
+  const ranked=[...filteredPlayers].map(p=>({p,v:lbActive.fn(p)})).filter(x=>x.v!=null).sort((a,b)=>b.v-a.v);
   const top10=ranked.slice(0,10),max=top10[0]?.v??1;
   document.getElementById('lb-panel-left').innerHTML=`<div class="panel-title"><i class="ti ti-trophy"></i>${lbActive.lbl} — Top ${top10.length}</div>`+top10.map(({p,v},i)=>`<div class="lb-row" onclick="openPM('${p.name.replace(/'/g,"\\'")}')"><span class="lb-rank" style="color:${i===0?'#B45309':i===1?'#475569':i===2?'#92400E':'var(--text3)'}">${i+1}</span><div class="avatar" style="background:rgba(250,70,22,.1);color:var(--uf-orange)">${ini(p.name)}</div><div style="flex:1"><div style="font-weight:600;font-size:12px">${p.name}</div><div style="font-size:10px;color:var(--text3)">${p.pos} · ${p.unit}</div></div><div class="lb-bar-bg"><div class="lb-bar-fill" style="width:${Math.round(v/max*100)}%"></div></div><span class="lb-val">${lbActive.fmt(v)}</span></div>`).join('');
   const byPos={};ranked.forEach(({p,v})=>{if(!byPos[p.pos])byPos[p.pos]={pos:p.pos,vals:[]};byPos[p.pos].vals.push(v);});
