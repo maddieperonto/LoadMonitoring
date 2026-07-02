@@ -392,7 +392,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR — HSD 16+ mph</div><div class="chart-wrap h200"><canvas id="gps-team-acwr-hsr16"></canvas></div></div>      <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR — Accel &amp; Decel</div><div class="chart-wrap h200"><canvas id="gps-team-acwr-accel"></canvas></div></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Team Weekly GPS Summary</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel (mph)</th><th>Avg Dist (y)</th><th>Avg A&amp;D</th><th>Avg HSR (y)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-weekly"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel (mph)</th><th>Avg Dist (y)</th><th>Avg A&amp;D</th><th>Avg HSR (y)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-weekly"></tbody></table></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-users"></i>Full Team GPS Roster</div>
       <div class="sel-row" style="margin-bottom:12px">
@@ -1456,8 +1456,7 @@ function renderGPSTeam(){
     const origI=validWks.length-1-i;
     const d=tDACWR[origI]??0,a=tAACWR[origI]??0,st=acwrSt(d);
     const amv=(()=>{const v=PLAYERS.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();
-    return`<tr><td class="mono">${wk}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${amv}</td><td class="mono">${Math.round(tDf[origI]||0).toLocaleString()}</td><td class="mono">${Math.round(tAf[origI]||0)}</td><td class="mono">${Math.round((tDf[origI]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(tDf[origI]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;
-  }).join('');
+    return`<tr><td class="mono">${wk}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${amv}</td><td class="mono">${Math.round(tDf[origI]||0).toLocaleString()}</td><td class="mono">${Math.round(tAf[origI]||0)}</td><td class="mono">${Math.round((tDf[origI]||0)*0.15).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;  }).join('');
   const allTeamDates=[...new Set(PLAYERS.flatMap(p=>p.sessions.map(s=>s.date)))].sort((a,b)=>{
     const[am,ad,ay]=a.split('/').map(Number);
     const[bm,bd,by]=b.split('/').map(Number);
