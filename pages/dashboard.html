@@ -1043,7 +1043,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
     document.getElementById('pg-'+pg)?.classList.add('active');
     document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
     document.getElementById('content-area').scrollTop=0;
-    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:renderLeaderboards,injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();}};
+    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();}};
     if(map[pg])setTimeout(map[pg],60);
   });
 });
@@ -1804,7 +1804,14 @@ window.renderVALDGroup=function(){
 
 
 // ── LEADERBOARDS ────────────────────────────────────────────────── 
-const LB_CATS=[{id:'maxvel',lbl:'Max Velocity',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},{id:'hsr',lbl:'Total HSR (m)',fn:p=>p.totalHSR>0?p.totalHSR:null,fmt:v=>Math.round(v).toLocaleString()+' m'},{id:'sessions',lbl:'Session Count',fn:p=>p.sessions.length,fmt:v=>v.toFixed(2)+' sessions'},{id:'acwr',lbl:'ACWR Distance',fn:p=>p.latD>0?p.latD:null,fmt:v=>v.toFixed(2)}];
+const LB_CATS=[
+  {id:'maxvel',lbl:'Max Velocity (All Time)',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},
+  {id:'nordbord',lbl:'NordBord Max Force',fn:p=>{const n=nordData.find(r=>r.athlete_name===p.name);return n?Math.max(n.left_peak_force_n||0,n.right_peak_force_n||0):null;},fmt:v=>v.toFixed(1)+' N'},
+  {id:'cmjjh',lbl:'CMJ Jump Height',fn:p=>{const c=cmjData.find(r=>r.athlete_name===p.name);return c?.jump_height_cm??null;},fmt:v=>(v/2.54).toFixed(2)+'"'},
+  {id:'bench',lbl:'Bench Press',fn:p=>null,fmt:v=>v+' lbs'},
+  {id:'squat',lbl:'Back Squat',fn:p=>null,fmt:v=>v+' lbs'},
+  {id:'keiser',lbl:'Keiser Squat',fn:p=>null,fmt:v=>v+' lbs'},
+];
 let lbActive=LB_CATS[0];
 window.renderLeaderboards=function(){
   document.getElementById('lb-tabs').innerHTML=LB_CATS.map(c=>`<div class="lb-tab ${c.id===lbActive.id?'active':''}" onclick="setLBCat('${c.id}')">${c.lbl}</div>`).join('');
