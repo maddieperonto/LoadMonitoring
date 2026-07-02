@@ -1935,81 +1935,57 @@ window.renderVALDGroup=function(){
 };
 
 // ── SUMMER LOAD RAMP UP ───────────────────────────────────────────
-// Training week mapping (skips Su W7 off week)
-const SLRU_WK_MAP={
-  'Su W1':'W1','Su W2':'W2','Su W3':'W3','Su W4':'W4',
-  'Su W5':'W5','Su W6':'W6','Su W8':'W7'
-};
-const SLRU_PROJ_WKS=['W8','W9 Peak','W10 Taper'];
-const SLRU_ALL_WKS=['W1','W2','W3','W4','W5','W6','W7','W8','W9 Peak','W10 Taper'];
+const SLRU_WK_MAP={'Su W8':'W7'}; // Current week only — W1-W6 use static historical data
+const SLRU_HIST_WKS=['W1','W2','W3','W4','W5','W6'];
+const SLRU_CURR_WK='W7';
+const SLRU_PROJ_WKS=['W8','W9','W10','W10 Taper'];
+const SLRU_ALL_WKS=['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W10 Taper'];
+const SLRU_CAMP_WK='Camp Proj';
 
-// Static projection data from Excel
 const SLRU_DATA={
-  'pl-off':{
-    label:'Total Player Load',unit:'',
-    positions:['WR','RB','QB','TE','OL'],
+  'pl-off':{label:'Total Player Load',unit:'',positions:['WR','RB','QB','TE','OL'],
     campProj:{WR:3361,RB:3010,QB:2757,TE:3033,OL:2606},
-    proj:{WR:[2054.3,2455.6,2856.8,2184.7],RB:[1858.2,2208.3,2558.5,1956.5],QB:[1797.1,2070.3,2343.4,1792],TE:[1906.7,2242.4,2578,1971.5],OL:[1589,1902.1,2215.1,1693.9]}
-  },
-  'pl-def':{
-    label:'Total Player Load',unit:'',
-    positions:['CB','SAF','ILB','OLB','DL'],
+    hist:{WR:[440,671,1132,1762,1642,1653],RB:[484,713,1001,1585,1610,1508],QB:[483,853,997,1423,1166,1524],TE:[386,658,982,1652,1497,1571],OL:[339,574,770,1381,1222,1276]},
+    proj:{WR:[2054.3,2455.6,2856.8,2184.7],RB:[1858.2,2208.3,2558.5,1956.5],QB:[1797.1,2070.3,2343.4,1792],TE:[1906.7,2242.4,2578,1971.5],OL:[1589,1902.1,2215.1,1693.9]}},
+  'pl-def':{label:'Total Player Load',unit:'',positions:['CB','SAF','ILB','OLB','DL'],
     campProj:{CB:2864,SAF:3075,ILB:2823,OLB:3123,DL:2325},
-    proj:{CB:[1810.1,2122.3,2434.4,1861.6],SAF:[1861.2,2237.5,2613.8,1998.8],ILB:[1771.8,2085.7,2399.5,1835],OLB:[1856.8,2255.7,2654.5,2030],DL:[1377.4,1676.8,1976.2,1511.2]}
-  },
-  'hsd12-off':{
-    label:'HSD 12-16 mph',unit:'y',
-    positions:['WR','RB','QB','TE','OL'],
+    hist:{CB:[400,700,995,1320,1531,1498],SAF:[362,709,963,1295,1532,1485],ILB:[356,641,938,1301,1496,1458],OLB:[430,704,855,1314,1468,1458],DL:[313,600,727,1048,1211,1078]},
+    proj:{CB:[1810.1,2122.3,2434.4,1861.6],SAF:[1861.2,2237.5,2613.8,1998.8],ILB:[1771.8,2085.7,2399.5,1835],OLB:[1856.8,2255.7,2654.5,2030],DL:[1377.4,1676.8,1976.2,1511.2]}},
+  'hsd12-off':{label:'HSD 12-16 mph',unit:'y',positions:['WR','RB','QB','TE','OL'],
     campProj:{WR:2500,RB:2400,QB:2450,TE:2250,OL:550},
-    proj:{WR:[1641.7,1883.3,2125,1625],RB:[1580,1810,2040,1560],QB:[1494.2,1788.3,2082.5,1592.5],TE:[1504.2,1708.3,1912.5,1462.5],OL:[689.2,578.3,467.5,357.5]}
-  },
-  'hsd12-def':{
-    label:'HSD 12-16 mph',unit:'y',
-    positions:['CB','SAF','ILB','OLB','DL'],
+    hist:{WR:[258,472,951,1562,1703,1400],RB:[254,453,973,1261,1378,1350],QB:[122,393,598,1115,626,1200],TE:[209,364,835,1255,1308,1300],OL:[164,190,242,329,481,800]},
+    proj:{WR:[1641.7,1883.3,2125,1625],RB:[1580,1810,2040,1560],QB:[1494.2,1788.3,2082.5,1592.5],TE:[1504.2,1708.3,1912.5,1462.5],OL:[689.2,578.3,467.5,357.5]}},
+  'hsd12-def':{label:'HSD 12-16 mph',unit:'y',positions:['CB','SAF','ILB','OLB','DL'],
     campProj:{CB:2300,SAF:2450,ILB:2250,OLB:2200,DL:450},
-    proj:{CB:[1516.3,1735.7,1955,1495],SAF:[1545.5,1814,2082.5,1592.5],ILB:[1389.5,1651,1912.5,1462.5],OLB:[1372,1621,1870,1430],DL:[660.8,521.7,382.5,292.5]}
-  },
-  'hsd16-off':{
-    label:'HSD 16+ mph',unit:'y',
-    positions:['WR','RB','QB','TE','OL'],
+    hist:{CB:[238,344,714,1096,1328,1297],SAF:[188,384,673,1161,1416,1277],ILB:[175,295,653,1089,1175,1128],OLB:[198,267,500,1055,1161,1123],DL:[121,187,324,321,585,800]},
+    proj:{CB:[1516.3,1735.7,1955,1495],SAF:[1545.5,1814,2082.5,1592.5],ILB:[1389.5,1651,1912.5,1462.5],OLB:[1372,1621,1870,1430],DL:[660.8,521.7,382.5,292.5]}},
+  'hsd16-off':{label:'HSD 16+ mph',unit:'y',positions:['WR','RB','QB','TE','OL'],
     campProj:{WR:1400,RB:950,QB:375,TE:475,OL:5},
-    proj:{WR:[523.3,856.7,1190,910],RB:[342.5,575,807.5,617.5],QB:[166.2,242.5,318.8,243.8],TE:[194.6,299.2,403.8,308.8],OL:[3.4,3.8,4.2,3.2]}
-  },
-  'hsd16-def':{
-    label:'HSD 16+ mph',unit:'y',
-    positions:['CB','SAF','ILB','OLB','DL'],
+    hist:{WR:[76,59,139,110,149,190],RB:[54,53,82,64,101,110],QB:[58,52,55,52,60,90],TE:[33,54,47,37,45,90],OL:[5,8,1,0,2,3]},
+    proj:{WR:[523.3,856.7,1190,910],RB:[342.5,575,807.5,617.5],QB:[166.2,242.5,318.8,243.8],TE:[194.6,299.2,403.8,308.8],OL:[3.4,3.8,4.2,3.2]}},
+  'hsd16-def':{label:'HSD 16+ mph',unit:'y',positions:['CB','SAF','ILB','OLB','DL'],
     campProj:{CB:750,SAF:725,ILB:450,OLB:250,DL:35},
-    proj:{CB:[339.2,488.3,637.5,487.5],SAF:[312.1,464.2,616.2,471.2],ILB:[194.2,288.3,382.5,292.5],OLB:[130.8,171.7,212.5,162.5],DL:[26.6,28.2,29.8,22.8]}
-  },
-  'accel-off':{
-    label:'Accelerations',unit:'',
-    positions:['WR','RB','QB','TE','OL'],
+    hist:{CB:[81,64,100,100,101,190],SAF:[85,68,85,101,107,160],ILB:[71,55,66,66,79,100],OLB:[55,50,37,61,54,90],DL:[32,23,12,2,4,25]},
+    proj:{CB:[339.2,488.3,637.5,487.5],SAF:[312.1,464.2,616.2,471.2],ILB:[194.2,288.3,382.5,292.5],OLB:[130.8,171.7,212.5,162.5],DL:[26.6,28.2,29.8,22.8]}},
+  'accel-off':{label:'Accelerations',unit:'',positions:['WR','RB','QB','TE','OL'],
     campProj:{WR:456,RB:340,QB:197,TE:303,OL:122},
-    proj:{WR:[282.5,335.1,387.6,296.4],RB:[226.3,257.7,289,221],QB:[155.8,161.6,167.4,128.1],TE:[209.2,233.4,257.6,197],OL:[101.2,102.5,103.7,79.3]}
-  },
-  'accel-def':{
-    label:'Accelerations',unit:'',
-    positions:['CB','SAF','ILB','OLB','DL'],
+    hist:{WR:[52,82,156,237,213,230],RB:[35,75,117,186,191,195],QB:[27,69,88,154,85,150],TE:[35,59,120,173,186,185],OL:[23,55,68,138,117,100]},
+    proj:{WR:[282.5,335.1,387.6,296.4],RB:[226.3,257.7,289,221],QB:[155.8,161.6,167.4,128.1],TE:[209.2,233.4,257.6,197],OL:[101.2,102.5,103.7,79.3]}},
+  'accel-def':{label:'Accelerations',unit:'',positions:['CB','SAF','ILB','OLB','DL'],
     campProj:{CB:355,SAF:370,ILB:308,OLB:292,DL:148},
-    proj:{CB:[233.9,267.8,301.8,230.8],SAF:[238.2,276.3,314.5,240.5],ILB:[193.9,227.9,261.8,200.2],OLB:[199.4,223.8,248.2,189.8],DL:[101.9,113.9,125.8,96.2]}
-  },
-  'decel-off':{
-    label:'Decelerations',unit:'',
-    positions:['WR','RB','QB','TE','OL'],
+    hist:{CB:[50,82,125,151,176,200],SAF:[42,100,122,166,210,200],ILB:[34,74,110,167,186,160],OLB:[48,100,99,165,178,175],DL:[22,54,60,94,138,90]},
+    proj:{CB:[233.9,267.8,301.8,230.8],SAF:[238.2,276.3,314.5,240.5],ILB:[193.9,227.9,261.8,200.2],OLB:[199.4,223.8,248.2,189.8],DL:[101.9,113.9,125.8,96.2]}},
+  'decel-off':{label:'Decelerations',unit:'',positions:['WR','RB','QB','TE','OL'],
     campProj:{WR:323,RB:230,QB:104,TE:225,OL:72},
-    proj:{WR:[198.2,236.4,274.6,210],RB:[171.8,183.7,195.5,149.5],QB:[96.1,92.3,88.4,67.6],TE:[150.4,170.8,191.2,146.2],OL:[60.4,60.8,61.2,46.8]}
-  },
-  'decel-def':{
-    label:'Decelerations',unit:'',
-    positions:['CB','SAF','ILB','OLB','DL'],
+    hist:{WR:[30,50,117,161,156,160],RB:[18,44,93,129,141,160],QB:[16,41,57,90,50,100],TE:[15,31,88,112,128,130],OL:[9,40,42,90,68,60]},
+    proj:{WR:[198.2,236.4,274.6,210],RB:[171.8,183.7,195.5,149.5],QB:[96.1,92.3,88.4,67.6],TE:[150.4,170.8,191.2,146.2],OL:[60.4,60.8,61.2,46.8]}},
+  'decel-def':{label:'Decelerations',unit:'',positions:['CB','SAF','ILB','OLB','DL'],
     campProj:{CB:267,SAF:267,ILB:230,OLB:176,DL:88},
-    proj:{CB:[162.3,194.6,226.9,173.6],SAF:[169,198,226.9,173.6],ILB:[141.8,168.7,195.5,149.5],OLB:[129.9,139.7,149.6,114.4],DL:[61.6,68.2,74.8,57.2]}
-  }
+    hist:{CB:[24,50,93,111,124,130],SAF:[21,62,84,109,142,140],ILB:[18,52,83,111,138,115],OLB:[20,60,64,94,109,120],DL:[12,39,42,58,90,55]},
+    proj:{CB:[162.3,194.6,226.9,173.6],SAF:[169,198,226.9,173.6],ILB:[141.8,168.7,195.5,149.5],OLB:[129.9,139.7,149.6,114.4],DL:[61.6,68.2,74.8,57.2]}}
 };
 
-// Position code mapping for Supabase data
 const SLRU_POS_MAP={'SAF':'S','OLB':'EDGE'};
-
 let slruActive='pl-off';
 
 window.setSlruTab=function(tab){
@@ -2030,89 +2006,113 @@ function getSlruField(tabId){
   return'load';
 }
 
-function getSlruActual(positions,field){
-  // Get weekly totals per position from PLAYERS sessions
+function getSlruCurrentWk(positions,field){
   const result={};
   positions.forEach(pos=>{
     const dbPos=SLRU_POS_MAP[pos]||pos;
     const posPlayers=PLAYERS.filter(p=>p.pos===dbPos);
-    result[pos]={};
-    // Map Su weeks to training weeks
-    Object.entries(SLRU_WK_MAP).forEach(([suWk,trainWk])=>{
-      const activePlayers=posPlayers.filter(p=>p.sessions.some(s=>s.wk===suWk));
-      const total=posPlayers.reduce((t,p)=>{
-        return t+p.sessions.filter(s=>s.wk===suWk).reduce((st,s)=>st+(s[field]||0),0);
-      },0);
-      result[pos][trainWk]=activePlayers.length>0?Math.round(total/activePlayers.length):null;
-    });
+    const activePlayers=posPlayers.filter(p=>p.sessions.some(s=>s.wk==='Su W8'));
+    const total=posPlayers.reduce((t,p)=>t+p.sessions.filter(s=>s.wk==='Su W8').reduce((st,s)=>st+(s[field]||0),0),0);
+    result[pos]=activePlayers.length>0?Math.round(total/activePlayers.length):null;
   });
   return result;
+}
+
+function pctBg(pct){
+  if(pct==null)return'';
+  if(pct<50)return'background:rgba(220,38,38,0.12)';
+  if(pct<80)return'background:rgba(217,119,6,0.12)';
+  return'background:rgba(22,163,74,0.12)';
+}
+function pctColor(pct){
+  if(pct==null)return'';
+  if(pct<50)return'color:#B91C1C;font-weight:600';
+  if(pct<80)return'color:#92400E;font-weight:600';
+  return'color:#15803D;font-weight:600';
 }
 
 function renderSlru(){
   const cfg=SLRU_DATA[slruActive];
   const field=getSlruField(slruActive);
-  const actual=getSlruActual(cfg.positions,field);
+  const currWk=getSlruCurrentWk(cfg.positions,field);
+  const currWkProj=cfg.proj; // W7 proj = proj[pos][0] which is W8 in Excel = first projected week
 
-  // Build table header
+  // Colors
+  const histBg='rgba(0,48,135,0.08)';
+  const currBg='rgba(250,70,22,0.08)';
+  const projBg='rgba(250,70,22,0.05)';
+  const campBg='rgba(22,163,74,0.08)';
+
+  // Table headers
   document.getElementById('slru-thead').innerHTML=
-    `<th>Position</th>`+
-    SLRU_ALL_WKS.map((wk,i)=>`<th style="font-size:10px;${i>=7?'color:var(--text3);font-style:italic':''}">${wk}${i>=7?' (Proj)':''}</th>`).join('')+
-    `<th>Camp Proj</th>`+
-    SLRU_ALL_WKS.slice(0,7).map(wk=>`<th style="font-size:10px">% ${wk}</th>`).join('');
+    `<th style="min-width:70px">Position</th>`+
+    SLRU_HIST_WKS.map(wk=>`<th style="font-size:10px;background:${histBg}">${wk}</th>`).join('')+
+    `<th style="font-size:10px;background:${currBg};font-weight:800">W7<br><span style="font-size:9px;opacity:.7">Current</span></th>`+
+    `<th style="font-size:10px;background:${projBg};color:var(--text3)">W7 Proj</th>`+
+    `<th style="font-size:10px;background:${projBg};color:var(--text3)">W8</th>`+
+    `<th style="font-size:10px;background:${projBg};color:var(--text3)">W9</th>`+
+    `<th style="font-size:10px;background:${projBg};color:var(--text3)">W10</th>`+
+    `<th style="font-size:10px;background:${campBg};color:#15803D;font-weight:700">Camp</th>`+
+    SLRU_HIST_WKS.map(wk=>`<th style="font-size:9px;color:var(--text3)">%${wk}</th>`).join('')+
+    `<th style="font-size:9px;color:var(--uf-orange);font-weight:700">%W7</th>`;
 
-  // Build table body
+  // Table body
   document.getElementById('slru-tbody').innerHTML=cfg.positions.map(pos=>{
     const campProj=cfg.campProj[pos];
-    const projVals=cfg.proj[pos]; // W8,W9,W9Peak,W10Taper
-    const actualVals=actual[pos];
+    const histVals=cfg.hist[pos]; // W1-W6
+    const projVals=cfg.proj[pos]; // W7proj, W8, W9, W10
+    const curr=currWk[pos];
+    const w7proj=projVals[0]; // W7 projection from Excel
 
-    const allVals=SLRU_ALL_WKS.map((wk,i)=>{
-      if(i<7)return actualVals[wk]??null; // actual weeks W1-W7
-      return projVals[i-7]??null; // projected weeks W8-W10
-    });
-
-    const pcts=SLRU_ALL_WKS.slice(0,7).map(wk=>{
-      const v=actualVals[wk];
-      return v!=null&&campProj>0?Math.round(v/campProj*100):null;
-    });
+    const histPcts=histVals.map(v=>campProj>0?Math.round(v/campProj*100):null);
+    const currPct=curr!=null&&campProj>0?Math.round(curr/campProj*100):null;
 
     return`<tr>
-      <td style="font-weight:700;color:var(--uf-blue)">${pos}</td>
-      ${allVals.map((v,i)=>{
-        const isProj=i>=7;
-        const isCurrent=SLRU_ALL_WKS[i]==='W7';
-        return`<td class="mono" style="${isProj?'color:var(--text3);font-style:italic':''}${isCurrent?';font-weight:700;color:var(--uf-orange)':''}">${v!=null?v.toLocaleString():'—'}</td>`;
-      }).join('')}
-      <td class="mono" style="font-weight:700;color:var(--uf-blue)">${campProj.toLocaleString()}</td>
-      ${pcts.map(p=>{
-        const cls=p==null?'':p>=90?'ok':p>=75?'warn':'danger';
-        return`<td class="mono ${cls}">${p!=null?p+'%':'—'}</td>`;
-      }).join('')}
+      <td style="font-weight:700;color:var(--uf-blue);min-width:50px">${pos}</td>
+      ${histVals.map((v,i)=>`<td class="mono" style="background:${histBg}">${v!=null?v.toLocaleString():'—'}</td>`).join('')}
+      <td class="mono" style="background:${currBg};font-weight:700;color:var(--uf-orange)">${curr!=null?curr.toLocaleString():'—'}</td>
+      <td class="mono" style="background:${projBg};color:var(--text3)">${Math.round(w7proj).toLocaleString()}</td>
+      ${projVals.slice(1).map(v=>`<td class="mono" style="background:${projBg};color:var(--text3)">${Math.round(v).toLocaleString()}</td>`).join('')}
+      <td class="mono" style="background:${campBg};font-weight:700;color:#15803D">${campProj.toLocaleString()}</td>
+      ${histPcts.map(p=>`<td class="mono" style="${pctBg(p)};${pctColor(p)}">${p!=null?p+'%':'—'}</td>`).join('')}
+      <td class="mono" style="${pctBg(currPct)};${pctColor(currPct)}">${currPct!=null?currPct+'%':'—'}</td>
     </tr>`;
   }).join('');
 
-  // Build bar charts per position
+  // Bar charts
   document.getElementById('slru-charts').innerHTML=cfg.positions.map(pos=>`
     <div class="panel" style="margin-bottom:0">
-      <div style="font-family:var(--font-d);font-size:12px;font-weight:700;margin-bottom:8px">${pos} — % of Camp Proj</div>
+      <div style="font-family:var(--font-d);font-size:12px;font-weight:700;color:var(--uf-blue);margin-bottom:8px">${pos} — % of Camp Proj</div>
       <div class="chart-wrap h180"><canvas id="slru-chart-${pos}"></canvas></div>
     </div>`).join('');
 
-  // Render each position bar chart
   cfg.positions.forEach(pos=>{
     const campProj=cfg.campProj[pos];
+    const histVals=cfg.hist[pos];
     const projVals=cfg.proj[pos];
-    const actualVals=actual[pos];
-    const allVals=SLRU_ALL_WKS.map((wk,i)=>i<7?(actualVals[wk]??0):projVals[i-7]??0);
-    const pcts=allVals.map(v=>campProj>0?Math.round(v/campProj*100):0);
-    const colors=SLRU_ALL_WKS.map((_,i)=>i<7?C.blue:'rgba(0,48,135,0.25)');
+    const curr=currWk[pos];
+    const w7proj=projVals[0];
+
+    const labels=['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','Camp'];
+    const values=[
+      ...histVals.map(v=>campProj>0?Math.round(v/campProj*100):0),
+      curr!=null&&campProj>0?Math.round(curr/campProj*100):0,
+      ...projVals.slice(1).map(v=>campProj>0?Math.round(v/campProj*100):0),
+      100 // Camp proj always 100%
+    ];
+    const colors=[
+      ...histVals.map(()=>'#003087'), // dark blue for historical
+      '#FA4616', // orange for current week
+      ...projVals.slice(1).map(()=>'rgba(250,70,22,0.5)'), // light orange for projections
+      '#22C55E' // green for camp
+    ];
+
     mk(`slru-chart-${pos}`,{type:'bar',data:{
-      labels:SLRU_ALL_WKS,
-      datasets:[{data:pcts,backgroundColor:colors,borderRadius:3}]
+      labels,
+      datasets:[{data:values,backgroundColor:colors,borderRadius:3}]
     },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw}% of camp proj`}}},scales:{
       x:{ticks:{color:C.tick,font:{size:9}},grid:{color:C.grid}},
-      y:{ticks:{color:C.tick,font:{size:9},callback:v=>v+'%'},grid:{color:C.grid},min:0,max:100}
+      y:{ticks:{color:C.tick,font:{size:9},callback:v=>v+'%'},grid:{color:C.grid},min:0,max:110}
     }}});
   });
 }
