@@ -2039,10 +2039,11 @@ function getSlruActual(positions,field){
     result[pos]={};
     // Map Su weeks to training weeks
     Object.entries(SLRU_WK_MAP).forEach(([suWk,trainWk])=>{
+      const activePlayers=posPlayers.filter(p=>p.sessions.some(s=>s.wk===suWk));
       const total=posPlayers.reduce((t,p)=>{
         return t+p.sessions.filter(s=>s.wk===suWk).reduce((st,s)=>st+(s[field]||0),0);
       },0);
-      result[pos][trainWk]=total>0?Math.round(total):null;
+      result[pos][trainWk]=activePlayers.length>0?Math.round(total/activePlayers.length):null;
     });
   });
   return result;
