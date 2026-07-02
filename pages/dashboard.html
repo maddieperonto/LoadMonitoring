@@ -317,7 +317,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel"><div class="panel-title"><i class="ti ti-alert-triangle" style="color:var(--acc5)"></i>High Risk Athletes</div><div id="dash-high-risk"></div></div>
   </div>
   <div class="two-col">
-    <div class="panel"><div class="panel-title"><i class="ti ti-run" style="color:var(--uf-orange)"></i>Top High Speed Distance (m)</div><div id="dash-hsr"></div></div>
+    <div class="panel"><div class="panel-title"><i class="ti ti-run" style="color:var(--uf-orange)"></i>Top High Speed Distance (y)</div><div id="dash-hsr"></div></div>
     <div class="panel"><div class="panel-title"><i class="ti ti-arrows-horizontal" style="color:var(--acc5)"></i>Highest Nord Asymmetry %</div><div id="dash-nord-asymm"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></div></div>  </div>
   <div class="panel">
     <div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR Trend — Distance</div>
@@ -357,7 +357,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <div class="panel-title" style="margin-bottom:8px;border:none;padding:0"><i class="ti ti-history"></i>Last 5 Sessions</div>
         <div class="tbl-wrap">
           <table><thead><tr>
-            <th>Date</th><th>Player Load</th><th>Distance (m)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (m)</th>
+            <th>Date</th><th>Player Load</th><th>Distance (y)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (y)</th>
           </tr></thead><tbody id="roster-recent-sessions"></tbody></table>
         </div>
       </div>
@@ -392,14 +392,14 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR — HSD 16+ mph</div><div class="chart-wrap h200"><canvas id="gps-team-acwr-hsr16"></canvas></div></div>      <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>Team ACWR — Accel &amp; Decel</div><div class="chart-wrap h200"><canvas id="gps-team-acwr-accel"></canvas></div></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Team Weekly GPS Summary</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel (mph)</th><th>Avg Dist (m)</th><th>Avg A&amp;D</th><th>Avg HSR (m)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-weekly"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel (mph)</th><th>Avg Dist (y)</th><th>Avg A&amp;D</th><th>Avg HSR (y)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-weekly"></tbody></table></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-users"></i>Full Team GPS Roster</div>
       <div class="sel-row" style="margin-bottom:12px">
         <select class="data-sel" id="gps-team-date-sel" onchange="renderGPSTeamRoster()"></select>
         <span id="gps-team-roster-badge" class="tbb info">— athletes</span>
       </div>
-      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Dist (m)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-roster"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Dist (y)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (y)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-roster"></tbody></table></div>
     </div>
   </div>
   <div id="gps-individual-view" style="display:none">
@@ -414,10 +414,10 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="panel"><div class="panel-title"><i class="ti ti-chart-line"></i>ACWR — Accel &amp; Decel</div><div class="chart-wrap h180"><canvas id="gps-acwr-accel"></canvas></div></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Weekly GPS Summary</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Dist (m)</th><th>Max Vel (mph)</th><th>A&amp;D</th><th>HSR (m)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-table"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Dist (y)</th><th>Max Vel (mph)</th><th>A&amp;D</th><th>HSR (y)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-table"></tbody></table></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Session History</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Week</th><th>Player Load</th><th>Dist (m)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (m)</th></tr></thead><tbody id="gps-session-history"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Date</th><th>Week</th><th>Player Load</th><th>Dist (y)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (y)</th></tr></thead><tbody id="gps-session-history"></tbody></table></div>
     </div>
   </div>
   <div id="gps-group-view" style="display:none">
@@ -446,10 +446,10 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <select class="data-sel" id="gps-grp-date-sel" onchange="renderGPSGrpRoster()"></select>
         <span id="gps-grp-roster-badge" class="tbb info">— athletes</span>
       </div>
-      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Player Load</th><th>Dist (m)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (m)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-grp-roster"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Player Load</th><th>Dist (y)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (y)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-grp-roster"></tbody></table></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Group Weekly GPS Summary</div>
-      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel</th><th>Avg Dist (m)</th><th>Avg A&amp;D</th><th>Avg HSR (m)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-group-table"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead><tr><th>Week</th><th>Avg Max Vel</th><th>Avg Dist (y)</th><th>Avg A&amp;D</th><th>Avg HSR (y)</th><th>Acute Dist</th><th>Chronic Dist</th><th>ACWR Dist</th><th>Acute A&amp;D</th><th>Chronic A&amp;D</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-group-table"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -490,7 +490,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div style="font-size:11px;color:var(--text3);font-family:var(--font-m)" id="lm-roster-count">— players</div>
     </div>
     <div class="lm-filter-row" id="lm-pos-filters"></div>
-    <div class="tbl-wrap"><table><thead><tr><th>Player</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Spring Avg</th><th>% Spring</th><th>HSRD (m)</th><th>Total Dist (m)</th><th>Accel</th><th>Decel</th><th>Max Velo (mph)</th><th>ACWR</th><th>Zone</th></tr></thead><tbody id="lm-roster-body"></tbody></table></div>
+    <div class="tbl-wrap"><table><thead><tr><th>Player</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Spring Avg</th><th>% Spring</th><th>HSRD (m)</th><th>Total Dist (y)</th><th>Accel</th><th>Decel</th><th>Max Velo (mph)</th><th>ACWR</th><th>Zone</th></tr></thead><tbody id="lm-roster-body"></tbody></table></div>
   </div>
   <div class="lm-detail-section" id="lm-detail-section"><div class="lm-detail-card" id="lm-detail-card"></div></div>
 </div>
@@ -618,7 +618,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="tbl-wrap"><table><thead><tr>
       <th class="sortable" onclick="sortInjury('name')">Athlete</th><th>Pos</th><th>Unit</th>
       <th class="sortable" onclick="sortInjury('acwr')">ACWR Dist</th><th>ACWR A&amp;D</th>
-      <th>Max Vel (mph)</th><th>Total HSR (m)</th>
+      <th>Max Vel (mph)</th><th>Total HSR (y)</th>
       <th class="sortable" onclick="sortInjury('risk')">Risk</th><th>Flags</th>
     </tr></thead><tbody id="injury-table"></tbody></table></div>
   </div>
@@ -1275,8 +1275,8 @@ window.openRosterAthlete=async function(name){
     const hsr=(+s.velocity_band4_distance||0)+(+s.velocity_band5_distance||0);
     document.getElementById('roster-session-stats').innerHTML=`
       <div class="stat-card acc"><div class="sc-label">Player Load</div><div class="sc-val acc">${(+s.total_player_load||0).toFixed(0)}</div><div class="sc-sub">AU</div></div>
-      <div class="stat-card blue"><div class="sc-label">Total Distance</div><div class="sc-val blue">${Math.round(+s.total_distance||0).toLocaleString()}</div><div class="sc-sub">meters</div></div>
-      <div class="stat-card ok"><div class="sc-label">HSR</div><div class="sc-val ok">${Math.round(hsr).toLocaleString()}</div><div class="sc-sub">meters</div></div>
+      <div class="stat-card blue"><div class="sc-label">Total Distance</div><div class="sc-val blue">${Math.round(+s.total_distance||0).toLocaleString()}</div><div class="sc-sub">yards</div></div>
+      <div class="stat-card ok"><div class="sc-label">HSR</div><div class="sc-val ok">${Math.round(hsr).toLocaleString()}</div><div class="sc-sub">yards</div></div>
       <div class="stat-card info"><div class="sc-label">Max Velocity</div><div class="sc-val info">${(+s.max_velocity||0).toFixed(2)}</div><div class="sc-sub">mph</div></div>
       <div class="stat-card warn"><div class="sc-label">Accel Efforts</div><div class="sc-val warn">${+s.accel_total_efforts||0}</div><div class="sc-sub">≥2 m/s²</div></div>
       <div class="stat-card purple"><div class="sc-label">Decel Efforts</div><div class="sc-val purple">${+s.decel_total_efforts||0}</div><div class="sc-sub">≤-2 m/s²</div></div>`;
@@ -1464,7 +1464,7 @@ window.renderGPS=function(){
   const dCh=dF.map((_,i)=>{const w=dF.slice(Math.max(0,i-3),i+1);return w.reduce((a,b)=>a+b)/w.length;});
   const aCh=aF.map((_,i)=>{const w=aF.slice(Math.max(0,i-3),i+1);return w.reduce((a,b)=>a+b)/w.length;});
   const s=p.latest;
-  document.getElementById('gps-stats').innerHTML=`<div class="stat-card ${st.cls}"><div class="sc-label">ACWR — Distance</div><div class="sc-val ${st.cls}">${p.latD>0?p.latD.toFixed(2):'—'}</div><div class="sc-sub">${st.lbl}</div></div><div class="stat-card ${acwrSt(p.latA).cls}"><div class="sc-label">ACWR — Accel/Decel</div><div class="sc-val ${acwrSt(p.latA).cls}">${p.latA>0?p.latA.toFixed(2):'—'}</div><div class="sc-sub">${acwrSt(p.latA).lbl}</div></div><div class="stat-card acc"><div class="sc-label">Max Velocity</div><div class="sc-val acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</div><div class="sc-sub">mph · latest</div></div><div class="stat-card orange"><div class="sc-label">Latest Distance</div><div class="sc-val orange">${s?Math.round(s.dist).toLocaleString():'—'}</div><div class="sc-sub">meters</div></div>`;
+  document.getElementById('gps-stats').innerHTML=`<div class="stat-card ${st.cls}"><div class="sc-label">ACWR — Distance</div><div class="sc-val ${st.cls}">${p.latD>0?p.latD.toFixed(2):'—'}</div><div class="sc-sub">${st.lbl}</div></div><div class="stat-card ${acwrSt(p.latA).cls}"><div class="sc-label">ACWR — Accel/Decel</div><div class="sc-val ${acwrSt(p.latA).cls}">${p.latA>0?p.latA.toFixed(2):'—'}</div><div class="sc-sub">${acwrSt(p.latA).lbl}</div></div><div class="stat-card acc"><div class="sc-label">Max Velocity</div><div class="sc-val acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</div><div class="sc-sub">mph · latest</div></div><div class="stat-card orange"><div class="sc-label">Latest Distance</div><div class="sc-val orange">${s?Math.round(s.dist).toLocaleString():'—'}</div><div class="sc-sub">yards</div></div>`;
   acwrChart('gps-team-acwr-hsr12',tHSR12ACWR_daily,DAILY_LABELS,true);
   acwrChart('gps-acwr-dist',p.dACWR,validWks);
   acwrChart('gps-team-acwr-hsr16',tHSR16ACWR_daily,DAILY_LABELS,true);
@@ -1531,7 +1531,7 @@ function renderLMMetrics(){
 }
 function renderLMTeamChart(){
   const fp=lmFilt();if(!fp.length)return;
-  const MCFG={load:{arr:p=>p.allLoads,label:'Team avg player load',color:C.blue,unit:''},dist:{arr:p=>p.allDist,label:'Avg distance (m)',color:'#4a7fd4',unit:'m'},hsrd:{arr:p=>p.allHSR,label:'Avg HSRD (m)',color:C.green,unit:'m'},accel:{arr:p=>p.allAccel,label:'Avg accel efforts',color:C.yellow,unit:''},decel:{arr:p=>p.allDecel,label:'Avg decel efforts',color:'#9b59b6',unit:''},acwr:{arr:null,label:'Team ACWR',color:C.acc,unit:''}};
+  const MCFG={load:{arr:p=>p.allLoads,label:'Team avg player load',color:C.blue,unit:''},dist:{arr:p=>p.allDist,label:'Avg Distance (y)',color:'#4a7fd4',unit:'m'},hsrd:{arr:p=>p.allHSR,label:'Avg HSRD (m)',color:C.green,unit:'m'},accel:{arr:p=>p.allAccel,label:'Avg accel efforts',color:C.yellow,unit:''},decel:{arr:p=>p.allDecel,label:'Avg decel efforts',color:'#9b59b6',unit:''},acwr:{arr:null,label:'Team ACWR',color:C.acc,unit:''}};
   const cfg=MCFG[lmMetric]||MCFG.load;
   const realCount=spWks.length+suWks.length;
   const allLbls=[...allLMWks,...fcProjWks];
@@ -1916,7 +1916,7 @@ window.renderInjury=function(){
 window.renderCompare=function(){
   const a=PLAYERS.find(p=>p.name===document.getElementById('cmp-a').value)||PLAYERS[0];
   const b=PLAYERS.find(p=>p.name===document.getElementById('cmp-b').value)||PLAYERS[1]||PLAYERS[0];
-  const CATS=[{lbl:'ACWR — Distance',ka:'latD',high:true,fmt:v=>v>0?v.toFixed(2):'—'},{lbl:'ACWR — Accel/Decel',ka:'latA',high:true,fmt:v=>v>0?v.toFixed(2):'—'},{lbl:'Max Velocity (mph)',ka:'latMaxV',high:true,fmt:v=>v>0?v.toFixed(2):'—'},{lbl:'Total HSR (m)',ka:'totalHSR',high:true,fmt:v=>v>0?Math.round(v).toLocaleString():'—'},{lbl:'Sessions',ka:'sessions',high:true,fmt:(_,p)=>p.sessions.length+' sessions'}];
+  const CATS=[{lbl:'ACWR — Distance',ka:'latD',high:true,fmt:v=>v>0?v.toFixed(2):'—'},{lbl:'ACWR — Accel/Decel',ka:'latA',high:true,fmt:v=>v>0?v.toFixed(2):'—'},{lbl:'Max Velocity (mph)',ka:'latMaxV',high:true,fmt:v=>v>0?v.toFixed(2):'—'},{lbl:'Total HSR (y)',ka:'totalHSR',high:true,fmt:v=>v>0?Math.round(v).toLocaleString():'—'},{lbl:'Sessions',ka:'sessions',high:true,fmt:(_,p)=>p.sessions.length+' sessions'}];
   const bp=(p,other)=>`<div style="text-align:center;margin-bottom:16px"><div class="avatar" style="width:44px;height:44px;font-size:14px;background:rgba(250,70,22,.1);color:var(--uf-orange);margin:0 auto 6px">${ini(p.name)}</div><div style="font-weight:700;font-size:14px">${p.name}</div><div style="font-size:11px;color:var(--text3)">${p.pos} · ${p.unit}</div><div style="margin-top:6px">${pill(acwrSt(p.latD).cls,acwrSt(p.latD).lbl)}</div></div>${CATS.map(cat=>{const av=cat.ka==='sessions'?p.sessions.length:(p[cat.ka]??0);const bv=cat.ka==='sessions'?other.sessions.length:(other[cat.ka]??0);const win=cat.high?av>=bv:av<=bv;return`<div class="cmp-stat-row"><span class="cmp-label">${cat.lbl}</span><span class="cmp-val ${win&&av>0?'w':'l'}">${cat.fmt(av,p)}</span></div>`;}).join('')}`;
   document.getElementById('cmp-left').innerHTML=bp(a,b);
   document.getElementById('cmp-right').innerHTML=bp(b,a);
@@ -1939,7 +1939,7 @@ window.openPM=function(name){
   document.getElementById('pm-risk-label').textContent=p.risk.toUpperCase()+' RISK';
   document.getElementById('pm-risk-label').style.color=rc;
   document.getElementById('pm-flags').innerHTML=p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('');
-  document.getElementById('pm-grid').innerHTML=`<div class="pm-stat"><div class="pm-stat-lbl">ACWR — Distance</div><div class="pm-stat-val ${ds.cls==='ok'?'ok':ds.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">ACWR — Accel/Decel</div><div class="pm-stat-val ${as2.cls==='ok'?'ok':as2.cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Max Velocity</div><div class="pm-stat-val acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Total HSR (m)</div><div class="pm-stat-val blue">${p.totalHSR>0?Math.round(p.totalHSR).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Latest Distance</div><div class="pm-stat-val">${p.latest?Math.round(p.latest.dist).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Sessions</div><div class="pm-stat-val">${p.sessions.length}</div></div>`;
+  document.getElementById('pm-grid').innerHTML=`<div class="pm-stat"><div class="pm-stat-lbl">ACWR — Distance</div><div class="pm-stat-val ${ds.cls==='ok'?'ok':ds.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">ACWR — Accel/Decel</div><div class="pm-stat-val ${as2.cls==='ok'?'ok':as2.cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Max Velocity</div><div class="pm-stat-val acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Total HSR (y)</div><div class="pm-stat-val blue">${p.totalHSR>0?Math.round(p.totalHSR).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Latest Distance</div><div class="pm-stat-val">${p.latest?Math.round(p.latest.dist).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Sessions</div><div class="pm-stat-val">${p.sessions.length}</div></div>`;
   document.getElementById('pm-overlay').classList.add('open');
 };
 window.closePM=function(e,force=false){if(force||e?.target===e?.currentTarget)document.getElementById('pm-overlay').classList.remove('open');};
