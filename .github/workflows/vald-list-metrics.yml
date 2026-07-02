@@ -20,5 +20,5 @@ jobs:
           VALD_CLIENT_ID: ${{ secrets.VALD_CLIENT_ID }}
           VALD_CLIENT_PASSWORD: ${{ secrets.VALD_CLIENT_PASSWORD }}
         run: |
-          Rscript -e "install.packages('httr2', repos='https://packagemanager.posit.co/cran/__linux__/noble/latest')"
+          Rscript -e "install.packages(c('httr2','jsonlite'), repos='https://packagemanager.posit.co/cran/__linux__/noble/latest')"
           Rscript scripts/vald_list_metrics.R
