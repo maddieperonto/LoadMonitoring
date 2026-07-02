@@ -1012,10 +1012,12 @@ const TODAY_MS=(()=>{
 })();
 const DAILY_DAYS=dailyRange(SU_START_MS,TODAY_MS);
 const DAILY_LABELS=DAILY_DAYS.map(ms=>{
-  // Only label first day of each program week
   const wk=phWk(new Date(ms).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}).replace(/\//g,'/'));
   const prevWk=phWk(new Date(ms-86400000).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'}).replace(/\//g,'/'));
-  return wk&&wk!==prevWk?wk:'';
+  if(!wk||wk===prevWk)return'';
+  const disp=displayWk(wk);
+  if(disp===null)return'Off Wk';
+  return disp;
 });
 
 // ── BUILD PLAYERS ─────────────────────────────────────────────────
