@@ -1435,7 +1435,6 @@ function renderGPSTeam(){
   const ds=acwrSt(latTD),as2=acwrSt(latTA);
   const avgMV=PLAYERS.filter(p=>p.latMaxV>0).reduce((s,p)=>s+p.latMaxV,0)/Math.max(1,PLAYERS.filter(p=>p.latMaxV>0).length);
   document.getElementById('gps-team-stats').innerHTML=`<div class="stat-card ${ds.cls}"><div class="sc-label">Team ACWR — Distance</div><div class="sc-val ${ds.cls}">${latTD.toFixed(2)}</div><div class="sc-sub">${ds.lbl}</div></div><div class="stat-card ${as2.cls}"><div class="sc-label">Team ACWR — Accel/Decel</div><div class="sc-val ${as2.cls}">${latTA.toFixed(2)}</div><div class="sc-sub">${as2.lbl}</div></div><div class="stat-card acc"><div class="sc-label">Avg Max Velocity</div><div class="sc-val acc">${avgMV>0?avgMV.toFixed(2):'—'}</div><div class="sc-sub">mph</div></div><div class="stat-card blue"><div class="sc-label">Athletes w/ Data</div><div class="sc-val blue">${PLAYERS.length}</div><div class="sc-sub">active sessions</div></div>`;
-  const tDf=tDA.filter(v=>v!=null),tAf=tAA.filter(v=>v!=null);
   acwrChart('gps-team-acwr-dist',tDACWR_daily,DAILY_LABELS,true);
   acwrChart('gps-team-acwr-accel',tAACWR_daily,DAILY_LABELS,true);
   document.getElementById('gps-team-weekly').innerHTML=validWks.map((wk,i)=>{
