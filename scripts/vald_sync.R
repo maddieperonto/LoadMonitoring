@@ -237,6 +237,9 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
           eccentric_peak_force_asymmetry_pct = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "asym"),
           eccentric_peak_force_left          = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "left"),
           eccentric_peak_force_right         = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "right"),
+          force_at_zero_velocity_n           = get_metric_from_trial(res, c("force at zero velocity")),
+          relative_peak_power_w_bm           = get_metric_from_trial(res, c("peak power / bm")),
+          countermovement_depth_cm           = get_metric_from_trial(res, c("countermovement depth")),
           stringsAsFactors = FALSE
         )
       })
