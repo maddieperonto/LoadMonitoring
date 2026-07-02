@@ -1457,7 +1457,11 @@ function renderGPSTeam(){
     const amv=(()=>{const v=PLAYERS.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();
     return`<tr><td class="mono">${wk}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${amv}</td><td class="mono">${Math.round(tDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono">${Math.round((tDf[i]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(tDf[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;
   }).join('');
-  const allTeamDates=[...new Set(PLAYERS.flatMap(p=>p.sessions.map(s=>s.date)))].sort().reverse();
+  const allTeamDates=[...new Set(PLAYERS.flatMap(p=>p.sessions.map(s=>s.date)))].sort((a,b)=>{
+    const[am,ad,ay]=a.split('/').map(Number);
+    const[bm,bd,by]=b.split('/').map(Number);
+    return new Date(by,bm-1,bd)-new Date(ay,am-1,ad);
+  });
   const teamDateSel=document.getElementById('gps-team-date-sel');
   teamDateSel.innerHTML='';
   allTeamDates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;teamDateSel.appendChild(o);});
@@ -1477,8 +1481,9 @@ window.renderGPS=function(){
   acwrChart('gps-acwr-accel',p.aACWR,DAILY_LABELS,true);
   acwrChart('gps-acwr-hsr12',playerDailyACWR(p.sessions,'hsr12',DAILY_DAYS),DAILY_LABELS,true);
   acwrChart('gps-acwr-hsr16',playerDailyACWR(p.sessions,'hsr',DAILY_DAYS),DAILY_LABELS,true);
-  document.getElementById('gps-table').innerHTML=validWks.map((wk,i)=>{
-    const d=p.dACWR[i]??0,a=p.aACWR[i]??0,st=acwrSt(d);
+  document.getElementById('gps-table').innerHTML=[...validWks].reverse().map((wk,i)=>{
+    const origI=validWks.length-1-i;
+    const d=p.dACWR[origI]??0,a=p.aACWR[origI]??0,st=acwrSt(d);
     const ws=p.sessions.filter(s=>s.wk===wk);
     const wMV=ws.length?Math.max(...ws.map(s=>s.maxV)):0;
     const wDist=ws.reduce((t,s)=>t+s.dist,0);
@@ -1486,7 +1491,11 @@ window.renderGPS=function(){
     const wHSR=ws.reduce((t,s)=>t+s.hsr,0);
     return`<tr><td class="mono">${wk}</td><td class="mono">${Math.round(wDist).toLocaleString()}</td><td class="mono acc">${wMV>0?wMV.toFixed(2):'—'}</td><td class="mono">${Math.round(wAccel)}</td><td class="mono">${Math.round(wHSR).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;
   }).join('');
-  const allSessions=[...p.sessions].sort((a,b)=>b.date.localeCompare(a.date));
+  const allSessions=[...p.sessions].sort((a,b)=>{
+    const[am,ad,ay]=a.date.split('/').map(Number);
+    const[bm,bd,by]=b.date.split('/').map(Number);
+    return new Date(by,bm-1,bd)-new Date(ay,am-1,ad);
+  });
   document.getElementById('gps-session-history').innerHTML=allSessions.map(s=>`<tr>
     <td class="mono">${s.date}</td>
     <td class="mono">${s.wk}</td>
@@ -1529,9 +1538,10 @@ window.renderGPSGroup=function(){
   grpDates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;grpDateSel.appendChild(o);});
   renderGPSGrpRoster();
 
-  document.getElementById('gps-group-table').innerHTML=validWks.map((wk,i)=>{
-    const d=grpDailyDist[Math.min(i*7+6,grpDailyDist.length-1)]??0;
-    const a=grpDailyAccel[Math.min(i*7+6,grpDailyAccel.length-1)]??0;
+  document.getElementById('gps-group-table').innerHTML=[...validWks].reverse().map((wk,i)=>{
+    const origI=validWks.length-1-i;
+    const d=grpDailyDist[Math.min(origI*7+6,grpDailyDist.length-1)]??0;
+    const a=grpDailyAccel[Math.min(origI*7+6,grpDailyAccel.length-1)]??0;
     const st=acwrSt(d);
     const amv=(()=>{const v=grp.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();
     const avgDist=grp.map(p=>p.sessions.filter(s=>s.wk===wk).reduce((t,s)=>t+s.dist,0)).reduce((a,b)=>a+b,0)/Math.max(1,grp.length);
