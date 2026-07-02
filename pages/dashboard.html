@@ -1452,10 +1452,11 @@ function renderGPSTeam(){
   acwrChart('gps-team-acwr-accel',tAACWR_daily,DAILY_LABELS,true);
   acwrChart('gps-team-acwr-hsr12',tHSR12ACWR_daily,DAILY_LABELS,true);
   acwrChart('gps-team-acwr-hsr16',tHSR16ACWR_daily,DAILY_LABELS,true);
-  document.getElementById('gps-team-weekly').innerHTML=validWks.map((wk,i)=>{
-    const d=tDACWR[i]??0,a=tAACWR[i]??0,st=acwrSt(d);
+  document.getElementById('gps-team-weekly').innerHTML=[...validWks].reverse().map((wk,i)=>{
+    const origI=validWks.length-1-i;
+    const d=tDACWR[origI]??0,a=tAACWR[origI]??0,st=acwrSt(d);
     const amv=(()=>{const v=PLAYERS.map(p=>{const s=p.sessions.filter(s=>s.wk===wk);return s.length?Math.max(...s.map(x=>x.maxV)):0;}).filter(v=>v>0);return v.length?(v.reduce((a,b)=>a+b)/v.length).toFixed(2):'—';})();
-    return`<tr><td class="mono">${wk}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${amv}</td><td class="mono">${Math.round(tDf[i]||0).toLocaleString()}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono">${Math.round((tDf[i]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(tDf[i]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;
+    return`<tr><td class="mono">${wk}</td><td class="mono" style="color:var(--uf-orange);font-weight:600">${amv}</td><td class="mono">${Math.round(tDf[origI]||0).toLocaleString()}</td><td class="mono">${Math.round(tAf[origI]||0)}</td><td class="mono">${Math.round((tDf[origI]||0)*0.15).toLocaleString()}</td><td class="mono">${Math.round(tDf[origI]||0).toLocaleString()}</td><td class="mono ${acwrSt(d).cls==='ok'?'ok':acwrSt(d).cls==='warn'?'warn':'danger'}">${d.toFixed(2)}</td><td class="mono">${Math.round(tAf[i]||0)}</td><td class="mono ${acwrSt(a).cls==='ok'?'ok':acwrSt(a).cls==='warn'?'warn':'danger'}">${a.toFixed(2)}</td><td>${pill(st.cls,st.lbl)}</td></tr>`;
   }).join('');
   const allTeamDates=[...new Set(PLAYERS.flatMap(p=>p.sessions.map(s=>s.date)))].sort((a,b)=>{
     const[am,ad,ay]=a.split('/').map(Number);
@@ -1532,11 +1533,15 @@ window.renderGPSGroup=function(){
   acwrChart('grp-acwr-hsr16',grpDailyHsr16,DAILY_LABELS,true);
 
   // Populate group date selector
-  const grpDates=[...new Set(grp.flatMap(p=>p.sessions.map(s=>s.date)))].sort().reverse();
+  const grpDates=[...new Set(grp.flatMap(p=>p.sessions.map(s=>s.date)))].sort((a,b)=>{
+    const[am,ad,ay]=a.split('/').map(Number);
+    const[bm,bd,by]=b.split('/').map(Number);
+    return new Date(by,bm-1,bd)-new Date(ay,am-1,ad);
+  });
   const grpDateSel=document.getElementById('gps-grp-date-sel');
   grpDateSel.innerHTML='';
   grpDates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;grpDateSel.appendChild(o);});
-  renderGPSGrpRoster();
+    if(grpDateSel.options.length>0){grpDateSel.selectedIndex=0;renderGPSGrpRoster();}
 
   document.getElementById('gps-group-table').innerHTML=[...validWks].reverse().map((wk,i)=>{
     const origI=validWks.length-1-i;
