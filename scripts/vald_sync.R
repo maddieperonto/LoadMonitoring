@@ -52,7 +52,17 @@ vald_get <- function(path, query = list(), base_url) {
     req_headers(Accept = "application/json") |>
     req_error(is_error = function(resp) FALSE)
   if (length(query) > 0) req <- req |> req_url_query(!!!query)
-  resp <- req_perform(req)
+
+  resp <- tryCatch(
+    req_perform(req),
+    error = function(e) {
+      cat("[VALD Sync DEBUG] req_perform failed for", path, "\n")
+      cat("[VALD Sync DEBUG] Error:", conditionMessage(e), "\n")
+      NULL
+    }
+  )
+  if (is.null(resp)) return(NULL)
+
   status <- resp_status(resp)
   if (status == 204) { cat("[VALD Sync] 204 No Content for", path, "\n"); return(NULL) }
   if (status != 200) {
