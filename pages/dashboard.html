@@ -237,6 +237,12 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 @keyframes spin{to{transform:rotate(360deg)}}
 .uf-error{padding:1rem 1.25rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#991b1b;font-size:12px;margin:.5rem 0}
 @media print{.sidebar,.topbar,.pm-overlay{display:none!important}.content-area{overflow:visible!important;padding:0!important}.page{display:none!important}.page.active{display:block!important}body,html{overflow:visible!important;height:auto!important}.app{display:block!important;height:auto!important}.main-area{overflow:visible!important;height:auto!important}.panel,.stat-card{box-shadow:none!important;break-inside:avoid}canvas{max-width:100%!important}}
+#slru-export-container{position:absolute;left:-9999px;top:0;width:900px;background:#fff}
+@media print{
+  body.slru-exporting .app{display:none!important}
+  body.slru-exporting #slru-export-container{position:static!important;left:auto!important;width:auto!important}
+  body.slru-exporting,body.slru-exporting html{overflow:visible!important;height:auto!important}
+}
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(0,48,135,.2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--uf-orange)}
 </style>
 </head>
@@ -478,6 +484,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <div style="font-size:13px;font-weight:600">Summer Load Ramp Up</div>
         <div style="font-size:11px;color:var(--text3);font-family:var(--font-m)">Weekly totals vs fall camp projection</div>
       </div>
+      <button onclick="exportSlruPDF()" style="font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 14px;border-radius:6px;background:var(--uf-blue);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-export" style="font-size:13px"></i>Export All Filters (PDF)</button>
     </div>
     <!-- 10 Tab buttons -->
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px" id="slru-tabs">
@@ -2046,21 +2053,16 @@ function pctColor(pct){
   return'color:#15803D;font-weight:600';
 }
 
-function renderSlru(){
-  if(!document.getElementById('slru-charts'))return;
-  const cfg=SLRU_DATA[slruActive];
-  const field=getSlruField(slruActive);
+function getSlruTableHTML(tabId){
+  const cfg=SLRU_DATA[tabId];
+  const field=getSlruField(tabId);
   const currWk=getSlruCurrentWk(cfg.positions,field);
-  const currWkProj=cfg.proj; // W7 proj = proj[pos][0] which is W8 in Excel = first projected week
-
-  // Colors
   const histBg='rgba(0,48,135,0.08)';
   const currBg='rgba(250,70,22,0.08)';
   const projBg='rgba(250,70,22,0.05)';
   const campBg='rgba(22,163,74,0.08)';
 
-  // Table headers
-  document.getElementById('slru-thead').innerHTML=
+  const thead=
     `<th style="min-width:70px">Position</th>`+
     SLRU_HIST_WKS.map(wk=>`<th style="font-size:10px;background:${histBg}">${wk}</th>`).join('')+
     `<th style="font-size:10px;background:${currBg};font-weight:800">W7<br><span style="font-size:9px;opacity:.7">Current</span></th>`+
@@ -2072,20 +2074,17 @@ function renderSlru(){
     SLRU_HIST_WKS.map(wk=>`<th style="font-size:9px;color:var(--text3)">%${wk}</th>`).join('')+
     `<th style="font-size:9px;color:var(--uf-orange);font-weight:700">%W7</th>`;
 
-  // Table body
-  document.getElementById('slru-tbody').innerHTML=cfg.positions.map(pos=>{
+  const tbody=cfg.positions.map(pos=>{
     const campProj=cfg.campProj[pos];
-    const histVals=cfg.hist[pos]; // W1-W6
-    const projVals=cfg.proj[pos]; // W7proj, W8, W9, W10
+    const histVals=cfg.hist[pos];
+    const projVals=cfg.proj[pos];
     const curr=currWk[pos];
-    const w7proj=projVals[0]; // W7 projection from Excel
-
+    const w7proj=projVals[0];
     const histPcts=histVals.map(v=>campProj>0?Math.round(v/campProj*100):null);
     const currPct=curr!=null&&campProj>0?Math.round(curr/campProj*100):null;
-
     return`<tr>
       <td style="font-weight:700;color:var(--uf-blue);min-width:50px">${pos}</td>
-      ${histVals.map((v,i)=>`<td class="mono" style="background:${histBg}">${v!=null?v.toLocaleString():'—'}</td>`).join('')}
+      ${histVals.map(v=>`<td class="mono" style="background:${histBg}">${v!=null?v.toLocaleString():'—'}</td>`).join('')}
       <td class="mono" style="background:${currBg};font-weight:700;color:var(--uf-orange)">${curr!=null?curr.toLocaleString():'—'}</td>
       <td class="mono" style="background:${projBg};color:var(--text3)">${Math.round(w7proj).toLocaleString()}</td>
       ${projVals.slice(1).map(v=>`<td class="mono" style="background:${projBg};color:var(--text3)">${Math.round(v).toLocaleString()}</td>`).join('')}
@@ -2095,11 +2094,20 @@ function renderSlru(){
     </tr>`;
   }).join('');
 
-  // Bar charts
-  document.getElementById('slru-charts').innerHTML=cfg.positions.map(pos=>`
+  return{thead,tbody};
+}
+
+function renderSlruCharts(containerId,tabId,idPrefix){
+  const cfg=SLRU_DATA[tabId];
+  const field=getSlruField(tabId);
+  const currWk=getSlruCurrentWk(cfg.positions,field);
+  const container=document.getElementById(containerId);
+  if(!container)return;
+
+  container.innerHTML=cfg.positions.map(pos=>`
     <div class="panel" style="margin-bottom:0">
       <div style="font-family:var(--font-d);font-size:12px;font-weight:700;color:var(--uf-blue);margin-bottom:8px">${pos} — % of Camp Proj</div>
-      <div class="chart-wrap h180"><canvas id="slru-chart-${pos}"></canvas></div>
+      <div class="chart-wrap h180"><canvas id="${idPrefix}${pos}"></canvas></div>
     </div>`).join('');
 
   cfg.positions.forEach(pos=>{
@@ -2107,23 +2115,22 @@ function renderSlru(){
     const histVals=cfg.hist[pos];
     const projVals=cfg.proj[pos];
     const curr=currWk[pos];
-    const w7proj=projVals[0];
 
     const labels=['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','Camp'];
     const values=[
       ...histVals.map(v=>campProj>0?Math.round(v/campProj*100):0),
       curr!=null&&campProj>0?Math.round(curr/campProj*100):0,
       ...projVals.slice(1).map(v=>campProj>0?Math.round(v/campProj*100):0),
-      100 // Camp proj always 100%
+      100
     ];
     const colors=[
-      ...histVals.map(()=>'#003087'), // dark blue for historical
-      '#FA4616', // orange for current week
-      ...projVals.slice(1).map(()=>'rgba(250,70,22,0.5)'), // light orange for projections
-      '#22C55E' // green for camp
+      ...histVals.map(()=>'#003087'),
+      '#FA4616',
+      ...projVals.slice(1).map(()=>'rgba(250,70,22,0.5)'),
+      '#22C55E'
     ];
 
-    mk(`slru-chart-${pos}`,{type:'bar',data:{
+    mk(`${idPrefix}${pos}`,{type:'bar',data:{
       labels,
       datasets:[{data:values,backgroundColor:colors,borderRadius:3}]
     },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw}% of camp proj`}}},scales:{
@@ -2132,7 +2139,61 @@ function renderSlru(){
     }}});
   });
 }
+
+function renderSlru(){
+  if(!document.getElementById('slru-charts'))return;
+  const{thead,tbody}=getSlruTableHTML(slruActive);
+  document.getElementById('slru-thead').innerHTML=thead;
+  document.getElementById('slru-tbody').innerHTML=tbody;
+  renderSlruCharts('slru-charts',slruActive,'slru-chart-');
+}
 window.renderSlru=renderSlru;
+
+// ── EXPORT ALL SLRU FILTERS TO PDF ─────────────────────────────────
+window.exportSlruPDF=async function(){
+  const allTabs=['pl-off','pl-def','hsd12-off','hsd12-def','hsd16-off','hsd16-def','accel-off','accel-def','decel-off','decel-def'];
+  const tabLabels={
+    'pl-off':'Player Load — Offense','pl-def':'Player Load — Defense',
+    'hsd12-off':'HSD 12-16 mph — Offense','hsd12-def':'HSD 12-16 mph — Defense',
+    'hsd16-off':'HSD 16+ mph — Offense','hsd16-def':'HSD 16+ mph — Defense',
+    'accel-off':'Accelerations — Offense','accel-def':'Accelerations — Defense',
+    'decel-off':'Decelerations — Offense','decel-def':'Decelerations — Defense'
+  };
+
+  let container=document.getElementById('slru-export-container');
+  if(container)container.remove();
+  container=document.createElement('div');
+  container.id='slru-export-container';
+  container.innerHTML=`<div style="padding:24px">
+    <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;margin-bottom:4px;color:#0F1923">Summer Load Ramp Up — Full Report</h1>
+    <div style="font-family:'DM Mono',monospace;font-size:11px;color:#475569;margin-bottom:20px">Generated ${new Date().toLocaleDateString()}</div>`+
+    allTabs.map(tabId=>`
+      <div style="margin-bottom:36px;page-break-inside:avoid">
+        <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:#003087;margin-bottom:10px;border-bottom:2px solid #eee;padding-bottom:6px">${tabLabels[tabId]}</h2>
+        <div class="tbl-wrap" style="margin-bottom:14px"><table><thead><tr id="export-thead-${tabId}"></tr></thead><tbody id="export-tbody-${tabId}"></tbody></table></div>
+        <div id="export-charts-${tabId}" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>
+      </div>`).join('')+
+    `</div>`;
+  document.body.appendChild(container);
+
+  allTabs.forEach(tabId=>{
+    const{thead,tbody}=getSlruTableHTML(tabId);
+    document.getElementById(`export-thead-${tabId}`).innerHTML=thead;
+    document.getElementById(`export-tbody-${tabId}`).innerHTML=tbody;
+    renderSlruCharts(`export-charts-${tabId}`,tabId,`export-chart-${tabId}-`);
+  });
+
+  await new Promise(r=>setTimeout(r,500));
+
+  document.body.classList.add('slru-exporting');
+  window.print();
+};
+
+window.addEventListener('afterprint',()=>{
+  document.body.classList.remove('slru-exporting');
+  const c=document.getElementById('slru-export-container');
+  if(c)c.remove();
+});
 
 // ── LEADERBOARDS ────────────────────────────────────────────────── 
 const LB_CATS=[
