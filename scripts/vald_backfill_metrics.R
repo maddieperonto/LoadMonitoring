@@ -262,13 +262,13 @@ backfill_rows$athlete_id <- athlete_id_lookup[backfill_rows$athlete_name]
 
 unmatched <- sort(unique(backfill_rows$athlete_name[is.na(backfill_rows$athlete_id)]))
 if (length(unmatched) > 0) {
-  cat("[Backfill] NOTE:", length(unmatched), "athlete name(s) are in VALD but not in the athletes table (likely not on current roster):\n")
+  cat("[Backfill] Skipping", length(unmatched), "name(s) not found in athletes table (staff/test entries/not on roster):\n")
   cat(paste(" -", unmatched), sep = "\n")
-} else {
-  cat("[Backfill] All athlete names matched to the athletes table.\n")
 }
 
-cat("[Backfill]", nrow(backfill_rows), "rows to upsert.\n")
+backfill_rows <- backfill_rows |> filter(!is.na(athlete_id))
+
+cat("[Backfill]", nrow(backfill_rows), "rows to upsert (roster athletes only).\n")
 sb_upsert("cmj_tests", backfill_rows, on_conflict = "vald_test_id,trial_number")
 
 cat("[Backfill] Completed at", format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC"), "\n")
