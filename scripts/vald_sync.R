@@ -116,6 +116,17 @@ if (is.null(profiles_raw) || length(profiles_raw) == 0) {
   cat("[VALD Sync]", nrow(profiles_df), "profiles fetched.\n")
 }
 
+# ── Step 2.5: Fetch athlete_id lookup from athletes table ─────────────────
+cat("[VALD Sync] Fetching athlete_id lookup...\n")
+athletes_resp <- request(paste0(SUPABASE_URL, "/rest/v1/athletes")) |>
+  req_headers(apikey = SUPABASE_SERVICE_KEY, Authorization = paste("Bearer", SUPABASE_SERVICE_KEY)) |>
+  req_url_query(select = "id,name") |>
+  req_error(is_error = function(resp) FALSE) |>
+  req_perform()
+athletes_df <- resp_body_json(athletes_resp, simplifyVector = TRUE)
+athlete_id_lookup <- setNames(athletes_df$id, athletes_df$name)
+cat("[VALD Sync]", length(athlete_id_lookup), "athlete_id mappings loaded.\n")
+
 # ── Step 3: ForceDecks result definitions ─────────────────────────────────
 cat("[VALD Sync] Fetching ForceDecks result definitions...\n")
 rd_raw <- vald_get("/resultdefinitions", query = list(), base_url = VALD_FD_BASE)
@@ -237,6 +248,9 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
           eccentric_peak_force_asymmetry_pct = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "asym"),
           eccentric_peak_force_left          = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "left"),
           eccentric_peak_force_right         = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "right"),
+          force_at_zero_velocity_n  = get_metric_from_trial(res, c("force at zero velocity")),
+          relative_peak_power_w_bm  = get_metric_from_trial(res, c("peak power / bm")),
+          countermovement_depth_cm  = get_metric_from_trial(res, c("countermovement depth")),
           stringsAsFactors = FALSE
         )
       })
@@ -288,6 +302,15 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
       name_map[cmj_rows$athlete_name],
       toupper(cmj_rows$athlete_name)
     )
+    cmj_rows$athlete_id <- athlete_id_lookup[cmj_rows$athlete_name]
+
+    cmj_unmatched <- sort(unique(cmj_rows$athlete_name[is.na(cmj_rows$athlete_id)]))
+    if (length(cmj_unmatched) > 0) {
+      cat("[VALD Sync] Skipping", length(cmj_unmatched), "name(s) not found in athletes table:\n")
+      cat(paste(" -", cmj_unmatched), sep = "\n")
+    }
+    cmj_rows <- cmj_rows |> filter(!is.na(athlete_id))
+
     cat("[VALD Sync]", nrow(cmj_rows), "ForceDecks rows to upsert.\n")
     sb_upsert("cmj_tests", cmj_rows)
   }
@@ -358,6 +381,15 @@ if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
       name_map[nord_rows$athlete_name],
       toupper(nord_rows$athlete_name)
     )
+    nord_rows$athlete_id <- athlete_id_lookup[nord_rows$athlete_name]
+
+    nord_unmatched <- sort(unique(nord_rows$athlete_name[is.na(nord_rows$athlete_id)]))
+    if (length(nord_unmatched) > 0) {
+      cat("[VALD Sync] Skipping", length(nord_unmatched), "name(s) not found in athletes table:\n")
+      cat(paste(" -", nord_unmatched), sep = "\n")
+    }
+    nord_rows <- nord_rows |> filter(!is.na(athlete_id))
+
     cat("[VALD Sync]", nrow(nord_rows), "NordBord rows to upsert.\n")
     sb_upsert("nordbord_tests", nord_rows)
   }
