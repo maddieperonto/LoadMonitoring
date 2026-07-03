@@ -85,6 +85,17 @@ profiles_df <- pdf |>
   select(profileId, name)
 cat("[Backfill]", nrow(profiles_df), "profiles fetched.\n")
 
+# ── Fetch athlete_id lookup from athletes table ────────────────────────────
+cat("[Backfill] Fetching athlete_id lookup...\n")
+athletes_resp <- request(paste0(SUPABASE_URL, "/rest/v1/athletes")) |>
+  req_headers(apikey = SUPABASE_SERVICE_KEY, Authorization = paste("Bearer", SUPABASE_SERVICE_KEY)) |>
+  req_url_query(select = "id,name") |>
+  req_error(is_error = function(resp) FALSE) |>
+  req_perform()
+athletes_df <- resp_body_json(athletes_resp, simplifyVector = TRUE)
+athlete_id_lookup <- setNames(athletes_df$id, athletes_df$name)
+cat("[Backfill]", length(athlete_id_lookup), "athlete_id mappings loaded.\n")
+
 # ── Result definitions ────────────────────────────────────────────────────
 cat("[Backfill] Fetching result definitions...\n")
 rd_raw <- vald_get("/resultdefinitions", query = list(), base_url = VALD_FD_BASE)
@@ -246,6 +257,7 @@ backfill_rows$athlete_name <- ifelse(
   name_map[backfill_rows$athlete_name],
   toupper(backfill_rows$athlete_name)
 )
+backfill_rows$athlete_id <- athlete_id_lookup[backfill_rows$athlete_name]
 
 cat("[Backfill]", nrow(backfill_rows), "rows to upsert.\n")
 sb_upsert("cmj_tests", backfill_rows, on_conflict = "vald_test_id,trial_number")
