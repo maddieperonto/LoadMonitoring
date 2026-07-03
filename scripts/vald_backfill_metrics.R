@@ -257,7 +257,16 @@ backfill_rows$athlete_name <- ifelse(
   name_map[backfill_rows$athlete_name],
   toupper(backfill_rows$athlete_name)
 )
+
 backfill_rows$athlete_id <- athlete_id_lookup[backfill_rows$athlete_name]
+
+unmatched <- sort(unique(backfill_rows$athlete_name[is.na(backfill_rows$athlete_id)]))
+if (length(unmatched) > 0) {
+  cat("[Backfill] NOTE:", length(unmatched), "athlete name(s) are in VALD but not in the athletes table (likely not on current roster):\n")
+  cat(paste(" -", unmatched), sep = "\n")
+} else {
+  cat("[Backfill] All athlete names matched to the athletes table.\n")
+}
 
 cat("[Backfill]", nrow(backfill_rows), "rows to upsert.\n")
 sb_upsert("cmj_tests", backfill_rows, on_conflict = "vald_test_id,trial_number")
