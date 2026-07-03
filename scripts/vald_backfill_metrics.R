@@ -1,5 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════════
-# vald_backfill_metrics.R — One-time backfill of new CMJ metrics for existing tests
+# vald_backfill_metrics.R — One-time backfill: fills ALL CMJ metrics
+# (including the 3 new ones) for every historical trial, fixing any
+# previously incomplete rows and adding the new columns everywhere.
 # ═══════════════════════════════════════════════════════════════════════════
 
 library(httr2)
@@ -160,7 +162,9 @@ get_metric_from_trial <- function(results_list, keywords, limb_filter = NULL) {
   NA_real_
 }
 
-# ── Only pull the 3 new metrics + IDs needed to match existing rows ───────
+# ── Build FULL row per trial — same metric set as the nightly sync, ───────
+# ── PLUS the 3 new metrics — so any previously incomplete rows get ────────
+# ── completely refilled, not just the new columns. ─────────────────────────
 cmj_trial_rows <- lapply(seq_len(nrow(fd_df)), function(i) {
   ttype <- toupper(fd_df$testType[i])
   if (!any(sapply(CMJ_TYPES, function(t) grepl(t, ttype, fixed = TRUE)))) return(NULL)
@@ -170,15 +174,28 @@ cmj_trial_rows <- lapply(seq_len(nrow(fd_df)), function(i) {
 
   per_trial <- lapply(seq_len(nrow(trials)), function(t) {
     res <- trials$results[[t]]
+
     data.frame(
-      vald_test_id              = as.character(fd_df$testId[i]),
-      vald_profile_id           = as.character(fd_df$profileId[i]),
-      athlete_name              = fd_df$athlete_name[i],
-      test_date                 = fd_df$test_date[i],
-      trial_number               = t,
-      force_at_zero_velocity_n  = get_metric_from_trial(res, c("force at zero velocity")),
-      relative_peak_power_w_bm  = get_metric_from_trial(res, c("peak power / bm")),
-      countermovement_depth_cm  = get_metric_from_trial(res, c("countermovement depth")),
+      vald_test_id                       = as.character(fd_df$testId[i]),
+      vald_profile_id                    = as.character(fd_df$profileId[i]),
+      athlete_name                       = fd_df$athlete_name[i],
+      test_date                          = fd_df$test_date[i],
+      trial_number                       = t,
+      jump_height_cm                     = get_metric_from_trial(res, c("jump height (flight time)")),
+      peak_force_n                       = get_metric_from_trial(res, c("peak force")),
+      peak_power_w                       = get_metric_from_trial(res, c("peak power / bm", "peak power")),
+      rsi_modified                       = get_metric_from_trial(res, c("rsi-modified", "rsi modified", "reactive strength")),
+      concentric_impulse_ns              = get_metric_from_trial(res, c("concentric impulse")),
+      eccentric_decel_impulse_ns         = get_metric_from_trial(res, c("eccentric decel")),
+      eccentric_decel_rfd_bm             = get_metric_from_trial(res, c("eccentric deceleration rfd / bm")),
+      eccentric_peak_power_bm            = get_metric_from_trial(res, c("eccentric peak power / bm")),
+      flight_time_contraction_time       = get_metric_from_trial(res, c("flight time:contraction time", "flighttime:contraction time")),
+      eccentric_peak_force_asymmetry_pct = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "asym"),
+      eccentric_peak_force_left          = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "left"),
+      eccentric_peak_force_right         = get_metric_from_trial(res, c("eccentric peak force"), limb_filter = "right"),
+      force_at_zero_velocity_n           = get_metric_from_trial(res, c("force at zero velocity")),
+      relative_peak_power_w_bm           = get_metric_from_trial(res, c("peak power / bm")),
+      countermovement_depth_cm           = get_metric_from_trial(res, c("countermovement depth")),
       stringsAsFactors = FALSE
     )
   })
@@ -186,9 +203,51 @@ cmj_trial_rows <- lapply(seq_len(nrow(fd_df)), function(i) {
 })
 
 backfill_rows <- do.call(rbind, Filter(Negate(is.null), cmj_trial_rows)) |>
+  mutate(across(where(is.numeric), ~ ifelse(is.nan(.), NA_real_, .))) |>
   filter(!is.na(test_date))
 
-cat("[Backfill]", nrow(backfill_rows), "rows to upsert with new metrics.\n")
+# ── Standardize athlete names to match roster ──────────────────────────────
+name_map <- c(
+  "Aaron Philo"="AARON PHILO","Alec Clark"="ALEC CLARK",
+  "Alfonzo Allen"="ALFONZO ALLEN JR","AUSTIN \"ACE\" CIONGOLI"="AUSTIN CIONGOLI",
+  "Bailey Stockton"="BAILEY STOCKTON","Ben Hanks Jr."="BEN HANKS III",
+  "Brian Case"="BRIAN CASE","Byron Louis"="BYRON LOUIS",
+  "Cam'Ron Dooley"="CAM DOOLEY","Carter Milliron"="CARTER MILLIRON",
+  "Charles Emanuel III"="CHARLES EMANUEL III","Cj  Hester"="CJ HESTER",
+  "CJ Bronaugh "="CJ BRONAUGH","Cormani McClain"="CORMANI MCCLAIN",
+  "Dallas Wilson"="DALLAS WILSON","Davian Groce"="DAVIAN GROCE",
+  "Drake Stubbs"="DRAKE STUBBS","Dylan Leighton"="DYLAN LEIGHTON",
+  "Dylan Purter"="DYLAN PURTER","Elijah Owens"="ELIJAH OWENS",
+  "Eric Parks"="ERIC PARKS","Eric Singleton"="ERIC SINGLETON JR",
+  "Erich Seager"="ERICH SEAGER","Evan Chieca"="EVAN CHIECA",
+  "Hezekiah Kent"="HEZE KENT","Hunter Solwold"="HUNTER SOLWOLD",
+  "J'Vari Flowers"="J'VARI FLOWERS","Jadan Baugh"="JADAN BAUGH",
+  "Jaden Edgecombe"="JADEN EDGECOMBE","Jayden Woods"="JAYDEN WOODS",
+  "Jordy Lowery"="JORDY LOWERY","Justin Williams"="JUSTIN WILLIAMS",
+  "Kaiden Hall"="KAIDEN HALL","Kelvin Jimenez"="KELVIN JIMENEZ",
+  "KJ Ford"="KJ FORD","Kofi Asare"="KOFI ASARE",
+  "Lacota Dippre"="LACOTA DIPPRE","Lagonza Hayward"="LAGONZA HAYWARD",
+  "Liam Padron"="LIAM PADRON","Lincoln Anderson"="LINCOLN ANDERSON",
+  "London Montgomery"="LONDON MONTGOMERY","Malik Morris"="MALIK MORRIS",
+  "Marquez Daniel"="MARQUEZ DANIEL","Mason Jordan"="MASON JORDAN",
+  "Matthew Kade"="MATTHEW KADE","Micah Jones"="MICAH JONES",
+  "Micah Mays"="MICAH MAYS JR","Miller Fealy"="MILLER FEALY",
+  "Myles Johnson"="MYLES JOHNSON","Nicholas Inglis"="NICK INGLIS",
+  "Onis Konanbanny"="ONIS KONANBANNY","Patrick Durkin"="PATRICK DURKIN",
+  "Thaddeus TJ Bullard Jr."="TJ BULLARD","Titus Bullard"="TITUS BULLARD",
+  "TJ Abrams"="TJ ABRAMS","Tramell Jones"="TRAMELL JONES JR",
+  "Ty Jackson"="TY JACKSON","Vernell Brown"="VERNELL BROWN III",
+  "Vincent Brown"="VINCENT BROWN JR","Waltez Clark"="WALTEZ CLARK",
+  "William Griffin"="WILL GRIFFIN","Eric Singleton Jr"="ERIC SINGLETON JR",
+  "Micah Mays Jr"="MICAH MAYS JR"
+)
+backfill_rows$athlete_name <- ifelse(
+  backfill_rows$athlete_name %in% names(name_map),
+  name_map[backfill_rows$athlete_name],
+  toupper(backfill_rows$athlete_name)
+)
+
+cat("[Backfill]", nrow(backfill_rows), "rows to upsert.\n")
 sb_upsert("cmj_tests", backfill_rows, on_conflict = "vald_test_id,trial_number")
 
 cat("[Backfill] Completed at", format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC"), "\n")
