@@ -26,7 +26,9 @@ resp <- request(paste0(CATAPULT_BASE_URL, "/athletes")) |>
   req_perform()
 
 if (resp_status(resp) != 200) {
-  stop("[Catapult Profiles] /athletes fetch failed: ", resp_status(resp))
+  body_text <- tryCatch(resp_body_string(resp), error = function(e) "(could not read body)")
+  stop("[Catapult Profiles] /athletes fetch failed: ", resp_status(resp), "\n",
+       "Response body: ", body_text)
 }
 
 catapult_athletes <- resp_body_json(resp, simplifyVector = TRUE) |>
