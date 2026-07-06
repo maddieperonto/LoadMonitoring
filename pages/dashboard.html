@@ -575,13 +575,13 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     </div>
     <div class="stat-row" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px" id="vald-grp-cards"></div>
     <div class="panel">
-      <div class="panel-title"><i class="ti ti-table"></i>Position Group — VALD Testing Log</div>
+      <div class="panel-title"><i class="ti ti-table"></i>VALD Testing Log</div>
       <div class="tbl-wrap">
         <table><thead><tr>
           <th>Athlete</th><th>Test Date</th><th>Nord Force (N)</th>
           <th>Nord Asymm %</th><th>Jump Ht (in)</th><th>mRSI</th>
-          <th>EDRFD</th>
-        </tr></thead><tbody id="vald-grp-table"></tbody></table>
+          <th>EDRFD</th><th>Force @ 0 Vel (N)</th><th>Rel Peak Power (W/kg)</th><th>CM Depth (in)</th>
+        </tr></thead><tbody id="vald-log-table"></tbody></table>
       </div>
     </div>
   </div>
@@ -1714,7 +1714,7 @@ window.setVALDView=function(v){
 
 async function loadVALD(){
   const [{data:cmj},{data:nord}]=await Promise.all([
-  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_decel_rfd_bm').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)
+  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_decel_rfd_bm,force_at_zero_velocity_n,relative_peak_power_w_bm,countermovement_depth_cm').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)  
   ]);
   cmjData=(cmj||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
   nordData=(nord||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
@@ -1794,6 +1794,9 @@ window.renderVALDIndividual=function(){
   document.getElementById('vald-log-table').innerHTML=allTests.map(t=>{
     const na=nordAvgFn(t.nord),nasym=nordAsymmFn(t.nord);
     const edrfd=t.cmj?.eccentric_decel_rfd_bm;
+    const fzv=t.cmj?.force_at_zero_velocity_n;
+    const rpp=t.cmj?.relative_peak_power_w_bm;
+    const cmd=t.cmj?.countermovement_depth_cm;
     return`<tr>
       <td style="font-weight:600">${name}</td>
       <td class="mono">${t.date} ${pill(t.type==='CMJ'?'acc':'info',t.type)}</td>
@@ -1802,6 +1805,9 @@ window.renderVALDIndividual=function(){
       <td class="mono ${t.cmj?.jump_height_cm?'acc':''}">${t.cmj?.jump_height_cm!=null?(t.cmj.jump_height_cm/2.54).toFixed(2)+'"':'—'}</td>
       <td class="mono">${t.cmj?.rsi_modified!=null?t.cmj.rsi_modified.toFixed(2):'—'}</td>
       <td class="mono ${edrfd!=null?'acc':''}">${edrfd!=null?edrfd.toFixed(2):'—'}</td>
+      <td class="mono">${fzv!=null?fzv.toFixed(1):'—'}</td>
+      <td class="mono">${rpp!=null?rpp.toFixed(2):'—'}</td>
+      <td class="mono">${cmd!=null?(cmd/2.54).toFixed(2)+'"':'—'}</td>
     </tr>`;
   }).join('');
 };
@@ -1943,6 +1949,9 @@ window.renderVALDGroup=function(){
     const na=nord?((nord.left_peak_force_n||0)+(nord.right_peak_force_n||0))/2:null;
     const nasym=nord&&Math.max(nord.left_peak_force_n||0,nord.right_peak_force_n||0)>0?(1-Math.min(nord.left_peak_force_n||0,nord.right_peak_force_n||0)/Math.max(nord.left_peak_force_n||0,nord.right_peak_force_n||0))*100:null;
     const edrfd=cmj?.eccentric_decel_rfd_bm;
+    const fzv=cmj?.force_at_zero_velocity_n;
+    const rpp=cmj?.relative_peak_power_w_bm;
+    const cmd=cmj?.countermovement_depth_cm;
     const date=cmj?.test_date||nord?.test_date||'—';
     return`<tr>
       <td style="font-weight:600;color:var(--uf-blue)">${name}</td>
@@ -1952,6 +1961,9 @@ window.renderVALDGroup=function(){
       <td class="mono ${cmj?.jump_height_cm?'acc':''}">${cmj?.jump_height_cm!=null?(cmj.jump_height_cm/2.54).toFixed(2)+'"':'—'}</td>
       <td class="mono">${cmj?.rsi_modified!=null?cmj.rsi_modified.toFixed(2):'—'}</td>
       <td class="mono ${edrfd!=null?'acc':''}">${edrfd!=null?edrfd.toFixed(2):'—'}</td>
+      <td class="mono">${fzv!=null?fzv.toFixed(1):'—'}</td>
+      <td class="mono">${rpp!=null?rpp.toFixed(2):'—'}</td>
+      <td class="mono">${cmd!=null?(cmd/2.54).toFixed(2)+'"':'—'}</td>
     </tr>`;
   }).join('');
 };
