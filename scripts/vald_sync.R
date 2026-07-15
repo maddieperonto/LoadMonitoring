@@ -312,7 +312,7 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
     cmj_rows <- cmj_rows |> filter(!is.na(athlete_id))
 
     cat("[VALD Sync]", nrow(cmj_rows), "ForceDecks rows to upsert.\n")
-    sb_upsert("cmj_tests", cmj_rows)
+    sb_upsert("cmj_tests", cmj_rows, on_conflict = "vald_test_id,trial_number")
   }
 } else {
   cat("[VALD Sync] No new ForceDecks tests.\n")
@@ -391,7 +391,7 @@ if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
     nord_rows <- nord_rows |> filter(!is.na(athlete_id))
 
     cat("[VALD Sync]", nrow(nord_rows), "NordBord rows to upsert.\n")
-    sb_upsert("nordbord_tests", nord_rows)
+    sb_upsert("nordbord_tests", nord_rows, on_conflict = "vald_test_id")
   }
 } else {
   cat("[VALD Sync] No new NordBord tests.\n")
