@@ -466,17 +466,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 <!-- LOAD MONITOR -->
 <div class="page" id="pg-loadmonitor">
   <div class="lm-metric-grid" id="lm-metrics"></div>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-    <span style="font-family:var(--font-m);font-size:10px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase">Metric</span>
-    <div class="lm-toggle">
-      <button class="lm-chip active" onclick="setLMMetric('load',this)">Player Load</button>
-      <button class="lm-chip" onclick="setLMMetric('dist',this)">Distance</button>
-      <button class="lm-chip" onclick="setLMMetric('hsrd',this)">HSRD</button>
-      <button class="lm-chip" onclick="setLMMetric('accel',this)">Accel</button>
-      <button class="lm-chip" onclick="setLMMetric('decel',this)">Decel</button>
-      <button class="lm-chip" onclick="setLMMetric('acwr',this)">ACWR</button>
-    </div>
-  </div>
+
   <!-- Summer Load Ramp Up -->
   <div class="panel" style="margin-bottom:14px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
@@ -930,9 +920,15 @@ const allPhWks=[...new Set(raw.map(r=>phWk(r.session_date)).filter(Boolean))].so
   const[bp,bn]=[b.slice(0,2),parseInt(b.slice(3))];
   return phWkOrd[ap]-phWkOrd[bp]||an-bn;
 });
+
 const spWks=allPhWks.filter(w=>w.startsWith('Sp'));
 const suWks=allPhWks.filter(w=>w.startsWith('Su'));
 const faWks=allPhWks.filter(w=>w.startsWith('Fa'));
+
+// ── SLRU dynamic current-week detection ────────────────────────────────────
+function slruWkToSuWk(n){ return n<=6 ? `Su W${n}` : `Su W${n+1}`; }
+const SLRU_LATEST_SU_WK_NUM = suWks.length ? parseInt(suWks[suWks.length-1].replace('Su W','')) : 1;
+const SLRU_CURRENT_WK_NUM = Math.min(10, SLRU_LATEST_SU_WK_NUM<=6 ? SLRU_LATEST_SU_WK_NUM : SLRU_LATEST_SU_WK_NUM-1);
 
 // GPS charts: Spring W1–W12 + Summer W1–current (no Fall 2025)
 const gpsChartWks=[...spWks,...suWks];
@@ -2040,13 +2036,13 @@ function getSlruField(tabId){
   return'load';
 }
 
-function getSlruCurrentWk(positions,field){
+function getSlruWeekActuals(suWkLabel,positions,field){
   const result={};
   positions.forEach(pos=>{
     const dbPos=SLRU_POS_MAP[pos]||pos;
     const posPlayers=PLAYERS.filter(p=>p.pos===dbPos);
-    const activePlayers=posPlayers.filter(p=>p.sessions.some(s=>s.wk==='Su W8'));
-    const total=posPlayers.reduce((t,p)=>t+p.sessions.filter(s=>s.wk==='Su W8').reduce((st,s)=>st+(s[field]||0),0),0);
+    const activePlayers=posPlayers.filter(p=>p.sessions.some(s=>s.wk===suWkLabel));
+    const total=posPlayers.reduce((t,p)=>t+p.sessions.filter(s=>s.wk===suWkLabel).reduce((st,s)=>st+(s[field]||0),0),0);
     result[pos]=activePlayers.length>0?Math.round(total/activePlayers.length):null;
   });
   return result;
@@ -2068,41 +2064,64 @@ function pctColor(pct){
 function getSlruTableHTML(tabId){
   const cfg=SLRU_DATA[tabId];
   const field=getSlruField(tabId);
-  const currWk=getSlruCurrentWk(cfg.positions,field);
   const histBg='rgba(0,48,135,0.08)';
   const currBg='rgba(250,70,22,0.08)';
   const projBg='rgba(250,70,22,0.05)';
   const campBg='rgba(22,163,74,0.08)';
+  const curN=SLRU_CURRENT_WK_NUM;
 
-  const thead=
-    `<th style="min-width:70px">Position</th>`+
-    SLRU_HIST_WKS.map(wk=>`<th style="font-size:10px;background:${histBg}">${wk}</th>`).join('')+
-    `<th style="font-size:10px;background:${currBg};font-weight:800">W7<br><span style="font-size:9px;opacity:.7">Current</span></th>`+
-    `<th style="font-size:10px;background:${projBg};color:var(--text3)">W7 Proj</th>`+
-    `<th style="font-size:10px;background:${projBg};color:var(--text3)">W8</th>`+
-    `<th style="font-size:10px;background:${projBg};color:var(--text3)">W9</th>`+
-    `<th style="font-size:10px;background:${projBg};color:var(--text3)">W10</th>`+
-    `<th style="font-size:10px;background:${campBg};color:#15803D;font-weight:700">Camp</th>`+
-    SLRU_HIST_WKS.map(wk=>`<th style="font-size:9px;color:var(--text3)">%${wk}</th>`).join('')+
-    `<th style="font-size:9px;color:var(--uf-orange);font-weight:700">%W7</th>`;
+  let weekTh='';
+  for(let n=1;n<=10;n++){
+    if(n<curN) weekTh+=`<th style="font-size:10px;background:${histBg}">W${n}</th>`;
+    else if(n===curN) weekTh+=`<th style="font-size:10px;background:${currBg};font-weight:800">W${n}<br><span style="font-size:9px;opacity:.7">Current</span></th>`;
+    else weekTh+=`<th style="font-size:10px;background:${projBg};color:var(--text3)">W${n}</th>`;
+  }
+  let pctTh='';
+  for(let n=1;n<=curN;n++){
+    pctTh+=`<th style="font-size:9px;color:${n===curN?'var(--uf-orange)':'var(--text3)'};font-weight:${n===curN?700:400}">%W${n}</th>`;
+  }
+
+  const thead=`<th style="min-width:70px">Position</th>`+weekTh+
+    `<th style="font-size:10px;background:${campBg};color:#15803D;font-weight:700">Camp</th>`+pctTh;
 
   const tbody=cfg.positions.map(pos=>{
     const campProj=cfg.campProj[pos];
-    const histVals=cfg.hist[pos];
-    const projVals=cfg.proj[pos];
-    const curr=currWk[pos];
-    const w7proj=projVals[0];
-    const histPcts=histVals.map(v=>campProj>0?Math.round(v/campProj*100):null);
-    const currPct=curr!=null&&campProj>0?Math.round(curr/campProj*100):null;
+    const histVals=cfg.hist[pos];   // static W1-W6
+    const projVals=cfg.proj[pos];   // [W7proj, W8, W9, W10]
+
+    function weekVal(n){
+      if(n<=6) return histVals[n-1];
+      if(n>=7&&n<=10){
+        if(n<curN){
+          const live=getSlruWeekActuals(slruWkToSuWk(n),[pos],field)[pos];
+          return live!=null?live:projVals[n-7];
+        }
+        if(n===curN) return getSlruWeekActuals(slruWkToSuWk(n),[pos],field)[pos];
+        return projVals[n-7];
+      }
+      return null;
+    }
+
+    let weekTds='';
+    for(let n=1;n<=10;n++){
+      const v=weekVal(n);
+      const bg=n<curN?histBg:n===curN?currBg:projBg;
+      const style=n===curN?`background:${bg};font-weight:700;color:var(--uf-orange)`:n<curN?`background:${bg}`:`background:${bg};color:var(--text3)`;
+      weekTds+=`<td class="mono" style="${style}">${v!=null?Math.round(v).toLocaleString():'—'}</td>`;
+    }
+
+    let pctTds='';
+    for(let n=1;n<=curN;n++){
+      const v=weekVal(n);
+      const pct=v!=null&&campProj>0?Math.round(v/campProj*100):null;
+      pctTds+=`<td class="mono" style="${pctBg(pct)};${pctColor(pct)}">${pct!=null?pct+'%':'—'}</td>`;
+    }
+
     return`<tr>
       <td style="font-weight:700;color:var(--uf-blue);min-width:50px">${pos}</td>
-      ${histVals.map(v=>`<td class="mono" style="background:${histBg}">${v!=null?v.toLocaleString():'—'}</td>`).join('')}
-      <td class="mono" style="background:${currBg};font-weight:700;color:var(--uf-orange)">${curr!=null?curr.toLocaleString():'—'}</td>
-      <td class="mono" style="background:${projBg};color:var(--text3)">${Math.round(w7proj).toLocaleString()}</td>
-      ${projVals.slice(1).map(v=>`<td class="mono" style="background:${projBg};color:var(--text3)">${Math.round(v).toLocaleString()}</td>`).join('')}
+      ${weekTds}
       <td class="mono" style="background:${campBg};font-weight:700;color:#15803D">${campProj.toLocaleString()}</td>
-      ${histPcts.map(p=>`<td class="mono" style="${pctBg(p)};${pctColor(p)}">${p!=null?p+'%':'—'}</td>`).join('')}
-      <td class="mono" style="${pctBg(currPct)};${pctColor(currPct)}">${currPct!=null?currPct+'%':'—'}</td>
+      ${pctTds}
     </tr>`;
   }).join('');
 
@@ -2112,9 +2131,9 @@ function getSlruTableHTML(tabId){
 function renderSlruCharts(containerId,tabId,idPrefix){
   const cfg=SLRU_DATA[tabId];
   const field=getSlruField(tabId);
-  const currWk=getSlruCurrentWk(cfg.positions,field);
   const container=document.getElementById(containerId);
   if(!container)return;
+  const curN=SLRU_CURRENT_WK_NUM;
 
   container.innerHTML=cfg.positions.map(pos=>`
     <div class="panel" style="margin-bottom:0">
@@ -2126,21 +2145,30 @@ function renderSlruCharts(containerId,tabId,idPrefix){
     const campProj=cfg.campProj[pos];
     const histVals=cfg.hist[pos];
     const projVals=cfg.proj[pos];
-    const curr=currWk[pos];
+
+    function weekVal(n){
+      if(n<=6) return histVals[n-1];
+      if(n>=7&&n<=10){
+        if(n<curN){
+          const live=getSlruWeekActuals(slruWkToSuWk(n),[pos],field)[pos];
+          return live!=null?live:projVals[n-7];
+        }
+        if(n===curN) return getSlruWeekActuals(slruWkToSuWk(n),[pos],field)[pos];
+        return projVals[n-7];
+      }
+      return null;
+    }
 
     const labels=['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','Camp'];
-    const values=[
-      ...histVals.map(v=>campProj>0?Math.round(v/campProj*100):0),
-      curr!=null&&campProj>0?Math.round(curr/campProj*100):0,
-      ...projVals.slice(1).map(v=>campProj>0?Math.round(v/campProj*100):0),
-      100
-    ];
-    const colors=[
-      ...histVals.map(()=>'#003087'),
-      '#FA4616',
-      ...projVals.slice(1).map(()=>'rgba(250,70,22,0.5)'),
-      '#22C55E'
-    ];
+    const values=[];
+    const colors=[];
+    for(let n=1;n<=10;n++){
+      const v=weekVal(n);
+      const pct=v!=null&&campProj>0?Math.round(v/campProj*100):0;
+      values.push(pct);
+      colors.push(n<curN?'#003087':n===curN?'#FA4616':'rgba(250,70,22,0.5)');
+    }
+    values.push(100); colors.push('#22C55E');
 
     mk(`${idPrefix}${pos}`,{type:'bar',data:{
       labels,
