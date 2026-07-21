@@ -23,8 +23,11 @@ cat("[Catapult Profiles] Base URL:", CATAPULT_BASE_URL, "\n")
 
 # ── Fetch Catapult athletes, filtered to current team ──────────────────────
 resp <- request(paste0(CATAPULT_BASE_URL, "/athletes")) |>
-  req_auth_bearer_token(CATAPULT_API_TOKEN) |>
-  req_headers(Accept = "application/json") |>
+  req_headers(
+    Authorization  = paste("Bearer", CATAPULT_API_TOKEN),
+    "Content-Type" = "application/json",
+    Accept         = "application/json"
+  ) |>
   req_error(is_error = function(resp) FALSE) |>
   req_perform()
 
