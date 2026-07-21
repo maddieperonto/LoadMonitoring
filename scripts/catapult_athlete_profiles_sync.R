@@ -19,7 +19,8 @@ CURRENT_TEAM_ID <- "75054b55-9900-11e3-b9b6-22000af8166b"
 cat("[Catapult Profiles] Starting at", format(Sys.time(), "%Y-%m-%d %H:%M:%S UTC"), "\n")
 cat("[Catapult Profiles] Token length:", nchar(CATAPULT_API_TOKEN), "\n")
 cat("[Catapult Profiles] Token has leading/trailing whitespace:", CATAPULT_API_TOKEN != trimws(CATAPULT_API_TOKEN), "\n")
-cat("[Catapult Profiles] Base URL:", CATAPULT_BASE_URL, "\n")
+cat("[Catapult Profiles] Base URL length:", nchar(CATAPULT_BASE_URL), "\n")
+cat("[Catapult Profiles] Base URL has whitespace:", CATAPULT_BASE_URL != trimws(CATAPULT_BASE_URL), "\n")
 
 # ── Fetch Catapult athletes, filtered to current team ──────────────────────
 resp <- request(paste0(CATAPULT_BASE_URL, "/athletes")) |>
