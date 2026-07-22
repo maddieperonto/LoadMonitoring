@@ -408,7 +408,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <select class="data-sel" id="gps-team-date-sel" onchange="renderGPSTeamRoster()"></select>
         <span id="gps-team-roster-badge" class="tbb info">— athletes</span>
       </div>
-      <div class="tbl-wrap"><table><thead><tr><th>Athlete</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Dist (y)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (y)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-roster"></tbody></table></div>
+      <div class="tbl-wrap"><table><thead id="gps-team-roster-thead"><tr><th>Athlete</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Dist (y)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (y)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-team-roster"></tbody></table></div>
     </div>
   </div>
   <div id="gps-individual-view" style="display:none">
@@ -1087,6 +1087,44 @@ const C={acc:'#FA4616',blue:'#003087',green:'#16A34A',yellow:'#D97706',red:'#DC2
 const CD={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'}},grid:{color:C.grid}},y:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'}},grid:{color:C.grid}}}};
 const CI={};
 function mk(id,cfg){if(CI[id])CI[id].destroy();const el=document.getElementById(id);if(!el)return;CI[id]=new Chart(el,cfg);}
+
+// ── GENERIC SORTABLE TABLE ENGINE ───────────────────────────────────────
+// columns: array aligned with <th> order. Each entry is either null (not sortable)
+// or a function (row)=>value used for sorting that column.
+// dataFn: () => array of raw row objects (unsorted, current full dataset)
+// renderFn: (sortedArray) => writes the <tbody> HTML for that data
+function makeSortableTable(theadId, columns, dataFn, renderFn){
+  const thead=document.getElementById(theadId);
+  if(!thead)return;
+  const ths=thead.querySelectorAll('th');
+  const state={colIndex:null,dir:null};
+  ths.forEach((th,i)=>{
+    if(!columns[i])return;
+    th.classList.add('sortable');
+    th.addEventListener('click',()=>{
+      if(state.colIndex!==i){state.colIndex=i;state.dir='asc';}
+      else if(state.dir==='asc'){state.dir='desc';}
+      else if(state.dir==='desc'){state.colIndex=null;state.dir=null;}
+      else{state.dir='asc';}
+      ths.forEach(t=>t.classList.remove('sort-asc','sort-desc'));
+      if(state.colIndex===i)th.classList.add(state.dir==='asc'?'sort-asc':'sort-desc');
+      let data=dataFn();
+      if(state.colIndex!==null&&state.dir){
+        const acc=columns[state.colIndex];
+        data=[...data].sort((a,b)=>{
+          let va=acc(a),vb=acc(b);
+          if(va==null&&vb==null)return 0;
+          if(va==null)return 1;
+          if(vb==null)return -1;
+          if(typeof va==='string')return state.dir==='asc'?va.localeCompare(vb):vb.localeCompare(va);
+          return state.dir==='asc'?va-vb:vb-va;
+        });
+      }
+      renderFn(data);
+    });
+  });
+}
+
 function pill(cls,lbl){return`<span class="pill ${cls}">${lbl}</span>`;}
 function ini(n){const p=(n||'').trim().split(/[\s,]+/);return((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase();}
 function acwrColor(v){return v>1.5||v<0.8?C.red:v>1.3?C.yellow:C.green;}
@@ -1385,17 +1423,10 @@ function populateGPSDateSel(selId, sessions){
   dates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;sel.appendChild(o);});
 }
 
-window.renderGPSTeamRoster=function(){
-  const date=document.getElementById('gps-team-date-sel').value;
-  if(!date)return;
-  const rows=[];
-  PLAYERS.forEach(p=>{
-    const s=p.sessions.find(x=>x.date===date);
-    if(!s)return;
-    rows.push({p,s});
-  });
+let _gpsTeamRosterRows=[];
+function renderGPSTeamRosterRows(rows){
   document.getElementById('gps-team-roster-badge').textContent=`${rows.length} athletes`;
-  document.getElementById('gps-team-roster').innerHTML=rows.sort((a,b)=>b.s.dist-a.s.dist).map(({p,s})=>{
+  document.getElementById('gps-team-roster').innerHTML=rows.map(({p,s})=>{
     const st=acwrSt(p.latD);
     return`<tr>
       <td style="font-weight:600;cursor:pointer;color:var(--uf-blue)" onclick="openPM('${p.name.replace(/'/g,"\\'")}');">${p.name}</td>
@@ -1412,6 +1443,22 @@ window.renderGPSTeamRoster=function(){
       <td>${pill(st.cls,st.lbl)}</td>
     </tr>`;
   }).join('');
+}
+window.renderGPSTeamRoster=function(){
+  const date=document.getElementById('gps-team-date-sel').value;
+  if(!date)return;
+  const rows=[];
+  PLAYERS.forEach(p=>{
+    const s=p.sessions.find(x=>x.date===date);
+    if(!s)return;
+    rows.push({p,s});
+  });
+  _gpsTeamRosterRows=rows.sort((a,b)=>b.s.dist-a.s.dist);
+  renderGPSTeamRosterRows(_gpsTeamRosterRows);
+  makeSortableTable('gps-team-roster-thead',[
+    r=>r.p.name, r=>r.p.pos, r=>r.p.unit, r=>r.s.load, r=>r.s.dist,
+    r=>r.s.maxV, r=>r.s.accel, r=>r.s.decel, r=>r.s.hsr, r=>r.p.latD, r=>r.p.latA, r=>r.p.risk
+  ], ()=>_gpsTeamRosterRows, renderGPSTeamRosterRows);
 };
 
 window.renderGPSGrpRoster=function(){
