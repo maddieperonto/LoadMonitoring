@@ -744,7 +744,7 @@ function displayWk(wk){
 let raw=[], _page=0, _done=false;
 while(!_done){
   const {data:chunk,error:eR2}=await SB.from('catapult_sessions')
-    .select('athlete_name,session_date,total_player_load,total_distance,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts')
+    .select('athlete_name,session_date,total_player_load,total_distance,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts,participation_tag')
     .order('session_date',{ascending:true})
     .range(_page*1000,(_page+1)*1000-1);
   if(eR2||!chunk||chunk.length===0)_done=true;
@@ -909,7 +909,8 @@ raw.forEach(r=>{
     load:+r.total_player_load||0,dist:+r.total_distance||0,
     hsr:(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0),
     hsr12:+r.velocity_band3_distance||0,
-    maxV:+r.max_velocity||0,accel:+r.accel_total_efforts||0,decel:+r.decel_total_efforts||0
+    maxV:+r.max_velocity||0,accel:+r.accel_total_efforts||0,decel:+r.decel_total_efforts||0,
+    tag:r.participation_tag||null
   });
 });
 
@@ -2041,8 +2042,9 @@ function getSlruWeekActuals(suWkLabel,positions,field){
   positions.forEach(pos=>{
     const dbPos=SLRU_POS_MAP[pos]||pos;
     const posPlayers=PLAYERS.filter(p=>p.pos===dbPos);
-    const activePlayers=posPlayers.filter(p=>p.sessions.some(s=>s.wk===suWkLabel));
-    const total=posPlayers.reduce((t,p)=>t+p.sessions.filter(s=>s.wk===suWkLabel).reduce((st,s)=>st+(s[field]||0),0),0);
+    const nonRehabSessions=p=>p.sessions.filter(s=>s.wk===suWkLabel&&s.tag!=='Rehab');
+    const activePlayers=posPlayers.filter(p=>nonRehabSessions(p).length>0);
+    const total=posPlayers.reduce((t,p)=>t+nonRehabSessions(p).reduce((st,s)=>st+(s[field]||0),0),0);
     result[pos]=activePlayers.length>0?Math.round(total/activePlayers.length):null;
   });
   return result;
