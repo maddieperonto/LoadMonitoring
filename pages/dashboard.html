@@ -114,6 +114,12 @@ tbody tr:hover td{background:var(--uf-orange-pale)}
 tbody tr:last-child td{border-bottom:none}
 .sesscmp-tbl th{padding:5px 7px;font-size:8px}
 .sesscmp-tbl td{padding:5px 7px;font-size:10px}
+.sesscmp-tbl tbody tr:nth-child(odd){background:#ffffff}
+.sesscmp-tbl tbody tr:nth-child(even){background:#f8f9fb}
+.sesscmp-cell{position:relative;cursor:help}
+.sesscmp-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:4px 9px;border-radius:6px;font-size:10px;font-family:var(--font-m);white-space:nowrap;z-index:50;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.sesscmp-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1e293b}
+.sesscmp-cell:hover .sesscmp-tip{display:block}
 td.mono{font-family:var(--font-m);font-size:11px}
 td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.danger{color:#B91C1C;font-weight:600}td.acc{color:var(--uf-orange);font-weight:600}
 .roster-search{width:100%;background:var(--surface);border:1.5px solid var(--border2);color:var(--text);padding:9px 14px;border-radius:var(--r);font-family:var(--font-b);font-size:13px;margin-bottom:14px;outline:none;box-shadow:var(--shadow)}
@@ -664,6 +670,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
           <th>Accel Eff</th><th>Decel Eff</th>
         </tr></thead><tbody id="sesscmp-body-a"></tbody></table></div>
       </div>
+      <div id="sesscmp-summary-a"></div>
     </div>
     <div>
       <select class="data-sel" id="sesscmp-date-b" onchange="renderSessionCompareSide('b')" style="width:100%;margin-bottom:14px"></select>
@@ -674,6 +681,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
           <th>Accel Eff</th><th>Decel Eff</th>
         </tr></thead><tbody id="sesscmp-body-b"></tbody></table></div>
       </div>
+      <div id="sesscmp-summary-b"></div>
     </div>
   </div>
 </div>
@@ -1743,24 +1751,118 @@ function sesscmpDefaultSort(rows){
     return a.name.localeCompare(b.name);
   });
 }
-let _sesscmpRowsA=[],_sesscmpRowsB=[];
-function renderSesscmpBody(side,rows){
-  document.getElementById(`sesscmp-body-${side}`).innerHTML=rows.map(r=>`<tr>
-    <td style="font-weight:600">${r.name}</td>
-    <td>${pill('info',r.pos)}</td>
-    <td class="mono">${fmtDuration(r.dur)}</td>
-    <td class="mono">${r.pl.toFixed(1)}</td>
-    <td class="mono">${r.plMin!=null?r.plMin.toFixed(2):'—'}</td>
-    <td class="mono">${Math.round(r.dist).toLocaleString()}</td>
-    <td class="mono acc">${r.maxV.toFixed(2)}</td>
-    <td class="mono">${r.maxAccel!=null?r.maxAccel.toFixed(2):'—'}</td>
-    <td class="mono">${r.maxDecel!=null?r.maxDecel.toFixed(2):'—'}</td>
-    <td class="mono">${Math.round(r.hsd1216).toLocaleString()}</td>
-    <td class="mono">${Math.round(r.hsd16).toLocaleString()}</td>
-    <td class="mono">${r.accelEff??'—'}</td>
-    <td class="mono">${r.decelEff??'—'}</td>
-  </tr>`).join('');
+const SESSCMP_METRICS=[
+  {key:'dur',label:'Tot Dur',fmt:v=>fmtDuration(v)},
+  {key:'pl',label:'Player Load',fmt:v=>v!=null?v.toFixed(1):'—'},
+  {key:'plMin',label:'PL/Min',fmt:v=>v!=null?v.toFixed(2):'—'},
+  {key:'dist',label:'Dist (y)',fmt:v=>v!=null?Math.round(v).toLocaleString():'—'},
+  {key:'maxV',label:'Max Vel',fmt:v=>v!=null?v.toFixed(2):'—'},
+  {key:'maxAccel',label:'Max Accel',fmt:v=>v!=null?v.toFixed(2):'—'},
+  {key:'maxDecel',label:'Max Decel',fmt:v=>v!=null?v.toFixed(2):'—'},
+  {key:'hsd1216',label:'HSD 12-16',fmt:v=>v!=null?Math.round(v).toLocaleString():'—'},
+  {key:'hsd16',label:'HSD 16+',fmt:v=>v!=null?Math.round(v).toLocaleString():'—'},
+  {key:'accelEff',label:'Accel Eff',fmt:v=>v!=null?v:'—'},
+  {key:'decelEff',label:'Decel Eff',fmt:v=>v!=null?v:'—'},
+];
+function sesscmpPct(curr,other){
+  if(curr==null||other==null||other===0)return null;
+  return((curr-other)/Math.abs(other))*100;
 }
+function sesscmpPctHTML(pct){
+  if(pct==null)return`<span style="color:#94A3B8">NA</span>`;
+  const color=pct>0?'#4ADE80':pct<0?'#F87171':'#94A3B8';
+  const sign=pct>0?'+':'';
+  return`<span style="color:${color};font-weight:700">${sign}${pct.toFixed(1)}%</span>`;
+}
+function sesscmpPctInline(pct){
+  if(pct==null)return`<span style="color:var(--text3)">NA</span>`;
+  const color=pct>0?'#15803D':pct<0?'#B91C1C':'var(--text3)';
+  const sign=pct>0?'+':'';
+  return`<span style="color:${color};font-weight:700">${sign}${pct.toFixed(1)}%</span>`;
+}
+
+let _sesscmpDataA=null,_sesscmpDataB=null,_sesscmpDisplayA=[],_sesscmpDisplayB=[];
+
+function buildSesscmpData(date){
+  const dayRows=raw.filter(r=>r.session_date===date&&(r.participation_tag==null||r.participation_tag===''));
+  const byName=new Map();
+  const rowsArr=[];
+  dayRows.forEach(r=>{
+    const nm=normName(r.athlete_name);
+    const pos=lkPos(nm)||'UNK';
+    const dur=+r.total_duration||0;
+    const pl=+r.total_player_load||0;
+    const metrics={
+      name:nm,pos,
+      dur,pl,
+      plMin:dur>0?(pl/(dur/60)):null,
+      dist:+r.total_distance||0,
+      maxV:+r.max_velocity||0,
+      maxAccel:r.max_accel!=null?+r.max_accel:null,
+      maxDecel:r.max_decel!=null?+r.max_decel:null,
+      hsd1216:+r.velocity_band3_distance||0,
+      hsd16:(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0),
+      accelEff:r.accel_total_efforts??null,
+      decelEff:r.decel_total_efforts??null,
+    };
+    byName.set(nm,metrics);
+    rowsArr.push(metrics);
+  });
+  return{byName,rows:sesscmpDefaultSort(rowsArr),date};
+}
+
+function renderSesscmpBody(side,rows){
+  if(side==='a')_sesscmpDisplayA=rows; else _sesscmpDisplayB=rows;
+  const other=side==='a'?_sesscmpDataB:_sesscmpDataA;
+  document.getElementById(`sesscmp-body-${side}`).innerHTML=rows.map(r=>{
+    const otherR=other?other.byName.get(r.name):null;
+    const tds=SESSCMP_METRICS.map(m=>{
+      const val=r[m.key];
+      const pct=other&&otherR?sesscmpPct(val,otherR[m.key]):null;
+      const tip=other?`<div class="sesscmp-tip">${otherR?sesscmpPctHTML(pct):'<span style="color:#94A3B8">NA</span>'}</div>`:'';
+      return`<td class="mono sesscmp-cell">${m.fmt(val)}${tip}</td>`;
+    }).join('');
+    return`<tr>
+      <td style="font-weight:600">${r.name}</td>
+      <td>${pill('info',r.pos)}</td>
+      ${tds}
+    </tr>`;
+  }).join('');
+}
+
+function renderSesscmpSummary(side){
+  const data=side==='a'?_sesscmpDataA:_sesscmpDataB;
+  const other=side==='a'?_sesscmpDataB:_sesscmpDataA;
+  const el=document.getElementById(`sesscmp-summary-${side}`);
+  if(!data||!data.rows.length){el.innerHTML='';return;}
+  function avgFor(rowsArr,key){
+    const vals=rowsArr.map(r=>r[key]).filter(v=>v!=null);
+    if(!vals.length)return null;
+    const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
+    return Math.round(avg*100)/100;
+  }
+  const positions=[...new Set(data.rows.map(r=>r.pos))].sort((a,b)=>sesscmpUnitRank(a)-sesscmpUnitRank(b)||SESSCMP_POS_ORDER.indexOf(a)-SESSCMP_POS_ORDER.indexOf(b));
+  const rowsHTML=positions.map(pos=>{
+    const posRows=data.rows.filter(r=>r.pos===pos);
+    const otherPosRows=other?other.rows.filter(r=>r.pos===pos):null;
+    const tds=SESSCMP_METRICS.map(m=>{
+      const avg=avgFor(posRows,m.key);
+      const otherAvg=otherPosRows&&otherPosRows.length?avgFor(otherPosRows,m.key):null;
+      const pct=other?(otherPosRows&&otherPosRows.length?sesscmpPct(avg,otherAvg):null):undefined;
+      const pctSpan=other!==null?` <span style="font-size:9px">(${sesscmpPctInline(pct)})</span>`:'';
+      return`<td class="mono">${m.fmt(avg)}${pctSpan}</td>`;
+    }).join('');
+    return`<tr><td style="font-weight:700;color:var(--uf-blue)">${pos}</td><td class="mono" style="color:var(--text3)">${posRows.length}</td>${tds}</tr>`;
+  }).join('');
+  el.innerHTML=`
+    <div class="panel" style="margin-top:14px;padding:10px">
+      <div class="panel-title" style="font-size:11px"><i class="ti ti-chart-bar"></i>Position Averages</div>
+      <div class="tbl-wrap"><table class="sesscmp-tbl"><thead><tr>
+        <th>Position</th><th># Ath</th>${SESSCMP_METRICS.map(m=>`<th>${m.label}</th>`).join('')}
+      </tr></thead><tbody>${rowsHTML}</tbody></table></div>
+    </div>`;
+}
+
 window.initSessionCompare=function(){
   const dates=getSessionCompareDates();
   const selA=document.getElementById('sesscmp-date-a');
@@ -1774,41 +1876,31 @@ window.initSessionCompare=function(){
   renderSessionCompareSide('a');
   renderSessionCompareSide('b');
 };
+
 window.renderSessionCompareSide=function(side){
   const date=document.getElementById(`sesscmp-date-${side}`).value;
-  if(!date){renderSesscmpBody(side,[]);return;}
-
-  const dayRows=raw.filter(r=>r.session_date===date&&(r.participation_tag==null||r.participation_tag===''));
-
-  const built=dayRows.map(r=>{
-    const nm=normName(r.athlete_name);
-    const pos=lkPos(nm)||'UNK';
-    const dur=+r.total_duration||0;
-    const pl=+r.total_player_load||0;
-    return{
-      name:nm, pos,
-      dur, pl,
-      plMin:dur>0?(pl/(dur/60)):null,
-      dist:+r.total_distance||0,
-      maxV:+r.max_velocity||0,
-      maxAccel:r.max_accel!=null?+r.max_accel:null,
-      maxDecel:r.max_decel!=null?+r.max_decel:null,
-      hsd1216:+r.velocity_band3_distance||0,
-      hsd16:(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0),
-      accelEff:r.accel_total_efforts??null,
-      decelEff:r.decel_total_efforts??null,
-    };
-  });
-
-  const defaultSorted=sesscmpDefaultSort(built);
-  if(side==='a')_sesscmpRowsA=defaultSorted; else _sesscmpRowsB=defaultSorted;
-
-  renderSesscmpBody(side,defaultSorted);
-  makeSortableTable(`sesscmp-thead-${side}`,[
-    r=>r.name,r=>r.pos,r=>r.dur,r=>r.pl,r=>r.plMin,r=>r.dist,r=>r.maxV,r=>r.maxAccel,r=>r.maxDecel,r=>r.hsd1216,r=>r.hsd16,r=>r.accelEff,r=>r.decelEff
-  ],
-  ()=>side==='a'?_sesscmpRowsA:_sesscmpRowsB,
-  (rows)=>renderSesscmpBody(side,rows));
+  if(!date){
+    if(side==='a')_sesscmpDataA=null; else _sesscmpDataB=null;
+    renderSesscmpBody(side,[]);
+    document.getElementById(`sesscmp-summary-${side}`).innerHTML='';
+  } else {
+    const data=buildSesscmpData(date);
+    if(side==='a')_sesscmpDataA=data; else _sesscmpDataB=data;
+    renderSesscmpBody(side,data.rows);
+    makeSortableTable(`sesscmp-thead-${side}`,[
+      r=>r.name,r=>r.pos,r=>r.dur,r=>r.pl,r=>r.plMin,r=>r.dist,r=>r.maxV,r=>r.maxAccel,r=>r.maxDecel,r=>r.hsd1216,r=>r.hsd16,r=>r.accelEff,r=>r.decelEff
+    ],
+    ()=>data.rows,
+    (rows)=>renderSesscmpBody(side,rows));
+    renderSesscmpSummary(side);
+  }
+  // Refresh the OTHER side too, since its tooltips/summary % depend on this side's data
+  const otherSide=side==='a'?'b':'a';
+  const otherData=otherSide==='a'?_sesscmpDataA:_sesscmpDataB;
+  if(otherData){
+    renderSesscmpBody(otherSide,otherSide==='a'?_sesscmpDisplayA:_sesscmpDisplayB);
+    renderSesscmpSummary(otherSide);
+  }
 };
 
 // ── LOAD MONITOR ──────────────────────────────────────────────────
