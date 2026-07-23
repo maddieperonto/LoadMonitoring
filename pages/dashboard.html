@@ -500,8 +500,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div style="font-size:11px;color:var(--text3);font-family:var(--font-m)" id="lm-roster-count">— players</div>
     </div>
     <div class="lm-filter-row" id="lm-pos-filters"></div>
-    <div class="tbl-wrap"><table><thead id="lm-roster-thead"><tr><th>Player</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Spring Avg</th><th>% Spring</th><th>HSRD (m)</th><th>Total Dist (y)</th><th>Accel</th><th>Decel</th><th>Max Velo (mph)</th><th>ACWR</th><th>Zone</th></tr></thead><tbody id="lm-roster-body"></tbody></table></div>
-  </div>
+    <div class="tbl-wrap"><table><thead id="lm-roster-thead"><tr><th>Player</th><th>Pos</th><th>Unit</th><th>Player Load</th><th>Spring Avg</th><th>% Spring</th><th>HSRD (m)</th><th>Total Dist (y)</th><th>Accel</th><th>Decel</th><th>Max Velo (mph)</th><th>ACWR</th><th>Zone</th></tr></thead><tbody id="lm-roster-body"></tbody></table></div>  </div>
   <div class="lm-detail-section" id="lm-detail-section"><div class="lm-detail-card" id="lm-detail-card"></div></div>
 </div>
 
@@ -1681,7 +1680,7 @@ window.renderGPSGroup=function(){
 };
 
 // ── LOAD MONITOR ──────────────────────────────────────────────────
-let lmUnit='All',lmPos='All',lmAcwr='all',lmMetric='load',lmSelIdx=null,lmTC=null,lmAC=null,lmPC=null;
+let lmUnit='All',lmPos='All',lmAcwr='all',lmMetric='load',lmSelName=null,lmTC=null,lmAC=null,lmPC=null;
 const LMP=PLAYERS.map(p=>({...p,allLoads:p.allLMLoad,allDist:p.allLMDist,allHSR:p.allLMHSR,allAccel:p.allLMAccel,allDecel:p.allLMDecel,allVel:p.allLMVel,acwr:p.acwr4}));
 function lmFilt(){return LMP.filter(p=>{const uOK=lmUnit==='All'||p.unit===lmUnit;const pOK=lmPos==='All'||p.pos===lmPos;const z=lmZone(p.acwr);const aOK=lmAcwr==='all'||z.key===lmAcwr;return uOK&&pOK&&aOK;});}
 function renderLMMetrics(){
@@ -1757,13 +1756,21 @@ function renderLMACWR(){
   lmAC=new Chart(el2,{type:'doughnut',data:{labels:zl,datasets:[{data:counts.map(c=>c||0.001),backgroundColor:zc,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw<0.01?0:ctx.raw}`}}}}});
 }
 function renderLMPosFilters(){const pos=['All',...new Set(LMP.map(p=>p.pos))].sort();document.getElementById('lm-pos-filters').innerHTML=`<span class="lm-fl">Position:</span>`+pos.map(p=>`<button class="pos-chip${p===lmPos?' active':''}" onclick="setLMPos('${p}')">${p}</button>`).join('');}
+let _lmRosterRows=[];
+function renderLMRosterRows(fp){
+  _lmRosterRows=fp;
+  document.getElementById('lm-roster-count').textContent=`${fp.length} player${fp.length!==1?'s':''}`;
+  document.getElementById('lm-roster-body').innerHTML=fp.length?fp.map((p)=>{const z=lmZone(p.acwr);const sel=lmSelName===p.name;return`<tr style="${sel?'background:rgba(250,70,22,0.06)':''};cursor:pointer" onclick="selLMPlayer('${p.name.replace(/'/g,"\\'")}')"><td style="font-weight:600">${p.name}</td><td style="font-family:var(--font-m);color:var(--text2)">${p.pos}</td><td style="color:var(--text2)">${p.unit}</td><td style="font-family:var(--font-m)">${p.cl||'—'}</td><td style="font-family:var(--font-m);color:var(--text3)">${p.spAvg||'—'}</td><td style="font-family:var(--font-m);color:${p.spPct>=80?C.green:C.yellow}">${p.spPct||'—'}%</td><td style="font-family:var(--font-m)">${p.ch2?Math.round(p.ch2):'—'}</td><td style="font-family:var(--font-m)">${p.cd?Math.round(p.cd):'—'}</td><td style="font-family:var(--font-m)">${p.ca||'—'}</td><td style="font-family:var(--font-m)">${p.cde||'—'}</td><td style="font-family:var(--font-m);font-weight:600;color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1):'—'}</td><td style="font-family:var(--font-m)">${p.acwr||'—'}</td><td><span class="pill ${z.cls}">${z.label}</span></td></tr>`;}).join(''):`<tr><td colspan="13" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No players match filters.</td></tr>`;
+}
 function renderLMRoster(){
   const fp=lmFilt();
-  document.getElementById('lm-roster-count').textContent=`${fp.length} player${fp.length!==1?'s':''}`;
-  document.getElementById('lm-roster-body').innerHTML=fp.length?fp.map((p,i)=>{const z=lmZone(p.acwr);const sel=lmSelIdx===i;return`<tr style="${sel?'background:rgba(250,70,22,0.06)':''};cursor:pointer" onclick="selLMPlayer(${i})"><td style="font-weight:600">${p.name}</td><td style="font-family:var(--font-m);color:var(--text2)">${p.pos}</td><td style="color:var(--text2)">${p.unit}</td><td style="font-family:var(--font-m)">${p.cl||'—'}</td><td style="font-family:var(--font-m);color:var(--text3)">${p.spAvg||'—'}</td><td style="font-family:var(--font-m);color:${p.spPct>=80?C.green:C.yellow}">${p.spPct||'—'}%</td><td style="font-family:var(--font-m)">${p.ch2?Math.round(p.ch2):'—'}</td><td style="font-family:var(--font-m)">${p.cd?Math.round(p.cd):'—'}</td><td style="font-family:var(--font-m)">${p.ca||'—'}</td><td style="font-family:var(--font-m)">${p.cde||'—'}</td><td style="font-family:var(--font-m);font-weight:600;color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1):'—'}</td><td style="font-family:var(--font-m)">${p.acwr||'—'}</td><td><span class="pill ${z.cls}">${z.label}</span></td></tr>`;}).join(''):`<tr><td colspan="13" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No players match filters.</td></tr>`;
+  renderLMRosterRows(fp);
+  makeSortableTable('lm-roster-thead',[
+    r=>r.name,r=>r.pos,r=>r.unit,r=>r.cl,r=>r.spAvg,r=>r.spPct,r=>r.ch2,r=>r.cd,r=>r.ca,r=>r.cde,r=>r.cv,r=>r.acwr,r=>r.acwr
+  ],()=>lmFilt(),renderLMRosterRows);
 }
 window.setLMMetric=function(m,btn){lmMetric=m;document.querySelectorAll('.lm-chip').forEach(c=>c.classList.remove('active'));btn.classList.add('active');renderLMTeamChart();};
-window.setLMPos=function(p){lmPos=p;lmSelIdx=null;renderLMMetrics();renderLMTeamChart();renderLMACWR();renderLMPosFilters();renderLMRoster();};
+window.setLMPos=function(p){lmPos=p;lmSelName=null;renderLMMetrics();renderLMTeamChart();renderLMACWR();renderLMPosFilters();renderLMRoster();};
 function renderLMAll(){
   renderLMMetrics();
   renderLMPosFilters();
@@ -1771,10 +1778,10 @@ function renderLMAll(){
   setTimeout(()=>{renderLMTeamChart();renderLMACWR();renderSlru();},100);
 }
 window.renderLoadMonitor=renderLMAll;
-window.selLMPlayer=function(i){
-  lmSelIdx=lmSelIdx===i?null:i;renderLMRoster();
-  const fp=lmFilt();const p=fp[lmSelIdx];const sec=document.getElementById('lm-detail-section');
-  if(!p||lmSelIdx===null){sec.classList.remove('visible');return;}
+window.selLMPlayer=function(name){
+  lmSelName=lmSelName===name?null:name;renderLMRoster();
+  const p=_lmRosterRows.find(x=>x.name===name);const sec=document.getElementById('lm-detail-section');
+  if(!p||lmSelName===null){sec.classList.remove('visible');return;}
   sec.classList.add('visible');
   const z=lmZone(p.acwr);
   document.getElementById('lm-detail-card').innerHTML=`<div class="lm-dh"><div><div class="lm-dn">${p.name}</div><div class="lm-dm">${p.pos} · ${p.unit} · Spring avg: ${p.spAvg}</div></div><span class="pill ${z.cls}" style="font-size:13px;padding:5px 14px">ACWR ${p.acwr} — ${z.label}</span></div><div class="lm-detail-stats"><div class="lm-ds"><div class="dl">Player load</div><div class="dv">${p.cl||'—'}</div></div><div class="lm-ds"><div class="dl">% of spring</div><div class="dv" style="color:${p.spPct>=80?C.green:C.yellow}">${p.spPct}%</div></div><div class="lm-ds"><div class="dl">ACWR (4wk)</div><div class="dv" style="color:${z.color}">${p.acwr}</div></div><div class="lm-ds"><div class="dl">HSRD</div><div class="dv">${p.ch2?Math.round(p.ch2)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Total dist</div><div class="dv">${p.cd?Math.round(p.cd)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Max velo</div><div class="dv" style="color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1)+' mph':'—'}</div></div><div class="lm-ds"><div class="dl">Accel</div><div class="dv">${p.ca||'—'}</div></div><div class="lm-ds"><div class="dl">Decel</div><div class="dv">${p.cde||'—'}</div></div><div class="lm-ds"><div class="dl">End summer proj</div><div class="dv" style="color:${p.endSumPct>=95?C.green:p.endSumPct>=80?C.yellow:C.red}">${p.endSumPct}%</div></div><div class="lm-ds"><div class="dl">Fall W1 proj</div><div class="dv" style="color:${p.fallW1Pct>=105?C.green:p.fallW1Pct>=95?C.yellow:C.red}">${p.fallW1Pct}%</div></div></div><div style="position:relative;height:200px"><canvas id="lm-player-chart"></canvas></div>`;
