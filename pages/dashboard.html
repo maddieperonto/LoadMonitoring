@@ -120,7 +120,7 @@ tbody tr:last-child td{border-bottom:none}
 .sesscmp-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:4px 9px;border-radius:6px;font-size:10px;font-family:var(--font-m);white-space:nowrap;z-index:50;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .sesscmp-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1e293b}
 .sesscmp-cell:hover .sesscmp-tip{display:block}
-td.mono{font-family:var(--font-m);font-size:11px}
+td.pct90{background:rgba(22,163,74,.12);color:#15803D;font-weight:700}
 td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.danger{color:#B91C1C;font-weight:600}td.acc{color:var(--uf-orange);font-weight:600}
 .roster-search{width:100%;background:var(--surface);border:1.5px solid var(--border2);color:var(--text);padding:9px 14px;border-radius:var(--r);font-family:var(--font-b);font-size:13px;margin-bottom:14px;outline:none;box-shadow:var(--shadow)}
 .roster-search:focus{border-color:var(--uf-orange);box-shadow:0 0 0 3px rgba(250,70,22,.1)}
@@ -399,6 +399,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <button id="gps-btn-team" onclick="setGPSView('team')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:var(--uf-orange);color:#fff;cursor:pointer">Team</button>
       <button id="gps-btn-player" onclick="setGPSView('player')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Individual</button>
       <button id="gps-btn-group" onclick="setGPSView('group')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Position Group</button>
+      <button id="gps-btn-90" onclick="setGPSView('90')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">90%</button>
     </div>
   </div>
   <div id="gps-team-view">
@@ -466,7 +467,22 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="tbl-wrap"><table><thead id="gps-grp-roster-thead"><tr><th>Athlete</th><th>Player Load</th><th>Dist (y)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (y)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-grp-roster"></tbody></table></div>
     </div>
     <div class="panel"><div class="panel-title"><i class="ti ti-table"></i>Group Weekly GPS Summary</div>
-      <div class="tbl-wrap"><table><thead id="gps-group-table-thead"><tr><th>Week</th><th>Avg Max Vel</th><th>Avg Dist (y)</th><th>Avg A&amp;D</th><th>Avg HSR (y)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-group-table"></tbody></table></div>    </div>
+      <div class="tbl-wrap"><table><thead id="gps-group-table-thead"><tr><th>Week</th><th>Avg Max Vel</th><th>Avg Dist (y)</th><th>Avg A&amp;D</th><th>Avg HSR (y)</th><th>ACWR Dist</th><th>ACWR A&amp;D</th><th>Status</th></tr></thead><tbody id="gps-group-table"></tbody></table></div>
+    </div>
+  </div>
+  <div id="gps-90-view" style="display:none">
+    <div class="sel-row" style="margin-bottom:14px">
+      <span class="tbb info" id="gps-90-badge">—</span>
+    </div>
+    <div class="stat-row" id="gps-90-stats"></div>
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-bolt"></i>Max Velocity — % of Profile Max, by Session</div>
+      <div class="tbl-wrap">
+        <table><thead id="gps-90-thead"><tr>
+          <th>Athlete</th><th>Pos</th><th>Unit</th><th>Sessions This Wk</th><th>Best Session (mph)</th><th>Best Session Date</th><th>Profile Max (mph)</th><th>Best %</th><th>Status</th>
+        </tr></thead><tbody id="gps-90-table"></tbody></table>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -788,7 +804,7 @@ while(!_done){
   else{raw=[...raw,...chunk];if(chunk.length<1000)_done=true;_page++;}
 }
 const eR=null;
-const {data:aths}=await SB.from('athletes').select('name,position,weight_lbs');
+const {data:aths}=await SB.from('athletes').select('name,position,weight_lbs,max_velocity_mph');
 if(!raw.length){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data returned from Supabase.</div>`;throw 0;}
 
 // ── NAME NORMALIZATION ─────────────────────────────────────────────
@@ -1214,8 +1230,8 @@ window.navTo=pg=>document.querySelector(`[data-page="${pg}"]`)?.click();
 let gpsView='team';
 window.setGPSView=function(v){
   gpsView=v;
-  const viewMap={team:'gps-team-view',player:'gps-individual-view',group:'gps-group-view'};
-  ['team','player','group'].forEach(x=>{
+  const viewMap={team:'gps-team-view',player:'gps-individual-view',group:'gps-group-view','90':'gps-90-view'};
+  ['team','player','group','90'].forEach(x=>{
     const el=document.getElementById(viewMap[x]);
     if(el)el.style.display=x===v?'':'none';
     const b=document.getElementById(`gps-btn-${x}`);
@@ -1224,6 +1240,7 @@ window.setGPSView=function(v){
   if(v==='team')renderGPSTeam();
   if(v==='player'){populateGPSSel();renderGPS();}
   if(v==='group')renderGPSGroup();
+  if(v==='90')renderGPS90();
 };
 document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
   el.addEventListener('click',()=>{
@@ -1902,6 +1919,76 @@ window.renderSessionCompareSide=function(side){
     renderSesscmpSummary(otherSide);
   }
 };
+
+/// ── GPS 90% MAX VELOCITY FLAGS (resets every Sunday, per-athlete) ──────────
+let _gps90Rows=[];
+function renderGps90Rows(rows){
+  const hit=rows.filter(r=>r.hit).length;
+  document.getElementById('gps-90-stats').innerHTML=`
+    <div class="stat-card ok"><div class="sc-label">Hit 90%+ This Week</div><div class="sc-val ok">${hit}</div><div class="sc-sub">at least once</div></div>
+    <div class="stat-card danger"><div class="sc-label">Not Yet Hit</div><div class="sc-val danger">${rows.length-hit}</div><div class="sc-sub">still below 90%</div></div>
+    <div class="stat-card blue"><div class="sc-label">Total Tracked</div><div class="sc-val blue">${rows.length}</div><div class="sc-sub">with profile max + sessions this week</div></div>`;
+  document.getElementById('gps-90-table').innerHTML=rows.map(r=>{
+    const pctCls=r.hit?'pct90':'';
+    return`<tr>
+      <td style="font-weight:600;cursor:pointer;color:var(--uf-blue)" onclick="openPM('${r.name.replace(/'/g,"\\'")}');">${r.name}</td>
+      <td>${pill('info',r.pos)}</td>
+      <td style="font-size:10px;color:var(--text3)">${r.unit}</td>
+      <td class="mono">${r.sessionCount}</td>
+      <td class="mono acc">${r.bestMax.toFixed(2)}</td>
+      <td class="mono">${r.bestDate}</td>
+      <td class="mono">${r.profileMax.toFixed(2)}</td>
+      <td class="mono ${pctCls}">${r.pct!=null?r.pct.toFixed(1)+'%':'—'}</td>
+      <td>${r.hit?pill('ok','Hit 90%'):pill('danger','Not Yet')}</td>
+    </tr>`;
+  }).join('');
+}
+function getSundayWeekStart(){
+  const now=new Date();
+  const day=now.getDay(); // 0 = Sunday
+  const sunday=new Date(now.getFullYear(),now.getMonth(),now.getDate()-day);
+  sunday.setHours(0,0,0,0);
+  return sunday;
+}
+function renderGPS90(){
+  const weekStart=getSundayWeekStart();
+  const weekStartMs=weekStart.getTime();
+  const todayStr=`${weekStart.getMonth()+1}/${weekStart.getDate()}/${String(weekStart.getFullYear()).slice(2)}`;
+  document.getElementById('gps-90-badge').textContent=`Since ${todayStr}`;
+
+  const athMaxMap={};
+  (aths||[]).forEach(a=>{athMaxMap[a.name]=a.max_velocity_mph!=null?+a.max_velocity_mph:null;});
+
+  const rows=[];
+  PLAYERS.forEach(p=>{
+    const profileMax=athMaxMap[p.name]??null;
+    if(profileMax==null)return;
+    const wkSessions=p.sessions.filter(s=>{
+      const ms=dateToMs(s.date);
+      return ms!=null&&ms>=weekStartMs&&s.maxV>0;
+    });
+    if(!wkSessions.length)return;
+    const best=wkSessions.reduce((a,b)=>b.maxV>a.maxV?b:a);
+    const pct=profileMax>0?(best.maxV/profileMax*100):null;
+    rows.push({
+      name:p.name,pos:p.pos,unit:p.unit,
+      sessionCount:wkSessions.length,
+      bestMax:best.maxV,bestDate:best.date,
+      profileMax,pct,hit:pct!=null&&pct>=90
+    });
+  });
+
+  rows.sort((a,b)=>{
+    if(a.hit!==b.hit)return a.hit?1:-1;
+    return (a.pct??0)-(b.pct??0);
+  });
+
+  _gps90Rows=rows;
+  renderGps90Rows(rows);
+  makeSortableTable('gps-90-thead',[
+    r=>r.name,r=>r.pos,r=>r.unit,r=>r.sessionCount,r=>r.bestMax,r=>dateToMs(r.bestDate),r=>r.profileMax,r=>r.pct,r=>r.hit
+  ],()=>_gps90Rows,renderGps90Rows);
+}
 
 // ── LOAD MONITOR ──────────────────────────────────────────────────
 let lmUnit='All',lmPos='All',lmAcwr='all',lmMetric='load',lmSelName=null,lmTC=null,lmAC=null,lmPC=null;
