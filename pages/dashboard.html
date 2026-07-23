@@ -112,6 +112,8 @@ thead th.sort-desc::after{content:' ▼';color:var(--uf-orange);font-size:8px}
 tbody td{padding:9px 12px;font-size:12px;color:var(--text);border-bottom:1px solid var(--border);white-space:nowrap}
 tbody tr:hover td{background:var(--uf-orange-pale)}
 tbody tr:last-child td{border-bottom:none}
+.sesscmp-tbl th{padding:5px 7px;font-size:8px}
+.sesscmp-tbl td{padding:5px 7px;font-size:10px}
 td.mono{font-family:var(--font-m);font-size:11px}
 td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.danger{color:#B91C1C;font-weight:600}td.acc{color:var(--uf-orange);font-weight:600}
 .roster-search{width:100%;background:var(--surface);border:1.5px solid var(--border2);color:var(--text);padding:9px 14px;border-radius:var(--r);font-family:var(--font-b);font-size:13px;margin-bottom:14px;outline:none;box-shadow:var(--shadow)}
@@ -290,6 +292,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="nav-item" data-page="lifting"><i class="ti ti-barbell"></i>Lifting Maxes</div>
     <div class="nav-item" data-page="standards"><i class="ti ti-award"></i>Strength Standards</div>
     <div class="nav-item" data-page="leaderboards"><i class="ti ti-trophy"></i>Leaderboards</div>
+    <div class="nav-item" data-page="sessioncompare"><i class="ti ti-arrows-left-right"></i>Session Compare</div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Health &amp; Analytics</div>
@@ -649,6 +652,35 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   <div class="placeholder-state"><div class="placeholder-icon">⚖️</div><div class="placeholder-title">Body Composition</div><div class="placeholder-sub">Body weight tracking, goal weight variance, lean mass, and body fat % will appear here once the body composition data pipeline is connected.</div><div class="placeholder-badge">Automation In Progress</div></div>
 </div>
 
+<!-- SESSION COMPARE -->
+<div class="page" id="pg-sessioncompare">
+  <div class="two-col">
+    <div>
+      <select class="data-sel" id="sesscmp-date-a" onchange="renderSessionCompareSide('a')" style="width:100%;margin-bottom:14px"></select>
+      <div class="panel" style="padding:10px">
+        <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="sesscmp-thead-a"><tr>
+          <th>Athlete</th><th>Pos</th><th>Tot Dur</th><th>Player Load</th><th>PL/Min</th><th>Dist (y)</th>
+          <th>Max Vel</th><th>Max Accel</th><th>Max Decel</th><th>HSD 12-16</th><th>HSD 16+</th>
+          <th>Accel Eff</th><th>Decel Eff</th>
+        </tr></thead><tbody id="sesscmp-body-a"></tbody></table></div>
+      </div>
+    </div>
+    <div>
+      <select class="data-sel" id="sesscmp-date-b" onchange="renderSessionCompareSide('b')" style="width:100%;margin-bottom:14px"></select>
+      <div class="panel" style="padding:10px">
+        <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="sesscmp-thead-b"><tr>
+          <th>Athlete</th><th>Pos</th><th>Tot Dur</th><th>Player Load</th><th>PL/Min</th><th>Dist (y)</th>
+          <th>Max Vel</th><th>Max Accel</th><th>Max Decel</th><th>HSD 12-16</th><th>HSD 16+</th>
+          <th>Accel Eff</th><th>Decel Eff</th>
+        </tr></thead><tbody id="sesscmp-body-b"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPARE -->
+<div class="page" id="pg-compare">
+
 <!-- COMPARE -->
 <div class="page" id="pg-compare">
   <div class="sel-row" style="margin-bottom:16px">
@@ -741,7 +773,7 @@ function displayWk(wk){
 let raw=[], _page=0, _done=false;
 while(!_done){
   const {data:chunk,error:eR2}=await SB.from('catapult_sessions')
-    .select('athlete_name,session_date,total_player_load,total_distance,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts,participation_tag')
+    .select('athlete_name,session_date,total_player_load,total_distance,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts,participation_tag,total_duration,max_accel,max_decel')
     .order('session_date',{ascending:true})
     .range(_page*1000,(_page+1)*1000-1);
   if(eR2||!chunk||chunk.length===0)_done=true;
@@ -1169,7 +1201,7 @@ const tDACWR=gpsChartWks.map((_,i)=>tDACWR_daily[Math.min(i*7+6,tDACWR_daily.len
 const tAACWR=gpsChartWks.map((_,i)=>tAACWR_daily[Math.min(i*7+6,tAACWR_daily.length-1)]);
 
 // ── NAV ───────────────────────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison'};
+const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison',sessioncompare:'Session Compare'};
 window.navTo=pg=>document.querySelector(`[data-page="${pg}"]`)?.click();
 let gpsView='team';
 window.setGPSView=function(v){
@@ -1194,7 +1226,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
     document.getElementById('pg-'+pg)?.classList.add('active');
     document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
     document.getElementById('content-area').scrollTop=0;
-    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();}};
+    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},sessioncompare:initSessionCompare};
     if(map[pg])setTimeout(map[pg],60);
   });
 });
@@ -1677,6 +1709,106 @@ window.renderGPSGroup=function(){
   makeSortableTable('gps-group-table-thead',[
     r=>r.wkLabel,r=>r.amv,r=>r.dist,r=>r.accel,r=>r.hsr,r=>r.acwrD,r=>r.acwrA,r=>r.acwrD
   ],()=>_gpsGroupTableRows,renderGpsGroupTableRows);
+};
+
+// ── SESSION COMPARE ──────────────────────────────────────────────────────
+function fmtDuration(seconds){
+  if(!seconds||seconds<=0)return'—';
+  const h=Math.floor(seconds/3600);
+  const m=Math.floor((seconds%3600)/60);
+  const s=Math.floor(seconds%60);
+  return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function getSessionCompareDates(){
+  const dates=[...new Set(raw.map(r=>r.session_date))].sort((a,b)=>{
+    const[am,ad,ay]=a.split('/').map(Number);
+    const[bm,bd,by]=b.split('/').map(Number);
+    return new Date(by,bm-1,bd)-new Date(ay,am-1,ad);
+  });
+  return dates;
+}
+const SESSCMP_POS_ORDER=[...OFF,...DEF,...STS];
+function sesscmpUnitRank(pos){
+  if(OFF.includes(pos))return 0;
+  if(DEF.includes(pos))return 1;
+  if(STS.includes(pos))return 2;
+  return 3;
+}
+function sesscmpDefaultSort(rows){
+  return [...rows].sort((a,b)=>{
+    const ur=sesscmpUnitRank(a.pos)-sesscmpUnitRank(b.pos);
+    if(ur!==0)return ur;
+    const pi=SESSCMP_POS_ORDER.indexOf(a.pos)-SESSCMP_POS_ORDER.indexOf(b.pos);
+    if(pi!==0)return pi;
+    return a.name.localeCompare(b.name);
+  });
+}
+let _sesscmpRowsA=[],_sesscmpRowsB=[];
+function renderSesscmpBody(side,rows){
+  document.getElementById(`sesscmp-body-${side}`).innerHTML=rows.map(r=>`<tr>
+    <td style="font-weight:600">${r.name}</td>
+    <td>${pill('info',r.pos)}</td>
+    <td class="mono">${fmtDuration(r.dur)}</td>
+    <td class="mono">${r.pl.toFixed(1)}</td>
+    <td class="mono">${r.plMin!=null?r.plMin.toFixed(2):'—'}</td>
+    <td class="mono">${Math.round(r.dist).toLocaleString()}</td>
+    <td class="mono acc">${r.maxV.toFixed(2)}</td>
+    <td class="mono">${r.maxAccel!=null?r.maxAccel.toFixed(2):'—'}</td>
+    <td class="mono">${r.maxDecel!=null?r.maxDecel.toFixed(2):'—'}</td>
+    <td class="mono">${Math.round(r.hsd1216).toLocaleString()}</td>
+    <td class="mono">${Math.round(r.hsd16).toLocaleString()}</td>
+    <td class="mono">${r.accelEff??'—'}</td>
+    <td class="mono">${r.decelEff??'—'}</td>
+  </tr>`).join('');
+}
+window.initSessionCompare=function(){
+  const dates=getSessionCompareDates();
+  const selA=document.getElementById('sesscmp-date-a');
+  const selB=document.getElementById('sesscmp-date-b');
+  if(selA.options.length===0){
+    dates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;selA.appendChild(o);});
+    dates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;selB.appendChild(o);});
+    if(dates.length>0)selA.value=dates[0];
+    if(dates.length>1)selB.value=dates[1];
+  }
+  renderSessionCompareSide('a');
+  renderSessionCompareSide('b');
+};
+window.renderSessionCompareSide=function(side){
+  const date=document.getElementById(`sesscmp-date-${side}`).value;
+  if(!date){renderSesscmpBody(side,[]);return;}
+
+  const dayRows=raw.filter(r=>r.session_date===date&&(r.participation_tag==null||r.participation_tag===''));
+
+  const built=dayRows.map(r=>{
+    const nm=normName(r.athlete_name);
+    const pos=lkPos(nm)||'UNK';
+    const dur=+r.total_duration||0;
+    const pl=+r.total_player_load||0;
+    return{
+      name:nm, pos,
+      dur, pl,
+      plMin:dur>0?(pl/(dur/60)):null,
+      dist:+r.total_distance||0,
+      maxV:+r.max_velocity||0,
+      maxAccel:r.max_accel!=null?+r.max_accel:null,
+      maxDecel:r.max_decel!=null?+r.max_decel:null,
+      hsd1216:+r.velocity_band3_distance||0,
+      hsd16:(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0),
+      accelEff:r.accel_total_efforts??null,
+      decelEff:r.decel_total_efforts??null,
+    };
+  });
+
+  const defaultSorted=sesscmpDefaultSort(built);
+  if(side==='a')_sesscmpRowsA=defaultSorted; else _sesscmpRowsB=defaultSorted;
+
+  renderSesscmpBody(side,defaultSorted);
+  makeSortableTable(`sesscmp-thead-${side}`,[
+    r=>r.name,r=>r.pos,r=>r.dur,r=>r.pl,r=>r.plMin,r=>r.dist,r=>r.maxV,r=>r.maxAccel,r=>r.maxDecel,r=>r.hsd1216,r=>r.hsd16,r=>r.accelEff,r=>r.decelEff
+  ],
+  ()=>side==='a'?_sesscmpRowsA:_sesscmpRowsB,
+  (rows)=>renderSesscmpBody(side,rows));
 };
 
 // ── LOAD MONITOR ──────────────────────────────────────────────────
