@@ -961,6 +961,8 @@ const GPS_ROSTER = new Set([
 
 // ── POSITION LOOKUP ───────────────────────────────────────────────
 const OFF=['QB','WR','RB','TE','OL'],DEF=['DL','LB','ILB','EDGE','CB','S'],STS=['K','P','ST'];
+const athMaxVelMap={};
+(aths||[]).forEach(a=>{athMaxVelMap[a.name]=a.max_velocity_mph!=null?+a.max_velocity_mph:null;});
 const PM={},UM={};
 (aths||[]).forEach(a=>{
   PM[a.name.toLowerCase()]=a.position;
@@ -1375,7 +1377,7 @@ function filterRoster(q=''){
   document.getElementById('roster-grid').innerHTML=allRoster.map(a=>{
     const p=PLAYERS.find(x=>x.name===a.name);
     const acwr=p?p.latD:0;
-    const maxV=p?p.latMaxV:0;
+    const maxV=athMaxVelMap[a.name]??0;
     const flagCount=valdFlagCount30(a.name);
     const st=p?acwrSt(acwr):{cls:'info',lbl:'No Data'};
     return`<div class="roster-card" onclick="openRosterAthlete('${a.name.replace(/'/g,"\\'")}')">
@@ -2958,7 +2960,8 @@ window.openPM=function(name){
   document.getElementById('pm-risk-label').textContent=p.risk.toUpperCase()+' RISK';
   document.getElementById('pm-risk-label').style.color=rc;
   document.getElementById('pm-flags').innerHTML=p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('');
-  document.getElementById('pm-grid').innerHTML=`<div class="pm-stat"><div class="pm-stat-lbl">ACWR — Distance</div><div class="pm-stat-val ${ds.cls==='ok'?'ok':ds.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">ACWR — Accel/Decel</div><div class="pm-stat-val ${as2.cls==='ok'?'ok':as2.cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Max Velocity</div><div class="pm-stat-val acc">${p.latMaxV>0?p.latMaxV.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Total HSR (y)</div><div class="pm-stat-val blue">${p.totalHSR>0?Math.round(p.totalHSR).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Latest Distance</div><div class="pm-stat-val">${p.latest?Math.round(p.latest.dist).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Sessions</div><div class="pm-stat-val">${p.sessions.length}</div></div>`;
+  const profileMaxV=athMaxVelMap[p.name];
+  document.getElementById('pm-grid').innerHTML=`<div class="pm-stat"><div class="pm-stat-lbl">ACWR — Distance</div><div class="pm-stat-val ${ds.cls==='ok'?'ok':ds.cls==='warn'?'warn':'danger'}">${p.latD>0?p.latD.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">ACWR — Accel/Decel</div><div class="pm-stat-val ${as2.cls==='ok'?'ok':as2.cls==='warn'?'warn':'danger'}">${p.latA>0?p.latA.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Max Velocity</div><div class="pm-stat-val acc">${profileMaxV!=null?profileMaxV.toFixed(2):'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Total HSR (y)</div><div class="pm-stat-val blue">${p.totalHSR>0?Math.round(p.totalHSR).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Latest Distance</div><div class="pm-stat-val">${p.latest?Math.round(p.latest.dist).toLocaleString():'—'}</div></div><div class="pm-stat"><div class="pm-stat-lbl">Sessions</div><div class="pm-stat-val">${p.sessions.length}</div></div>`;
   document.getElementById('pm-overlay').classList.add('open');
 };
 window.closePM=function(e,force=false){if(force||e?.target===e?.currentTarget)document.getElementById('pm-overlay').classList.remove('open');};
