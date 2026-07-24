@@ -95,7 +95,7 @@ a{color:inherit;text-decoration:none}button{cursor:pointer;font-family:var(--fon
 .panel-title i{font-size:15px;color:var(--uf-orange)}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .chart-wrap{position:relative;width:100%}
-.h160{height:160px}.h180{height:180px}.h200{height:200px}.h220{height:220px}.h240{height:240px}.h260{height:260px}.h280{height:280px}
+.h160{height:160px}.h180{height:180px}.h200{height:200px}.h220{height:220px}.h240{height:240px}.h260{height:260px}.h280{height:280px}.h320{height:320px}
 .pill{font-family:var(--font-d);font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.3px;white-space:nowrap}
 .pill.ok{background:rgba(22,163,74,.08);color:#15803D;border:1px solid rgba(22,163,74,.2)}
 .pill.warn{background:rgba(217,119,6,.08);color:#92400E;border:1px solid rgba(217,119,6,.2)}
@@ -299,6 +299,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="nav-item" data-page="standards"><i class="ti ti-award"></i>Strength Standards</div>
     <div class="nav-item" data-page="leaderboards"><i class="ti ti-trophy"></i>Leaderboards</div>
     <div class="nav-item" data-page="sessioncompare"><i class="ti ti-arrows-left-right"></i>Session Compare</div>
+    <div class="nav-item" data-page="periodbreakdown"><i class="ti ti-chart-histogram"></i>Period Breakdown</div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Health &amp; Analytics</div>
@@ -701,6 +702,35 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     </div>
   </div>
 </div>
+
+<!-- PERIOD BREAKDOWN -->
+<div class="page" id="pg-periodbreakdown">
+  <div class="sel-row" style="margin-bottom:16px">
+    <select class="data-sel" id="periodbd-date-sel" onchange="renderPeriodBreakdown()" style="min-width:200px"></select>
+    <select class="data-sel" id="periodbd-pos-sel" onchange="renderPeriodBreakdown()" style="min-width:200px"></select>
+  </div>
+  <div class="lm-phase-tags" style="margin-bottom:10px">
+    <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#0F1923;display:inline-block;border-radius:2px"></span>Player Load</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:12px;height:12px;background:#CBD5E1;display:inline-block;border-radius:2px"></span>Period Duration</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#16A34A;display:inline-block"></span>Intensity (Load/Min)</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#DC2626;display:inline-block"></span>Max Velocity</span>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="periodbd-chart-title"><i class="ti ti-chart-bar"></i>Period Breakdown</div>
+    <div class="chart-wrap h320"><canvas id="periodbd-chart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title"><i class="ti ti-table"></i>Session Summary — Filtered Athletes</div>
+    <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="periodbd-summary-thead"><tr>
+      <th>Athlete</th><th>Pos</th><th>Tot Dur</th><th>Player Load</th><th>PL/Min</th><th>Dist (y)</th>
+      <th>Max Vel</th><th>Max Accel</th><th>Max Decel</th><th>HSD 12-16</th><th>HSD 16+</th>
+      <th>Accel Eff</th><th>Decel Eff</th>
+    </tr></thead><tbody id="periodbd-summary-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- COMPARE -->
+<div class="page" id="pg-compare">
 
 <!-- COMPARE -->
 <div class="page" id="pg-compare">
@@ -1225,8 +1255,7 @@ const tDACWR=gpsChartWks.map((_,i)=>tDACWR_daily[Math.min(i*7+6,tDACWR_daily.len
 const tAACWR=gpsChartWks.map((_,i)=>tAACWR_daily[Math.min(i*7+6,tAACWR_daily.length-1)]);
 
 // ── NAV ───────────────────────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison',sessioncompare:'Session Compare'};
-window.navTo=pg=>document.querySelector(`[data-page="${pg}"]`)?.click();
+const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison',sessioncompare:'Session Compare',periodbreakdown:'Period Breakdown'};window.navTo=pg=>document.querySelector(`[data-page="${pg}"]`)?.click();
 let gpsView='team';
 window.setGPSView=function(v){
   gpsView=v;
@@ -1251,7 +1280,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
     document.getElementById('pg-'+pg)?.classList.add('active');
     document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
     document.getElementById('content-area').scrollTop=0;
-    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},sessioncompare:initSessionCompare};
+    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},sessioncompare:initSessionCompare,periodbreakdown:initPeriodBreakdown};
     if(map[pg])setTimeout(map[pg],60);
   });
 });
@@ -1801,7 +1830,7 @@ function sesscmpPctInline(pct){
 let _sesscmpDataA=null,_sesscmpDataB=null,_sesscmpDisplayA=[],_sesscmpDisplayB=[];
 
 function buildSesscmpData(date){
-  const dayRows=raw.filter(r=>r.session_date===date&&(r.participation_tag==null||r.participation_tag===''));
+  const dayRows=raw.filter(r=>r.session_date===date&&r.participation_tag!=='Rehab');
   const byName=new Map();
   const rowsArr=[];
   dayRows.forEach(r=>{
@@ -1989,6 +2018,176 @@ function renderGPS90(){
     r=>r.name,r=>r.pos,r=>r.unit,r=>r.sessionCount,r=>r.bestMax,r=>dateToMs(r.bestDate),r=>r.profileMax,r=>r.pct,r=>r.hit
   ],()=>_gps90Rows,renderGps90Rows);
 }
+
+// ── PERIOD BREAKDOWN ──────────────────────────────────────────────────────
+function hhmmssToMinutes(t){
+  if(!t)return null;
+  const parts=t.split(':').map(Number);
+  if(parts.length<2)return null;
+  return parts[0]*60+parts[1]+(parts[2]||0)/60;
+}
+const PERIODBD_POS_LABELS={QB:'Quarterbacks',RB:'Running Backs',WR:'Wide Receivers',TE:'Tight Ends',OL:'Offensive Line',DL:'Defensive Line',EDGE:'Edge Rushers',LB:'Linebackers',ILB:'Inside Linebackers',CB:'Cornerbacks',S:'Safeties',ST:'Special Teams'};
+let _periodBdChart=null;
+window.initPeriodBreakdown=function(){
+  const selD=document.getElementById('periodbd-date-sel');
+  const selP=document.getElementById('periodbd-pos-sel');
+  if(selD.options.length===0){
+    const dates=getSessionCompareDates();
+    dates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;selD.appendChild(o);});
+    if(dates.length>0)selD.value=dates[0];
+  }
+  if(selP.options.length===0){
+    const posOrder=['WR','RB','QB','TE','OL','CB','SAF','ILB','OLB','DL'];
+    posOrder.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;selP.appendChild(o);});
+  }
+  renderPeriodBreakdown();
+};
+window.renderPeriodBreakdown=async function(){
+  const date=document.getElementById('periodbd-date-sel').value;
+  const pos=document.getElementById('periodbd-pos-sel').value;
+  if(!date||!pos)return;
+
+  document.getElementById('periodbd-chart-title').innerHTML=`<i class="ti ti-chart-bar"></i>${pos} — Period Breakdown — ${date}`;
+
+  const {data:periodRows,error}=await SB.from('catapult_period_stats')
+    .select('athlete_name,period_id,period_name,start_time_h,end_time_h,total_player_load,max_velocity')
+    .eq('session_date',date);
+
+  if(error||!periodRows){
+    document.getElementById('periodbd-summary-body').innerHTML=`<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text3)">Error loading data.</td></tr>`;
+    if(_periodBdChart){_periodBdChart.destroy();_periodBdChart=null;}
+    return;
+  }
+
+  const dbPos=SLRU_POS_MAP[pos]||pos;
+  const posFiltered=periodRows.filter(r=>lkPos(normName(r.athlete_name))===dbPos&&!(r.period_name||'').toLowerCase().includes('auto created period'));
+
+  const periods={};
+  posFiltered.forEach(r=>{
+    if(!periods[r.period_id]){
+      periods[r.period_id]={period_name:r.period_name,start_time_h:r.start_time_h,end_time_h:r.end_time_h,loads:[],vels:[]};
+    }
+    const p=periods[r.period_id];
+    if(r.total_player_load!=null)p.loads.push(+r.total_player_load);
+    if(r.max_velocity!=null)p.vels.push(+r.max_velocity);
+  });
+
+  const periodList=Object.values(periods).sort((a,b)=>(a.start_time_h||'').localeCompare(b.start_time_h||''));
+
+  if(_periodBdChart){_periodBdChart.destroy();_periodBdChart=null;}
+  const el=document.getElementById('periodbd-chart');
+
+  if(!periodList.length){
+    if(el){const ctx=el.getContext('2d');ctx.clearRect(0,0,el.width,el.height);}
+  } else {
+    const labels=periodList.map(p=>p.period_name);
+    const durations=periodList.map(p=>{
+      const s=hhmmssToMinutes(p.start_time_h),e=hhmmssToMinutes(p.end_time_h);
+      return(s!=null&&e!=null)?Math.max(0,e-s):null;
+    });
+    const loads=periodList.map(p=>p.loads.length?p.loads.reduce((a,b)=>a+b,0)/p.loads.length:null);
+    const vels=periodList.map(p=>p.vels.length?p.vels.reduce((a,b)=>a+b,0)/p.vels.length:null);
+    const intensity=periodList.map((p,i)=>{
+      const d=durations[i],l=loads[i];
+      return(d&&d>0&&l!=null)?l/d:null;
+    });
+
+    _periodBdChart=new Chart(el,{
+      data:{
+        labels,
+        datasets:[
+          {type:'line',label:'Duration (min)',data:durations,yAxisID:'yDur',fill:true,backgroundColor:'rgba(203,213,225,0.55)',borderColor:'rgba(203,213,225,0.8)',borderWidth:1,pointRadius:0,tension:.3,order:3},
+          {type:'bar',label:'Player Load',data:loads,yAxisID:'yLoad',backgroundColor:'#0F1923',borderRadius:3,order:2,barPercentage:.55},
+          {type:'line',label:'Intensity (Load/Min)',data:intensity,yAxisID:'yInt',borderColor:'#16A34A',backgroundColor:'#16A34A',pointRadius:3,pointBackgroundColor:'#16A34A',borderWidth:2,tension:.3,order:1},
+          {type:'line',label:'Max Velocity (mph)',data:vels,yAxisID:'yVel',borderColor:'#DC2626',backgroundColor:'#DC2626',pointRadius:3,pointBackgroundColor:'#DC2626',borderWidth:2,tension:.3,order:0},
+        ]
+      },
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:ctx=>{
+            const v=ctx.raw;
+            if(v==null)return`${ctx.dataset.label}: —`;
+            return`${ctx.dataset.label}: ${v.toFixed(2)}`;
+          }}}
+        },
+        scales:{
+          x:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:50,minRotation:30,autoSkip:false},grid:{display:false}},
+          yDur:{display:false,beginAtZero:true},
+          yLoad:{display:false,beginAtZero:true},
+          yInt:{display:false,beginAtZero:true},
+          yVel:{display:false,beginAtZero:true},
+        }
+      }
+    });
+  }
+
+ // ── Summary table: whole-session totals for this position on this date ──
+  const dayRows=raw.filter(r=>r.session_date===date&&r.participation_tag!=='Rehab');
+  const summaryRows=dayRows
+    .map(r=>{
+      const nm=normName(r.athlete_name);
+      const rPos=lkPos(nm)||'UNK';
+      if(rPos!==dbPos)return null;
+      const dur=+r.total_duration||0;
+      const pl=+r.total_player_load||0;
+      return{
+        name:nm,pos:rPos,
+        dur,pl,
+        plMin:dur>0?(pl/(dur/60)):null,
+        dist:+r.total_distance||0,
+        maxV:+r.max_velocity||0,
+        maxAccel:r.max_accel!=null?+r.max_accel:null,
+        maxDecel:r.max_decel!=null?+r.max_decel:null,
+        hsd1216:+r.velocity_band3_distance||0,
+        hsd16:(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0),
+        accelEff:r.accel_total_efforts??null,
+        decelEff:r.decel_total_efforts??null,
+      };
+    })
+    .filter(Boolean)
+    .sort((a,b)=>a.name.localeCompare(b.name));
+
+  document.getElementById('periodbd-summary-body').innerHTML=summaryRows.length
+    ? summaryRows.map(r=>`<tr>
+        <td style="font-weight:600">${r.name}</td>
+        <td>${pill('info',r.pos)}</td>
+        <td class="mono">${fmtDuration(r.dur)}</td>
+        <td class="mono">${r.pl.toFixed(1)}</td>
+        <td class="mono">${r.plMin!=null?r.plMin.toFixed(2):'—'}</td>
+        <td class="mono">${Math.round(r.dist).toLocaleString()}</td>
+        <td class="mono acc">${r.maxV.toFixed(2)}</td>
+        <td class="mono">${r.maxAccel!=null?r.maxAccel.toFixed(2):'—'}</td>
+        <td class="mono">${r.maxDecel!=null?r.maxDecel.toFixed(2):'—'}</td>
+        <td class="mono">${Math.round(r.hsd1216).toLocaleString()}</td>
+        <td class="mono">${Math.round(r.hsd16).toLocaleString()}</td>
+        <td class="mono">${r.accelEff??'—'}</td>
+        <td class="mono">${r.decelEff??'—'}</td>
+      </tr>`).join('')
+    : `<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text3)">No session data for this position on this date.</td></tr>`;
+
+  makeSortableTable('periodbd-summary-thead',[
+    r=>r.name,r=>r.pos,r=>r.dur,r=>r.pl,r=>r.plMin,r=>r.dist,r=>r.maxV,r=>r.maxAccel,r=>r.maxDecel,r=>r.hsd1216,r=>r.hsd16,r=>r.accelEff,r=>r.decelEff
+  ],()=>summaryRows,(rows)=>{
+    document.getElementById('periodbd-summary-body').innerHTML=rows.map(r=>`<tr>
+      <td style="font-weight:600">${r.name}</td>
+      <td>${pill('info',r.pos)}</td>
+      <td class="mono">${fmtDuration(r.dur)}</td>
+      <td class="mono">${r.pl.toFixed(1)}</td>
+      <td class="mono">${r.plMin!=null?r.plMin.toFixed(2):'—'}</td>
+      <td class="mono">${Math.round(r.dist).toLocaleString()}</td>
+      <td class="mono acc">${r.maxV.toFixed(2)}</td>
+      <td class="mono">${r.maxAccel!=null?r.maxAccel.toFixed(2):'—'}</td>
+      <td class="mono">${r.maxDecel!=null?r.maxDecel.toFixed(2):'—'}</td>
+      <td class="mono">${Math.round(r.hsd1216).toLocaleString()}</td>
+      <td class="mono">${Math.round(r.hsd16).toLocaleString()}</td>
+      <td class="mono">${r.accelEff??'—'}</td>
+      <td class="mono">${r.decelEff??'—'}</td>
+    </tr>`).join('');
+  });
+};
 
 // ── LOAD MONITOR ──────────────────────────────────────────────────
 let lmUnit='All',lmPos='All',lmAcwr='all',lmMetric='load',lmSelName=null,lmTC=null,lmAC=null,lmPC=null;
