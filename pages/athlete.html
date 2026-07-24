@@ -200,7 +200,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <div class="panel-title" style="margin-bottom:8px"><i class="ti ti-history"></i>Last 5 Sessions</div>
         <div class="tbl-wrap">
           <table><thead><tr>
-            <th>Date</th><th>Player Load</th><th>Distance (m)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (m)</th>
+            <th>Date</th><th>Player Load</th><th>Distance (y)</th><th>Max Vel (mph)</th><th>Accel</th><th>Decel</th><th>HSR (y)</th>
           </tr></thead><tbody id="athlete-recent-sessions"></tbody></table>
         </div>
       </div>
@@ -273,7 +273,7 @@ if (athleteRow) document.getElementById('sidebar-pos').textContent = athleteRow.
 
 // Fetch GPS sessions for this athlete (current year)
 const { data: sessions } = await SB.from('catapult_sessions')
-  .select('session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_b2_3_efforts,decel_b2_3_efforts')
+  .select('session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts')
   .ilike('athlete_name', athleteName)
   .gte('session_date', '01/01/2026')
   .order('session_date', { ascending: false });
@@ -306,11 +306,11 @@ function renderSession() {
   const hsr = (+s.velocity_band4_distance||0) + (+s.velocity_band5_distance||0);
   document.getElementById('session-stats').innerHTML = `
     <div class="stat-card acc"><div class="sc-label">Player Load</div><div class="sc-val acc">${(+s.total_player_load||0).toFixed(0)}</div><div class="sc-sub">arbitrary units</div></div>
-    <div class="stat-card blue"><div class="sc-label">Total Distance</div><div class="sc-val blue">${Math.round(+s.total_distance||0).toLocaleString()}</div><div class="sc-sub">meters</div></div>
-    <div class="stat-card ok"><div class="sc-label">High Speed Distance</div><div class="sc-val ok">${Math.round(hsr).toLocaleString()}</div><div class="sc-sub">meters (12+ mph)</div></div>
+    <div class="stat-card blue"><div class="sc-label">Total Distance</div><div class="sc-val blue">${Math.round(+s.total_distance||0).toLocaleString()}</div><div class="sc-sub">yards</div></div>
+    <div class="stat-card ok"><div class="sc-label">High Speed Distance</div><div class="sc-val ok">${Math.round(hsr).toLocaleString()}</div><div class="sc-sub">yards (12+ mph)</div></div>
     <div class="stat-card info"><div class="sc-label">Max Velocity</div><div class="sc-val info">${(+s.max_velocity||0).toFixed(2)}</div><div class="sc-sub">mph</div></div>
-    <div class="stat-card warn"><div class="sc-label">Accel Efforts</div><div class="sc-val warn">${+s.accel_b2_3_efforts||0}</div><div class="sc-sub">efforts</div></div>
-    <div class="stat-card purple"><div class="sc-label">Decel Efforts</div><div class="sc-val purple">${+s.decel_b2_3_efforts||0}</div><div class="sc-sub">efforts</div></div>
+    <div class="stat-card warn"><div class="sc-label">Accel Efforts</div><div class="sc-val warn">${+s.accel_total_efforts||0}</div><div class="sc-sub">efforts</div></div>
+    <div class="stat-card purple"><div class="sc-label">Decel Efforts</div><div class="sc-val purple">${+s.decel_total_efforts||0}</div><div class="sc-sub">efforts</div></div>
   `;
 }
 
@@ -322,8 +322,8 @@ document.getElementById('athlete-recent-sessions').innerHTML = sortedSessions.sl
     <td class="mono">${(+s.total_player_load||0).toFixed(1)}</td>
     <td class="mono">${Math.round(+s.total_distance||0).toLocaleString()}</td>
     <td class="mono acc">${(+s.max_velocity||0).toFixed(2)}</td>
-    <td class="mono">${+s.accel_b2_3_efforts||0}</td>
-    <td class="mono">${+s.decel_b2_3_efforts||0}</td>
+    <td class="mono">${+s.accel_total_efforts||0}</td>
+    <td class="mono">${+s.decel_total_efforts||0}</td>
     <td class="mono">${Math.round(hsr).toLocaleString()}</td>
   </tr>`;
 }).join('');
