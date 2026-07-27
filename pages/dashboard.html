@@ -2879,7 +2879,7 @@ window.addEventListener('afterprint',()=>{
 
 // ── LEADERBOARDS ────────────────────────────────────────────────── 
 const LB_CATS=[
-  {id:'maxvel',lbl:'Max Velocity (All Time)',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},
+  {id:'maxvel',lbl:'Max Velocity',fn:p=>p.latMaxV>0?p.latMaxV:null,fmt:v=>v.toFixed(2)+' mph'},
   {id:'nordbord',lbl:'NordBord Max Force',fn:p=>{const n=nordData.find(r=>r.athlete_name===p.name);return n?Math.max(n.left_peak_force_n||0,n.right_peak_force_n||0):null;},fmt:v=>v.toFixed(1)+' N'},
   {id:'cmjjh',lbl:'CMJ Jump Height',fn:p=>{const c=cmjData.find(r=>r.athlete_name===p.name);return c?.jump_height_cm??null;},fmt:v=>(v/2.54).toFixed(2)+'"'},
   {id:'bench',lbl:'Bench Press',fn:p=>null,fmt:v=>v+' lbs'},
