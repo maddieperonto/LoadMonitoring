@@ -1117,7 +1117,8 @@ const PLAYERS=Object.values(byPFiltered).map(p=>{
   const aACWR=playerDailyACWR(p.sessions,'accel',DAILY_DAYS);
   const latD=rollingACWR(p.sessions,'dist',TODAY_MS);
   const latA=rollingACWR(p.sessions,'accel',TODAY_MS);
-  const latMaxV=[...p.sessions].reverse().find(s=>s.maxV>0)?.maxV??0;
+  const allMaxVs=p.sessions.map(s=>s.maxV).filter(v=>v>0&&v<=25);
+ const latMaxV=allMaxVs.length?Math.max(...allMaxVs):0;
   const latest=[...p.sessions].sort((a,b)=>{
     const [am,ad,ay]=a.date.split('/').map(Number);
     const [bm,bd,by]=b.date.split('/').map(Number);
@@ -2905,7 +2906,7 @@ window.renderLeaderboards=function(){
     })
   })).map(p=>({
     ...p,
-    latMaxV:[...p.sessions].reverse().find(s=>s.maxV>0)?.maxV??0,
+    latMaxV:(()=>{const vs=p.sessions.map(s=>s.maxV).filter(v=>v>0&&v<=25);return vs.length?Math.max(...vs):0;})(),
   }));
 
   document.getElementById('lb-tabs').innerHTML=LB_CATS.map(c=>`<div class="lb-tab ${c.id===lbActive.id?'active':''}" onclick="setLBCat('${c.id}')">${c.lbl}</div>`).join('');
