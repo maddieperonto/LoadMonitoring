@@ -12,6 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
 <style>
 :root{
   --uf-orange:#FA4616;--uf-blue:#003087;
@@ -125,6 +126,13 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 .roster-search{width:100%;background:var(--surface);border:1.5px solid var(--border2);color:var(--text);padding:9px 14px;border-radius:var(--r);font-family:var(--font-b);font-size:13px;margin-bottom:14px;outline:none;box-shadow:var(--shadow)}
 .roster-search:focus{border-color:var(--uf-orange);box-shadow:0 0 0 3px rgba(250,70,22,.1)}
 .roster-search::placeholder{color:var(--text3)}
+.rpp-slider-wrap{position:relative;height:34px;margin:6px 0 4px}
+.rpp-slider-wrap input[type=range]{position:absolute;top:12px;left:0;width:100%;margin:0;pointer-events:none;-webkit-appearance:none;appearance:none;background:transparent;height:4px}
+.rpp-slider-wrap input[type=range]::-webkit-slider-runnable-track{height:4px;background:transparent}
+.rpp-slider-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;pointer-events:auto;width:16px;height:16px;border-radius:50%;background:var(--uf-orange);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:pointer;margin-top:-6px}
+.rpp-slider-wrap input[type=range]::-moz-range-thumb{pointer-events:auto;width:16px;height:16px;border-radius:50%;background:var(--uf-orange);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:pointer}
+.rpp-slider-track{position:absolute;top:16px;left:0;right:0;height:4px;background:var(--surface3);border-radius:3px}
+.rpp-slider-fill{position:absolute;top:16px;height:4px;background:var(--uf-orange);border-radius:3px;opacity:.5}
 .roster-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .roster-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:18px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
 .roster-card:hover{border-color:var(--uf-orange);box-shadow:0 4px 12px rgba(250,70,22,.12);transform:translateY(-1px)}
@@ -537,6 +545,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <button id="vald-btn-ind" onclick="setVALDView('individual')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:var(--uf-orange);color:#fff;cursor:pointer">Individual</button>
       <button id="vald-btn-grp" onclick="setVALDView('group')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Position Group</button>
       <button id="vald-btn-flags" onclick="setVALDView('flags')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Flags</button>
+      <button id="vald-btn-rpp" onclick="setVALDView('rpp')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Relative Peak Power</button>
     </div>
   </div>
 
@@ -620,6 +629,37 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
           <th>Athlete</th><th>Flag Type</th><th>Value</th><th>Test Date</th>
         </tr></thead><tbody id="vald-flags-table"></tbody></table>
       </div>
+    </div>
+  </div>
+  <div id="vald-rpp-view" style="display:none">
+    <div class="sel-row" style="margin-bottom:14px">
+      <select class="data-sel" id="rpp-athlete-sel" onchange="onRppAthleteChange()" style="min-width:220px"></select>
+    </div>
+    <div id="rpp-athlete-name" style="font-family:var(--font-d);font-size:28px;font-weight:800;color:var(--text);margin-bottom:14px"></div>
+    <div class="panel" style="margin-bottom:14px">
+      <div class="panel-title" style="border:none;padding:0;margin-bottom:10px"><i class="ti ti-calendar"></i>Date Range</div>
+      <div style="display:flex;gap:14px;align-items:center;margin-bottom:8px">
+        <input type="date" id="rpp-date-from" class="data-sel" style="min-width:160px" onchange="onRppDateInputChange()">
+        <span style="color:var(--text3);font-family:var(--font-m);font-size:11px">to</span>
+        <input type="date" id="rpp-date-to" class="data-sel" style="min-width:160px" onchange="onRppDateInputChange()">
+      </div>
+      <div class="rpp-slider-wrap">
+        <div class="rpp-slider-track"></div>
+        <div class="rpp-slider-fill" id="rpp-slider-fill"></div>
+        <input type="range" id="rpp-slider-from" min="0" max="0" value="0" oninput="onRppSliderChange()">
+        <input type="range" id="rpp-slider-to" min="0" max="0" value="0" oninput="onRppSliderChange()">
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-chart-line"></i>Relative Peak Power Over Time</div>
+      <div class="zone-legend" style="margin-bottom:10px">
+        <div class="zl"><div class="zl-dot" style="background:#0F1923"></div>Max Relative Peak Power</div>
+        <div class="zl"><div class="zl-dot" style="background:var(--uf-orange)"></div>Bodyweight (lbs)</div>
+        <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Athlete Mean</div>
+        <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1 SD</div>
+        <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2 SD</div>
+      </div>
+      <div class="chart-wrap h320"><canvas id="rpp-chart"></canvas></div>
     </div>
   </div>
 
@@ -2309,19 +2349,21 @@ window.setVALDView=function(v){
   document.getElementById('vald-individual-view').style.display=v==='individual'?'':'none';
   document.getElementById('vald-group-view').style.display=v==='group'?'':'none';
   document.getElementById('vald-flags-view').style.display=v==='flags'?'':'none';
-  const bi=document.getElementById('vald-btn-ind'),bg=document.getElementById('vald-btn-grp'),bf=document.getElementById('vald-btn-flags');
+  document.getElementById('vald-rpp-view').style.display=v==='rpp'?'':'none';
+  const bi=document.getElementById('vald-btn-ind'),bg=document.getElementById('vald-btn-grp'),bf=document.getElementById('vald-btn-flags'),br=document.getElementById('vald-btn-rpp');
   bi.style.background=v==='individual'?'var(--uf-orange)':'transparent';bi.style.color=v==='individual'?'#fff':'var(--text3)';
   bg.style.background=v==='group'?'var(--uf-orange)':'transparent';bg.style.color=v==='group'?'#fff':'var(--text3)';
   bf.style.background=v==='flags'?'var(--uf-orange)':'transparent';bf.style.color=v==='flags'?'#fff':'var(--text3)';
+  br.style.background=v==='rpp'?'var(--uf-orange)':'transparent';br.style.color=v==='rpp'?'#fff':'var(--text3)';
   if(v==='individual')renderVALDIndividual();
   if(v==='group')renderVALDGroup();
   if(v==='flags')renderVALDFlags();
+  if(v==='rpp')initRppPage();
 };
 
 async function loadVALD(){
   const [{data:cmj},{data:nord}]=await Promise.all([
-  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_decel_rfd_bm,force_at_zero_velocity_n,relative_peak_power_w_bm,countermovement_depth_cm').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)  
-  ]);
+  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_decel_rfd_bm,force_at_zero_velocity_n,relative_peak_power_w_bm,countermovement_depth_cm,bodyweight_kg').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)  ]);
   cmjData=(cmj||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
   nordData=(nord||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
 
@@ -2526,6 +2568,172 @@ window.renderVALDFlags=function(){
         <td class="mono">${f.date}</td>
       </tr>`).join('')
     :'<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No flags match this date range.</td></tr>';
+};
+
+// ── RELATIVE PEAK POWER ──────────────────────────────────────────────────
+let _rppAllDates=[],_rppDateStats=new Map(),_rppMean=0,_rppStd=0;
+
+function rppBuildAthleteSeries(name){
+  const rows=cmjData.filter(r=>r.athlete_name===name&&r.relative_peak_power_w_bm!=null);
+  const byDate={};
+  rows.forEach(r=>{
+    if(!byDate[r.test_date])byDate[r.test_date]={powers:[],weights:[]};
+    byDate[r.test_date].powers.push(+r.relative_peak_power_w_bm);
+    if(r.bodyweight_kg!=null)byDate[r.test_date].weights.push(+r.bodyweight_kg);
+  });
+  const dates=Object.keys(byDate).sort();
+  const stats=new Map();
+  dates.forEach(d=>{
+    const p=byDate[d].powers,w=byDate[d].weights;
+    const maxPower=p.length?Math.max(...p):null;
+    const avgWeightKg=w.length?w.reduce((a,b)=>a+b,0)/w.length:null;
+    stats.set(d,{avgPower:maxPower,avgWeightLbs:avgWeightKg!=null?avgWeightKg*2.20462:null});
+  });
+  return{dates,stats};
+}
+
+window.onRppAthleteChange=function(){
+  const name=document.getElementById('rpp-athlete-sel').value;
+  if(!name)return;
+  document.getElementById('rpp-athlete-name').textContent=name;
+  const{dates,stats}=rppBuildAthleteSeries(name);
+  _rppAllDates=dates;
+  _rppDateStats=stats;
+
+  const powers=dates.map(d=>stats.get(d).avgPower).filter(v=>v!=null);
+  _rppMean=powers.length?powers.reduce((a,b)=>a+b,0)/powers.length:0;
+  _rppStd=powers.length?Math.sqrt(powers.reduce((a,b)=>a+(b-_rppMean)**2,0)/powers.length):0;
+
+  const fromSlider=document.getElementById('rpp-slider-from');
+  const toSlider=document.getElementById('rpp-slider-to');
+  fromSlider.min=0;fromSlider.max=Math.max(0,dates.length-1);fromSlider.value=0;
+  toSlider.min=0;toSlider.max=Math.max(0,dates.length-1);toSlider.value=Math.max(0,dates.length-1);
+
+  if(dates.length){
+    document.getElementById('rpp-date-from').value=dates[0];
+    document.getElementById('rpp-date-to').value=dates[dates.length-1];
+  }
+  updateRppSliderFill();
+  renderRppChart();
+};
+
+window.onRppSliderChange=function(){
+  const fromSlider=document.getElementById('rpp-slider-from');
+  const toSlider=document.getElementById('rpp-slider-to');
+  let fi=+fromSlider.value,ti=+toSlider.value;
+  if(fi>ti){[fi,ti]=[ti,fi];fromSlider.value=fi;toSlider.value=ti;}
+  if(_rppAllDates[fi])document.getElementById('rpp-date-from').value=_rppAllDates[fi];
+  if(_rppAllDates[ti])document.getElementById('rpp-date-to').value=_rppAllDates[ti];
+  updateRppSliderFill();
+  renderRppChart();
+};
+
+window.onRppDateInputChange=function(){
+  const fromVal=document.getElementById('rpp-date-from').value;
+  const toVal=document.getElementById('rpp-date-to').value;
+  let fi=_rppAllDates.findIndex(d=>d>=fromVal);
+  if(fi<0)fi=0;
+  let ti=_rppAllDates.length-1;
+  for(let i=_rppAllDates.length-1;i>=0;i--){if(_rppAllDates[i]<=toVal){ti=i;break;}}
+  if(ti<fi)ti=fi;
+  document.getElementById('rpp-slider-from').value=fi;
+  document.getElementById('rpp-slider-to').value=ti;
+  updateRppSliderFill();
+  renderRppChart();
+};
+
+function updateRppSliderFill(){
+  const fromSlider=document.getElementById('rpp-slider-from');
+  const toSlider=document.getElementById('rpp-slider-to');
+  const max=+fromSlider.max||1;
+  const fromPct=max>0?(+fromSlider.value/max*100):0;
+  const toPct=max>0?(+toSlider.value/max*100):100;
+  const fill=document.getElementById('rpp-slider-fill');
+  fill.style.left=fromPct+'%';
+  fill.style.width=Math.max(0,toPct-fromPct)+'%';
+}
+
+const rppBandsPlugin = {
+  id: 'rppBands',
+  beforeDatasetsDraw(chart, args, opts) {
+    const {ctx, chartArea, scales} = chart;
+    if(!chartArea) return;
+    const yScale = scales.yPow;
+    if(!yScale) return;
+    const {mean, std, axisMin, axisMax} = opts;
+    const zones = [
+      [mean-3*std, mean-2*std, 'rgba(220,38,38,.15)'],
+      [mean-2*std, mean-1*std, 'rgba(217,119,6,.15)'],
+      [mean+1*std, mean+2*std, 'rgba(217,119,6,.15)'],
+      [mean+2*std, mean+3*std, 'rgba(220,38,38,.15)'],
+    ];
+    ctx.save();
+    zones.forEach(([lo,hi,color])=>{
+      const loC=Math.max(axisMin,Math.min(axisMax,lo));
+      const hiC=Math.max(axisMin,Math.min(axisMax,hi));
+      if(hiC<=loC) return;
+      const yTop=yScale.getPixelForValue(hiC);
+      const yBottom=yScale.getPixelForValue(loC);
+      ctx.fillStyle=color;
+      ctx.fillRect(chartArea.left, yTop, chartArea.right-chartArea.left, yBottom-yTop);
+    });
+    ctx.restore();
+  }
+};
+
+function renderRppChart(){
+  const fi=+document.getElementById('rpp-slider-from').value;
+  const ti=+document.getElementById('rpp-slider-to').value;
+  const displayDates=_rppAllDates.slice(fi,ti+1);
+
+  const powerSeries=displayDates.map(d=>_rppDateStats.get(d).avgPower);
+  const weightSeries=displayDates.map(d=>_rppDateStats.get(d).avgWeightLbs);
+
+  const mean=_rppMean,std=_rppStd;
+  const axisMin=30,axisMax=95;
+  const n=displayDates.length;
+
+  const el=document.getElementById('rpp-chart');if(!el)return;
+
+  mk('rpp-chart',{
+    plugins:[rppBandsPlugin,ChartDataLabels],
+    data:{
+      labels:displayDates,
+      datasets:[
+        {type:'line',label:'Mean',data:Array(n).fill(mean),yAxisID:'yPow',borderColor:'#94A3B8',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,order:2,datalabels:{display:false}},
+        {type:'bar',label:'Max Relative Peak Power',data:powerSeries,yAxisID:'yPow',backgroundColor:'#0F1923',borderRadius:3,order:3,datalabels:{anchor:'end',align:'top',color:'#0F1923',font:{size:18,family:'DM Mono'},formatter:v=>v!=null?v.toFixed(1):''}},
+        {type:'line',label:'Bodyweight (lbs)',data:weightSeries,yAxisID:'yBW',borderColor:C.acc,backgroundColor:C.acc,pointRadius:3,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5,tension:.25,fill:false,spanGaps:true,order:1,datalabels:{anchor:'end',align:'bottom',color:C.acc,font:{size:18,family:'DM Mono'},formatter:v=>v!=null?v.toFixed(1):''}},      
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        rppBands:{mean,std,axisMin,axisMax},
+        tooltip:{filter:ctx=>ctx.dataset.label!=='Mean',
+          callbacks:{label:ctx=>{
+            const v=ctx.raw;
+            return v!=null?`${ctx.dataset.label}: ${v.toFixed(2)}`:null;
+          }}}
+      },
+      scales:{
+        x:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:45,autoSkip:true},grid:{color:C.grid}},
+        yPow:{position:'left',min:axisMin,max:axisMax,ticks:{stepSize:5,color:C.tick,font:{size:10}},grid:{color:C.grid},title:{display:true,text:'Relative Peak Power (W/kg)',color:C.tick,font:{size:10}}},
+        yBW:{position:'right',ticks:{color:C.tick,font:{size:10}},grid:{display:false},title:{display:true,text:'Bodyweight (lbs)',color:C.tick,font:{size:10}}},
+      }
+    }
+  });}
+
+
+
+window.initRppPage=function(){
+  const sel=document.getElementById('rpp-athlete-sel');
+  if(sel.options.length===0){
+    const names=[...new Set(cmjData.map(r=>r.athlete_name))].filter(n=>rosterNames.has(n)).sort();
+    names.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
+  }
+  if(sel.value)onRppAthleteChange();
 };
 
 function renderValdGrpRows(rows){
