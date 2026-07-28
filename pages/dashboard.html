@@ -2701,8 +2701,8 @@ function renderRppChart(){
       labels:displayDates,
       datasets:[
         {type:'line',label:'Mean',data:Array(n).fill(mean),yAxisID:'yPow',borderColor:'#94A3B8',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,order:2,datalabels:{display:false}},
-        {type:'bar',label:'Max Relative Peak Power',data:powerSeries,yAxisID:'yPow',backgroundColor:'#0F1923',borderRadius:3,order:3,datalabels:{anchor:'end',align:'top',color:'#0F1923',font:{size:18,family:'DM Mono'},formatter:v=>v!=null?v.toFixed(1):''}},
-        {type:'line',label:'Bodyweight (lbs)',data:weightSeries,yAxisID:'yBW',borderColor:C.acc,backgroundColor:C.acc,pointRadius:3,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5,tension:.25,fill:false,spanGaps:true,order:1,datalabels:{anchor:'end',align:'bottom',color:C.acc,font:{size:18,family:'DM Mono'},formatter:v=>v!=null?v.toFixed(1):''}},      
+        {type:'bar',label:'Max Relative Peak Power',data:powerSeries,yAxisID:'yPow',backgroundColor:'#0F1923',borderRadius:3,order:3,datalabels:{anchor:'end',align:'top',color:'#0F1923',font:{size:14,family:'DM Mono',weight:'bold',style:'italic'},formatter:v=>v!=null?v.toFixed(1):''}},
+        {type:'line',label:'Bodyweight (lbs)',data:weightSeries,yAxisID:'yBW',borderColor:C.acc,backgroundColor:C.acc,pointRadius:3,pointBackgroundColor:C.acc,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5,tension:.25,fill:false,spanGaps:true,order:1,datalabels:{anchor:'end',align:'bottom',color:C.acc,font:{size:14,family:'DM Mono',weight:'bold',style:'italic'},formatter:v=>v!=null?v.toFixed(1):''}},
       ]
     },
     options:{
