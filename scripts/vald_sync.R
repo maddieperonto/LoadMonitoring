@@ -236,6 +236,7 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
           athlete_name                       = fd_df$athlete_name[i],
           test_date                          = fd_df$test_date[i],
           trial_number                       = t,
+          bodyweight_kg                      = as.numeric(fd_df$weight[i]),
           jump_height_cm                     = get_metric_from_trial(res, c("jump height (imp-mom)")),
           peak_force_n                       = get_metric_from_trial(res, c("peak force")),
           peak_power_w                       = get_metric_from_trial(res, c("peak power / bm", "peak power")),
