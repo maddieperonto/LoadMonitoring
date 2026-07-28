@@ -1,398 +1,210 @@
-# UF S&C Dashboard
+# UF Football S&C Load Monitoring Dashboard
 
-A real-time sport science dashboard for the University of Florida Division I Football
-Strength & Conditioning staff. Built on Supabase (database + hosting) and GitHub (code).
+A real-time sport science dashboard for the University of Florida Football
+Strength & Conditioning staff, tracking GPS load (Catapult), force plate/strength
+testing (VALD), and derived metrics (ACWR, load ramp-up, leaderboards, session
+comparisons, period/drill breakdowns) for the full roster.
+
+> **Note:** An earlier version of this README described a different, planned
+> architecture (Supabase Storage hosting, R "go-live" import scripts, role-based
+> auth). That plan was superseded by what's documented below — this file now
+> reflects the system as it actually runs in production.
 
 ---
 
-## What This System Does
+## Live System
 
-| Page | Who Can Access | Purpose |
-|---|---|---|
-| `index.html` | Head Coach, S&C Staff | Command Center — KPIs, flags, squad heatmap |
-| `load_management.html` | S&C Staff | GPS load, ACWR, monotony, strain, RPE entry |
-| `cmj.html` | S&C Staff | ForceDeck CMJ readiness, trends, asymmetry |
-| `nordbord.html` | S&C Staff, Athletic Trainer | Hamstring symmetry, RTP tracker |
-| `injury_risk.html` | S&C Staff, Athletic Trainer | Composite risk ranking, drill-down |
-| `roster.html` | S&C Staff, Athletic Trainer | Athlete profiles, full history modal |
-| `login.html` | Everyone | Supabase Auth login |
+- **Dashboard**: deployed via Vercel, auto-deploys from `main` on every push
+- **Staff view**: `pages/dashboard.html`
+- **Athlete-facing view**: `pages/athlete.html`
+
+---
+
+## Architecture
+
+| Layer | Technology |
+|---|---|
+| Frontend | Single-file vanilla HTML/CSS/JS per page, no build step |
+| Charts | Chart.js 4.4 via CDN |
+| Hosting | Vercel, auto-deploy from GitHub `main` branch |
+| Database | Supabase Postgres |
+| Backend logic | Supabase Edge Functions (Deno/TypeScript) + `pg_cron` scheduling |
+| GPS pipeline | Catapult OpenField → webhook → Supabase Edge Function |
+| Force/strength pipeline | VALD ForceDecks/NordBord → nightly R script via GitHub Actions |
+| Auth | Username-based login via Supabase (not Supabase's role-based auth system) |
 
 ---
 
 ## File Structure
 
 ```
-uf-sc-dashboard/
+LoadMonitoring/
 ├── pages/
-│   ├── index.html
-│   ├── load_management.html
-│   ├── cmj.html
-│   ├── nordbord.html
-│   ├── injury_risk.html
-│   ├── roster.html
-│   └── login.html
+│   ├── dashboard.html      ← Main staff dashboard (single large file: HTML+CSS+JS)
+│   └── athlete.html        ← Athlete-facing login/view
 ├── scripts/
-│   ├── supabase_client.js       ← Supabase connection (edit your credentials here)
-│   ├── auth.js                  ← Session checking, navbar, role guards
-│   ├── catapult_to_supabase.R   ← Run at go-live to import Catapult GPS exports
-│   ├── forcedeck_to_supabase.R  ← Run at go-live to import ForceDeck CMJ exports
-│   └── nordbord_to_supabase.R   ← Run at go-live to import NordBord exports
-├── data-imports/                ← Create this folder; drop device CSVs here at go-live
-│   ├── catapult/
-│   ├── forcedeck/
-│   └── nordbord/
-├── seed_data.sql                ← Simulated data for demos (wipe before go-live)
-├── README.md                    ← This file
-└── DATA_SOURCES.md              ← Database schema reference
+│   ├── vald_sync.R                    ← Nightly VALD sync (runs via GitHub Actions)
+│   ├── vald_backfill_metrics.R        ← One-off historical VALD metric backfill
+│   └── create_athletes.mjs            ← Admin script for creating athlete accounts
+├── .github/workflows/
+│   └── vald-sync.yml       ← Nightly cron trigger for vald_sync.R
+└── README.md                ← This file
 ```
 
----
-
-## Part 1 — Supabase Project Setup (One Time)
-
-### 1.1 Create a Supabase Project
-
-1. Go to [supabase.com](https://supabase.com) and sign in
-2. Click **New Project**
-3. Choose your organization, name the project `uf-sc-dashboard`
-4. Set a strong database password (save it somewhere safe — you won't need it often)
-5. Select region: **US East (N. Virginia)** — closest to Gainesville
-6. Click **Create new project** and wait ~2 minutes for provisioning
+**Note:** Supabase Edge Functions (the Catapult integration) live in the Supabase
+dashboard under Edge Functions — they are **not** stored in this GitHub repo.
+See "Supabase Edge Functions" below for what exists and what each one does.
 
 ---
 
-### 1.2 Run the Database Seed Script
+## Supabase Edge Functions
 
-This creates all 6 tables, Row Level Security policies, and populates the database
-with simulated data for 85 athletes.
+These are managed directly in the Supabase dashboard (Project → Edge Functions), not in Git.
 
-1. In your Supabase project, click **SQL Editor** in the left sidebar
-2. Click **New query**
-3. Open `seed_data.sql` from your project folder
-4. Select all the content (Ctrl+A / Cmd+A) and paste it into the editor
-5. Click **Run** (or press Ctrl+Enter)
-6. You should see: `Success. No rows returned`
-
-**Verify it worked:**
-- Click **Table Editor** in the left sidebar
-- You should see 6 tables: `athletes`, `gps_sessions`, `cmj_tests`,
-  `nordbord_tests`, `flags`, `profiles`
-- Click `athletes` — you should see 85 rows
-
----
-
-### 1.3 Get Your API Credentials
-
-1. Click **Project Settings** (gear icon) in the left sidebar
-2. Click **API**
-3. Copy two values:
-   - **Project URL** — looks like `https://xxxxxxxxxxxx.supabase.co`
-   - **anon public** key — a long JWT string starting with `eyJ...`
-
-4. Open `scripts/supabase_client.js` in VS Code and replace the placeholders:
-
-```js
-const SUPABASE_URL      = 'https://xxxxxxxxxxxx.supabase.co';   // ← paste here
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp...'; // ← paste here
-```
-
----
-
-## Part 2 — Create Test User Accounts (One Time)
-
-The dashboard uses Supabase Auth for login. You need to create user accounts manually
-in the Supabase dashboard, then link them to roles in the `profiles` table.
-
-### 2.1 Create Users in Supabase Auth
-
-1. In your Supabase project, click **Authentication** in the left sidebar
-2. Click **Users**
-3. Click **Add user** → **Create new user**
-4. Create three accounts:
-
-| Email | Password | Role |
+| Function | Purpose | Trigger |
 |---|---|---|
-| `coach@ufl.edu` | `UFCoach2025!` | head_coach |
-| `scstaff@ufl.edu` | `UFStrength2025!` | sc_staff |
-| `trainer@ufl.edu` | `UFTrainer2025!` | athletic_trainer |
+| `catapult-webhook` | **Core GPS sync.** Fires on every Catapult activity update. Writes to `catapult_sessions` and `catapult_period_stats`. Captures participation tags. Filters out Catapult's auto-created junk activities (named `Activity <digits>`). | Catapult webhook subscription |
+| `catapult-athlete-profiles-sync` | Pulls each athlete's profile max velocity from Catapult `/athletes`, writes to `athletes.max_velocity_mph` and `athletes.catapult_athlete_id`. | `pg_cron`, nightly |
+| `catapult-diagnostic` | Debug/inspection tool for testing Catapult API responses directly. Not part of the live pipeline. | Manual only |
+| `catapult-sessions-recheck` | Re-pulls fresh stats for existing activities into a separate comparison table (`catapult_sessions_recheck`), used to catch/diagnose sessions that synced with incomplete data. | Manual only |
+| `catapult-period-backfill` | One-time historical backfill of `catapult_period_stats`. Already run. | Manual only |
+| `catapult-tag-backfill` | One-time historical backfill of `catapult_sessions.participation_tag`. Already run. | Manual only |
 
-> **Note:** These are demo credentials. For real staff accounts use proper
-> passwords and real email addresses. Staff can reset their own passwords
-> via Supabase Auth if needed.
-
-### 2.2 Get the UUIDs
-
-After creating each user:
-1. Click on the user's row in the Auth → Users table
-2. Copy the **UUID** shown at the top (looks like `a1b2c3d4-e5f6-...`)
-3. Repeat for all three users
-
-### 2.3 Insert Profiles with Roles
-
-1. Go to **SQL Editor** → **New query**
-2. Paste this SQL, replacing the UUIDs with the ones you just copied:
-
+To check `pg_cron` job status/history:
 ```sql
-INSERT INTO public.profiles (id, full_name, role) VALUES
-  ('paste-coach-uuid-here',   'Coach Billy Napier',  'head_coach'),
-  ('paste-scstaff-uuid-here', 'Dr. Sarah Mitchell',  'sc_staff'),
-  ('paste-trainer-uuid-here', 'Marcus Thompson ATC', 'athletic_trainer');
-```
-
-3. Click **Run**
-4. Verify: click **Table Editor** → `profiles` — you should see 3 rows
-
----
-
-## Part 3 — Local Testing with VS Code Live Server
-
-You do not need to deploy anything to test the dashboard. Use VS Code's
-Live Server extension to run everything locally against your live Supabase project.
-
-### 3.1 Install Live Server
-
-1. Open VS Code
-2. Click the Extensions icon (or press Ctrl+Shift+X)
-3. Search for **Live Server** by Ritwick Dey
-4. Click Install
-
-### 3.2 Run the Dashboard
-
-1. Open your `uf-sc-dashboard` folder in VS Code:
-   - File → Open Folder → select `uf-sc-dashboard`
-2. Right-click `pages/login.html` in the Explorer panel
-3. Click **Open with Live Server**
-4. Your browser opens at `http://127.0.0.1:5500/pages/login.html`
-5. Log in with `scstaff@ufl.edu` / `UFStrength2025!`
-
-> **Why Live Server?** Opening HTML files directly (double-clicking them)
-> uses the `file://` protocol which blocks ES module imports. Live Server
-> runs a local HTTP server so JavaScript modules load correctly.
-
----
-
-## Part 4 — Deploy to Supabase Storage (Go Live)
-
-When you're ready to make the dashboard accessible to coaches without
-VS Code, host the HTML files in Supabase Storage.
-
-### 4.1 Create a Storage Bucket
-
-1. In Supabase, click **Storage** in the left sidebar
-2. Click **New bucket**
-3. Name it: `dashboard`
-4. Check **Public bucket** (so files are accessible via URL)
-5. Click **Save**
-
-### 4.2 Upload HTML and JS Files
-
-Upload these files maintaining the folder structure:
-
-```
-pages/login.html
-pages/index.html
-pages/load_management.html
-pages/cmj.html
-pages/nordbord.html
-pages/injury_risk.html
-pages/roster.html
-scripts/supabase_client.js
-scripts/auth.js
-```
-
-**To upload:**
-1. Click into the `dashboard` bucket
-2. Create a `pages` folder: click **New folder** → type `pages`
-3. Click into `pages`, then **Upload files** → select all HTML files
-4. Go back to bucket root, create a `scripts` folder
-5. Upload `supabase_client.js` and `auth.js` into `scripts`
-
-### 4.3 Get the Public URL
-
-1. Click on any uploaded file
-2. Click **Get URL** — it will look like:
-   `https://xxxxxxxxxxxx.supabase.co/storage/v1/object/public/dashboard/pages/login.html`
-3. Share the `login.html` URL with your staff — that's their entry point
-
-> **Important:** After uploading to Storage, the path references in `auth.js`
-> (`/pages/`, `/scripts/`) may need to become full Supabase Storage URLs.
-> The simplest fix is to use relative paths (`../scripts/supabase_client.js`)
-> which work correctly in both Live Server and Supabase Storage.
-
----
-
-## Part 5 — GitHub Integration (After Go-Live)
-
-Link GitHub to auto-deploy file changes to Supabase Storage instead of
-uploading manually every time.
-
-### 5.1 When to Do This
-
-Set this up after you have confirmed the dashboard works end-to-end in
-Supabase Storage. Do not set it up during the testing phase.
-
-### 5.2 GitHub Action for Auto-Deploy
-
-Create this file in your repo: `.github/workflows/deploy.yml`
-
-```yaml
-name: Deploy to Supabase Storage
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'pages/**'
-      - 'scripts/supabase_client.js'
-      - 'scripts/auth.js'
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Supabase CLI
-        run: npm install -g supabase
-
-      - name: Upload pages to Storage
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_ID:   ${{ secrets.SUPABASE_PROJECT_ID }}
-        run: |
-          supabase storage cp pages/ ss:///dashboard/pages/ \
-            --project-ref $SUPABASE_PROJECT_ID --recursive
-          supabase storage cp scripts/supabase_client.js ss:///dashboard/scripts/ \
-            --project-ref $SUPABASE_PROJECT_ID
-          supabase storage cp scripts/auth.js ss:///dashboard/scripts/ \
-            --project-ref $SUPABASE_PROJECT_ID
-```
-
-Add these GitHub repository secrets (Settings → Secrets → Actions):
-- `SUPABASE_ACCESS_TOKEN` — from Supabase Account Settings → Access Tokens
-- `SUPABASE_PROJECT_ID` — the short ID from your Supabase project URL
-
-After this is set up, every `git push` to `main` automatically updates
-the live dashboard.
-
----
-
-## Part 6 — Going Live with Real Data
-
-When you are ready to replace simulated data with real device exports:
-
-### 6.1 Wipe the Simulated Data
-
-Run this in the Supabase SQL Editor:
-
-```sql
--- Remove all simulated data (keeps table structure and RLS policies intact)
-TRUNCATE flags, nordbord_tests, cmj_tests, gps_sessions, athletes CASCADE;
-```
-
-> **Warning:** This permanently deletes all current data. Only run this
-> when you are ready to switch to real data.
-
-### 6.2 Add Your Real Roster
-
-Option A — Supabase Table Editor (recommended for first import):
-1. Go to Table Editor → `athletes`
-2. Click **Insert row** for each athlete
-3. Fill in: name, jersey_number, position, class_year, height_in, weight_lbs, status
-
-Option B — Create a roster CSV and use an R script similar to the device
-import scripts to bulk insert (see DATA_SOURCES.md for the column format).
-
-### 6.3 Run the R Import Scripts
-
-After each practice or testing session:
-
-1. Export CSV from your device software
-2. Drop the file into the appropriate `data-imports/` subfolder
-3. Open the matching R script in RStudio
-4. Update the `CSV_PATH` to point to your new file
-5. Run with `DRY_RUN <- TRUE` first — review the console output
-6. Set `DRY_RUN <- FALSE` and run again to insert
-
-See the comments at the top of each R script for device-specific export
-instructions.
-
-### 6.4 Install R Packages (One Time)
-
-Run this in the RStudio console before using any import script:
-
-```r
-install.packages(c("httr2", "readr", "dplyr", "stringr", "lubridate"))
+select * from cron.job;
+select * from cron.job_run_details order by start_time desc limit 10;
 ```
 
 ---
 
-## Role Permissions Reference
+## Key Database Tables
 
-| Feature | head_coach | sc_staff | athletic_trainer |
-|---|---|---|---|
-| Command Center (`index.html`) | ✅ | ✅ | ❌ |
-| Load Management | ❌ | ✅ | ❌ |
-| CMJ Data | ❌ | ✅ | ❌ |
-| NordBord | ❌ | ✅ | ✅ |
-| Injury Risk | ❌ | ✅ | ✅ |
-| Roster | ❌ | ✅ | ✅ |
-| CSV Export buttons | ❌ | ✅ | ❌ |
-| RPE Entry | ❌ | ✅ | ❌ |
-
----
-
-## Troubleshooting
-
-**Login does nothing / page goes blank**
-- You are opening the HTML file directly (double-click). Use Live Server instead.
-- Check browser console (F12) for errors.
-
-**"Failed to load data" error on any page**
-- Open `scripts/supabase_client.js` and verify your URL and anon key are correct.
-- Go to Supabase → Authentication → Policies and confirm RLS policies exist on all tables.
-
-**Athletes not matching in R scripts**
-- Check for spelling differences between the device export and the `athletes` table.
-- The scripts print unmatched names to the console — fix the spelling in one place.
-
-**Charts not rendering**
-- Check browser console for JavaScript errors.
-- Confirm Chart.js CDN loaded (requires internet connection).
-
-**Auth redirect loops**
-- Clear browser cookies and local storage for `127.0.0.1`.
-- In Supabase → Authentication → URL Configuration, add `http://127.0.0.1:5500`
-  to the allowed redirect URLs list.
-
----
-
-## Technology Stack
-
-| Layer | Technology |
+| Table | Contents |
 |---|---|
-| Database | Supabase Postgres |
-| Auth | Supabase Auth (email/password) |
-| Hosting | Supabase Storage (or local via Live Server) |
-| Frontend | Vanilla HTML + CSS + JavaScript (ES Modules) |
-| Charts | Chart.js 4.4 via CDN |
-| Icons | Lucide Icons via CDN |
-| Fonts | Google Fonts (Inter, Barlow Condensed) |
-| Data pipeline | R (httr2, readr, dplyr) |
-| Code editor | VS Code + Live Server extension |
+| `athletes` | Roster. Includes `catapult_athlete_id`, `max_velocity_mph` (synced nightly) |
+| `catapult_sessions` | GPS session totals per athlete per activity. Includes `participation_tag` (e.g. `'Full'`, `'Rehab'`) |
+| `catapult_period_stats` | Per-athlete, per-drill/period breakdown within each practice session |
+| `cmj_tests` | VALD ForceDecks CMJ jump testing data |
+| `nordbord_tests` | VALD NordBord hamstring testing data |
+| `catapult_sessions_recheck` | One-time comparison table, not used by the live dashboard |
+
+**Important:** `session_date` is stored as **text** (`MM/DD/YYYY`), not a real date
+column. Any SQL sorting/filtering by date must use `to_date(session_date, 'MM/DD/YYYY')`
+or it will sort alphabetically instead of chronologically.
 
 ---
 
-## Key Contacts / Ownership
+## Secrets / Environment Variables
 
-| Role | Responsibility |
-|---|---|
-| S&C Staff | Daily data exports, RPE entry, flag review |
-| Athletic Trainer | NordBord testing, RTP monitoring |
-| Dashboard Admin | User account management, R script execution |
-| Developer | Code changes, Supabase schema updates |
+Secrets live in **two separate places** and must be kept in sync manually — there is
+no automatic sharing between them:
+
+1. **GitHub** (Settings → Secrets and variables → Actions) — used by `vald-sync.yml`
+2. **Supabase** (Project Settings → Edge Functions → Secrets) — used by all Edge Functions
+
+| Secret | Used by | Notes |
+|---|---|---|
+| `CATAPULT_BASE_URL` | Edge Functions | e.g. `https://connect-us.catapultsports.com/api/v6` |
+| `CATAPULT_API_TOKEN` | Edge Functions | Generated in OpenField Cloud → Settings → API Tokens. Must have full scope (Summary Data, Sensor Data, Activities, Athletes, Tags, etc.) |
+| `VALD_CLIENT_ID` / `VALD_CLIENT_PASSWORD` / `VALD_DUENDE_ID` | GitHub Actions (`vald_sync.R`) | OAuth client credentials for VALD's API |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` | Edge Functions | Server-side Supabase access |
+| `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` | GitHub Actions | Same purpose, different secret store |
+
+**Secret values cannot be viewed again once saved** — only rotated. If a token needs
+regenerating, it must be recreated from scratch with the provider (Catapult/VALD) and
+updated in both places above.
 
 ---
 
-*UF Football Strength & Conditioning — Internal Use Only*
-*Data source documentation: see DATA_SOURCES.md*
+## Known Quirks & Gotchas
+
+1. **GitHub Actions cannot successfully call Catapult's `/athletes` endpoint** — it
+   returns a persistent 401 even with a correct token, likely due to IP allowlisting
+   on Catapult's side. Supabase Edge Functions work fine for the identical call. Any
+   new Catapult integration should be built as a Supabase Edge Function, not a GitHub
+   Actions/R script.
+
+2. **Catapult's `velocity_max` field (profile max velocity) is returned in meters/second**,
+   not mph. Multiply by `2.23694` to match what OpenField's own UI shows.
+
+3. **Catapult sometimes auto-creates junk "activities"** (default name pattern:
+   `Activity <digits>`) when a unit is powered on but not assigned to a tracked
+   period. `catapult-webhook` filters these out by name pattern before syncing —
+   if this starts happening under a different naming convention, the filter in
+   `catapult-webhook` will need updating.
+
+4. **Catapult webhook events can fire multiple times per activity** as stats get
+   recalculated, but can also **stop firing before a session finishes processing**,
+   leaving partial/incomplete data synced. There's no automatic re-check for this —
+   `catapult-sessions-recheck` exists as a manual tool to re-pull and compare if
+   numbers look wrong for a specific date.
+
+5. **Athlete names differ across systems** (Catapult, VALD, the `athletes` table) —
+   e.g. "Ace Ciongoli" in Catapult = "Austin Ciongoli" in Supabase. Every sync script
+   has a `NAME_MAP` object handling known mismatches. When a name doesn't match, it
+   logs as "unmatched" — check sync logs periodically, especially after roster changes,
+   and add new mappings as needed.
+
+6. **Participation tags**: athletes tagged `Rehab` in Catapult's Activity Editor are
+   captured into `catapult_sessions.participation_tag`. Load Monitor and Session
+   Compare pages exclude `Rehab`-tagged rows from averages to match what Catapult's
+   own reports show.
+
+7. **New tables need explicit Row Level Security (RLS) policies**, or the dashboard's
+   anon key silently returns zero rows (no error thrown). Copy this pattern for any
+   new table:
+   ```sql
+   alter table [new_table] enable row level security;
+   create policy "Service role full access" on [new_table] for all using (true);
+   create policy "Authenticated users can read [new_table]" on [new_table] for select using (true);
+   ```
+
+8. **Supabase queries cap at 1000 rows by default.** Scripts/functions pulling large
+   tables must paginate with `.range()` or will silently undercount.
+
+9. **Vercel's auto-deploy from GitHub occasionally fails silently** with no new
+   deployment triggered. Fix: `git commit --allow-empty -m "Trigger Vercel redeploy" && git push`.
+
+10. **`GPS_ROSTER`** — a hardcoded JS array inside `dashboard.html` — controls which
+    athletes appear in GPS-related views. This needs manual updates when the roster
+    changes; it does not automatically sync from the `athletes` table.
+
+---
+
+## Local Development / Testing
+
+No build step or bundler — these are static files. To test locally with a live
+connection to the real Supabase project:
+
+```bash
+cd pages
+python3 -m http.server 8000
+```
+
+Then open `http://localhost:8000/dashboard.html` in your browser. Edits to the file
+take effect on refresh — no server restart needed. Push to `main` when ready to deploy.
+
+---
+
+## Ongoing Maintenance
+
+- **When the roster changes**: update `GPS_ROSTER` in `dashboard.html`, and check
+  `NAME_MAP` objects in `vald_sync.R` and the `catapult-athlete-profiles-sync` Edge
+  Function for new name mismatches.
+- **Check sync logs periodically** (Supabase Edge Function logs, GitHub Actions run
+  history) for unmatched-name warnings or failed syncs.
+- **Catapult API tokens may expire** — check OpenField Cloud → Settings → API Tokens.
+
+---
+
+## Support Contacts
+
+- **Catapult support**: prior ticket history with Amber Miller / Alahna Mild / Aaron
+  Catapult Sports support — useful reference for the `/athletes` 401 issue and any
+  future account-level module/scope questions.
+- **VALD support**: contact via VALD's standard support channel.
+
+---
+
+*University of Florida Football Strength & Conditioning — Internal Use Only*
