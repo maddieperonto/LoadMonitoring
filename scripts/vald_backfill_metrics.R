@@ -192,7 +192,7 @@ cmj_trial_rows <- lapply(seq_len(nrow(fd_df)), function(i) {
       athlete_name                       = fd_df$athlete_name[i],
       test_date                          = fd_df$test_date[i],
       trial_number                       = t,
-      jump_height_cm                     = get_metric_from_trial(res, c("jump height (flight time)")),
+      jump_height_cm                     = get_metric_from_trial(res, c("jump height (imp-mom)")),
       peak_force_n                       = get_metric_from_trial(res, c("peak force")),
       peak_power_w                       = get_metric_from_trial(res, c("peak power / bm", "peak power")),
       rsi_modified                       = get_metric_from_trial(res, c("rsi-modified", "rsi modified", "reactive strength")),
