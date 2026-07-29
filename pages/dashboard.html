@@ -625,7 +625,13 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 
 <!-- LIFTING -->
 <div class="page" id="pg-lifting">
-  <div class="placeholder-state"><div class="placeholder-icon">🏋️</div><div class="placeholder-title">Lifting Maxes</div><div class="placeholder-sub">Clean, squat, bench, deadlift, and front squat data will appear here once the automated lifting data pipeline is connected.</div><div class="placeholder-badge">Automation In Progress</div></div>
+  <input class="roster-search" id="lifting-search" type="text" placeholder="Search name or position…">
+  <div class="tbl-wrap">
+    <table><thead id="lifting-thead"><tr>
+  <th>Name</th><th>Position</th><th>Clean</th><th>Squat</th><th>Bench</th><th>Deadlift</th><th>Front Squat</th>
+</tr></thead>
+    <tbody id="lifting-table"><tr><td colspan="7"><div class="uf-spinner-wrap"><div class="uf-spinner"></div></div></td></tr></tbody></table>
+  </div>
 </div>
 
 <!-- STANDARDS -->
@@ -1276,7 +1282,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
     document.getElementById('pg-'+pg)?.classList.add('active');
     document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
     document.getElementById('content-area').scrollTop=0;
-    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},sessioncompare:initSessionCompare,periodbreakdown:initPeriodBreakdown};
+    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},lifting:renderLifting,sessioncompare:initSessionCompare,periodbreakdown:initPeriodBreakdown};
     if(map[pg])setTimeout(map[pg],60);
   });
 });
@@ -1395,6 +1401,34 @@ function filterRoster(q=''){
 }
 
 document.getElementById('roster-search').addEventListener('input',function(){filterRoster(this.value.toLowerCase());});
+
+let liftingData=null;
+let liftingQuery='';
+function liftingFiltered(){
+  return (liftingData||[]).filter(r=>
+    r.athlete_name.toLowerCase().includes(liftingQuery)||
+    (r.position||'').toLowerCase().includes(liftingQuery)
+  );
+}
+function renderLiftingRows(rows){
+  document.getElementById('lifting-table').innerHTML=rows.map(r=>`<tr>
+    <td>${r.athlete_name}</td><td>${r.position||'—'}</td>
+    <td>${r.clean??'—'}</td><td>${r.squat??'—'}</td><td>${r.bench??'—'}</td><td>${r.deadlift??'—'}</td><td>${r.fsq??'—'}</td>
+  </tr>`).join('')||`<tr><td colspan="7">No results.</td></tr>`;
+}
+async function renderLifting(q=''){
+  liftingQuery=q.toLowerCase();
+  if(!liftingData){
+    const {data,error}=await SB.from('lifting_maxes').select('athlete_name,position,clean,squat,bench,deadlift,fsq').order('athlete_name');
+    if(error){document.getElementById('lifting-table').innerHTML=`<tr><td colspan="7">Failed to load lifting data.</td></tr>`;return;}
+    liftingData=data||[];
+  }
+  renderLiftingRows(liftingFiltered());
+  makeSortableTable('lifting-thead',[
+    r=>r.athlete_name,r=>r.position,r=>r.clean,r=>r.squat,r=>r.bench,r=>r.deadlift,r=>r.fsq
+  ],liftingFiltered,renderLiftingRows);
+}
+document.getElementById('lifting-search').addEventListener('input',function(){renderLifting(this.value.toLowerCase());});
 
 window.openRosterAthlete=async function(name){
   document.getElementById('roster-grid-view').style.display='none';
