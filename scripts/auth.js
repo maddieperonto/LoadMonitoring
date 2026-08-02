@@ -26,6 +26,7 @@ const PAGE_ACCESS = {
     'nordbord':        ['sc_staff', 'athletic_trainer'],
     'injury_risk':     ['sc_staff', 'athletic_trainer'],
     'roster':          ['sc_staff', 'athletic_trainer'],
+    'idp':             ['head_coach', 'sc_staff', 'athletic_trainer'],
 };
 
 // ── Nav links per role ────────────────────────────────────────────────────

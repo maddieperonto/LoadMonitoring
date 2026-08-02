@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UF S&C — Individual Development Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --uf-orange:#FA4616;--uf-blue:#003087;
+  --bg:#F4F5F7;--surface:#FFFFFF;--surface2:#F8F9FB;
+  --sidebar-bg:#001F5B;--sidebar-text:#C8D6F0;--sidebar-text-dim:#7A95C4;
+  --sidebar-border:rgba(255,255,255,0.08);
+  --border:rgba(0,48,135,0.10);--border2:rgba(0,48,135,0.20);
+  --text:#0F1923;--text2:#475569;--text3:#94A3B8;
+  --font-d:'Barlow Condensed',sans-serif;--font-b:'Barlow',sans-serif;--font-m:'DM Mono',monospace;
+  --r:8px;--r2:12px;
+  --shadow:0 1px 4px rgba(0,0,0,0.08),0 0 0 1px rgba(0,48,135,0.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font-b);background:var(--bg);color:var(--text);font-size:13px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--sidebar-bg);flex-shrink:0}
+.sidebar-logo-top{display:flex;align-items:center;gap:10px;padding:16px}
+.sidebar-logo-gator{width:34px;height:34px;background:var(--uf-orange);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:18px;font-weight:900;color:#fff}
+.logo-text{font-family:var(--font-d);font-size:19px;font-weight:900;letter-spacing:1px;color:#fff}
+.logo-sub{font-family:var(--font-m);font-size:9px;color:var(--sidebar-text-dim);letter-spacing:1.2px;text-transform:uppercase}
+.sidebar-stripe{height:3px;background:linear-gradient(90deg,var(--uf-orange) 0%,#FF8C42 50%,var(--uf-orange) 100%)}
+.back-link{display:block;padding:14px 16px;color:var(--sidebar-text);font-size:12px;text-decoration:none;font-family:var(--font-m)}
+.back-link:hover{color:#fff}
+.main-area{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:52px;background:#0F1923;display:flex;align-items:center;padding:0 22px;flex-shrink:0}
+.topbar-title{font-family:var(--font-d);font-size:24px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#fff}
+.content-area{flex:1;padding:18px;display:grid;grid-template-columns:260px 1fr 340px;gap:14px;align-items:start}
+
+.panel{background:var(--surface);border-radius:var(--r2);padding:16px 18px;box-shadow:var(--shadow);border:1px solid var(--border);margin-bottom:14px}
+.panel-title{font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text);margin-bottom:10px;padding-bottom:8px;border-bottom:2px solid var(--bg);display:flex;align-items:center;gap:6px;justify-content:space-between}
+.panel-title i{color:var(--uf-orange)}
+
+.headshot{width:100%;aspect-ratio:1;border-radius:var(--r2);background:var(--surface2) center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:48px;font-weight:800;color:var(--text3);margin-bottom:10px;overflow:hidden}
+.headshot img{width:100%;height:100%;object-fit:cover}
+.ath-name{font-family:var(--font-d);font-size:20px;font-weight:800;text-align:center}
+.ath-pos{font-family:var(--font-m);font-size:11px;color:var(--text2);text-align:center;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.bio-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--bg);gap:8px}
+.bio-row .lbl{color:var(--text2);flex-shrink:0}
+.bio-row input{width:130px;text-align:right;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;font-family:var(--font-b);font-size:12px;background:var(--surface2)}
+.bio-row input:focus{outline:none;border-color:var(--uf-orange);background:#fff}
+
+textarea.edit-box{width:100%;border:1px solid var(--border2);border-radius:6px;padding:8px 10px;font-family:var(--font-b);font-size:12px;color:var(--text);resize:vertical;min-height:44px;background:var(--surface2)}
+textarea.edit-box:focus{outline:none;border-color:var(--uf-orange);background:#fff}
+.btn-save{font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;background:var(--uf-blue);color:#fff;border:none;border-radius:6px;padding:5px 12px;cursor:pointer;transition:background .15s}
+.btn-save:hover{background:var(--uf-orange)}
+.btn-save.saved{background:#16A34A}
+.btn-save-sm{font-size:9px;padding:3px 9px;margin-top:6px}
+
+.numbers-bar{background:var(--sidebar-bg);color:#fff;border-radius:var(--r);padding:10px 16px;font-family:var(--font-m);font-size:12px;letter-spacing:.5px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px 18px}
+.numbers-bar b{color:var(--uf-orange)}
+.goal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.goal-col{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.goal-col .gb-label{font-family:var(--font-m);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3);margin-bottom:2px}
+.goal-col textarea{min-height:50px}
+
+.chart-wrap{position:relative;height:150px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="sidebar">
+  <div class="sidebar-logo-top">
+    <div class="sidebar-logo-gator">F</div>
+    <div><div class="logo-text">GATORS AMS</div><div class="logo-sub">Development Plan</div></div>
+  </div>
+  <div class="sidebar-stripe"></div>
+  <a class="back-link" href="./roster.html"><i class="ti ti-arrow-left"></i>&nbsp; Back to Roster</a>
+</div>
+
+<div class="main-area">
+  <div class="topbar"><div class="topbar-title">Florida Gators Development</div></div>
+
+  <div class="content-area">
+
+    <div>
+      <div class="panel">
+        <div class="headshot" id="ath-headshot"></div>
+        <div class="ath-name" id="ath-name">Loading…</div>
+        <div class="ath-pos" id="ath-pos"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-id-badge-2"></i>Bio</div>
+        <div class="bio-row"><span class="lbl">Height (in)</span><input type="number" id="bio-height" placeholder="e.g. 74"></div>
+        <div class="bio-row"><span class="lbl">Weight</span><span id="bio-weight" style="font-weight:600">—</span></div>
+        <div class="bio-row"><span class="lbl">Lean Mass (lbs)</span><input type="number" id="bio-leanmass" placeholder="—"></div>
+        <div class="bio-row"><span class="lbl">Body Comp (%)</span><input type="number" step="0.1" id="bio-bodycomp" placeholder="—"></div>
+        <div class="bio-row"><span class="lbl">Year</span><input type="text" id="bio-year" placeholder="e.g. Sophomore"></div>
+        <div class="bio-row" style="border-bottom:none"><span class="lbl">Hometown</span><input type="text" id="bio-hometown" placeholder="—"></div>
+        <button class="btn-save btn-save-sm" id="save-bio" style="width:100%;margin-top:10px">Save Bio</button>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-first-aid-kit"></i>Injuries</div>
+        <textarea class="edit-box" id="bio-injuries" placeholder="No injuries on file."></textarea>
+        <button class="btn-save btn-save-sm" id="save-injuries">Save</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-target-arrow"></i>Critical Factors</div>
+        <textarea class="edit-box" id="critical-factors" placeholder="Not yet entered."></textarea>
+        <button class="btn-save btn-save-sm" id="save-critical">Save</button>
+      </div>
+
+      <div class="numbers-bar" id="field-numbers-bar">MAX VELOCITY: <b id="fn-maxv">—</b></div>
+      <div class="numbers-bar" id="weightroom-bar">
+        CLEAN: <b id="wr-clean">—</b>&nbsp; SQUAT: <b id="wr-squat">—</b>&nbsp; BENCH: <b id="wr-bench">—</b>&nbsp;
+        DEADLIFT: <b id="wr-deadlift">—</b>&nbsp; FSQ: <b id="wr-fsq">—</b>&nbsp; CMJ REL PEAK: <b id="wr-cmjpeak">—</b>
+      </div>
+
+      <div class="goal-grid" id="goal-grid"></div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-bolt"></i>Relative Peak Power / BW</div>
+        <div class="chart-wrap"><canvas id="chart-relpeak"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-arrow-down"></i>Eccentric Braking RFD</div>
+        <div class="chart-wrap"><canvas id="chart-eccrfd"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-activity"></i>NordBord Max Force / Asymmetry</div>
+        <div class="chart-wrap"><canvas id="chart-nordic"></canvas></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-gauge"></i>Max Velocity</div>
+        <div class="chart-wrap"><canvas id="chart-maxv"></canvas></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { initAuth } from '../scripts/auth.js';
+
+const SB = createClient(
+  'https://fyhgvxfrwbwuqxllodip.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5aGd2eGZyd2J3dXF4bGxvZGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMzk5ODIsImV4cCI6MjA5NDcxNTk4Mn0.665OZwCsBvnHCVZ-ApiF2xM1CBgTIYZe2EEbuW7IW3U'
+);
+
+const auth = await initAuth('idp', { skipNavbar: true });
+if (!auth) throw 0;
+
+const params = new URLSearchParams(window.location.search);
+const athleteName = (params.get('name') || '').toUpperCase();
+if (!athleteName) {
+  document.getElementById('ath-name').textContent = 'No athlete specified';
+  throw 0;
+}
+
+const C = { orange:'#FA4616', blue:'#003087', green:'#16A34A', grey:'#94A3B8' };
+function line(canvasId, labels, datasets) {
+  new Chart(document.getElementById(canvasId), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: datasets.length > 1, labels: { font: { size: 9 }, boxWidth: 8 } } },
+      scales: { x: { ticks: { font: { size: 9 } } }, y: { ticks: { font: { size: 9 } } } }
+    }
+  });
+}
+
+function flashSaved(btn) {
+  const original = btn.textContent;
+  btn.textContent = 'Saved ✓';
+  btn.classList.add('saved');
+  setTimeout(() => { btn.textContent = original; btn.classList.remove('saved'); }, 1500);
+}
+
+const { data: ath } = await SB.from('athletes')
+  .select('id,name,position,weight_lbs,max_velocity_mph')
+  .ilike('name', athleteName)
+  .single();
+
+if (!ath) {
+  document.getElementById('ath-name').textContent = 'Athlete not found';
+  throw 0;
+}
+
+document.getElementById('ath-name').textContent = ath.name;
+document.getElementById('ath-pos').textContent = ath.position || '';
+document.getElementById('bio-weight').textContent = ath.weight_lbs ? `${ath.weight_lbs} lbs` : '—';
+document.getElementById('fn-maxv').textContent = ath.max_velocity_mph ? `${(+ath.max_velocity_mph).toFixed(2)} mph` : '—';
+document.getElementById('ath-headshot').textContent = ath.name.split(' ').map(w => w[0]).slice(0, 2).join('');
+
+const { data: dev } = await SB.from('athlete_development')
+  .select('*').eq('athlete_id', ath.id).maybeSingle();
+
+if (dev) {
+  if (dev.height_in != null) document.getElementById('bio-height').value = dev.height_in;
+  if (dev.lean_mass_lbs != null) document.getElementById('bio-leanmass').value = dev.lean_mass_lbs;
+  if (dev.body_comp_pct != null) document.getElementById('bio-bodycomp').value = dev.body_comp_pct;
+  if (dev.class_year) document.getElementById('bio-year').value = dev.class_year;
+  if (dev.hometown) document.getElementById('bio-hometown').value = dev.hometown;
+  if (dev.injuries) document.getElementById('bio-injuries').value = dev.injuries;
+  if (dev.critical_factors) document.getElementById('critical-factors').value = dev.critical_factors;
+  if (dev.headshot_url) {
+    document.getElementById('ath-headshot').innerHTML = `<img src="${dev.headshot_url}" alt="${ath.name}">`;
+  }
+}
+
+document.getElementById('save-bio').addEventListener('click', async (e) => {
+  const payload = {
+    athlete_id: ath.id,
+    height_in: parseFloat(document.getElementById('bio-height').value) || null,
+    lean_mass_lbs: parseFloat(document.getElementById('bio-leanmass').value) || null,
+    body_comp_pct: parseFloat(document.getElementById('bio-bodycomp').value) || null,
+    class_year: document.getElementById('bio-year').value || null,
+    hometown: document.getElementById('bio-hometown').value || null,
+    updated_at: new Date().toISOString()
+  };
+  const { error } = await SB.from('athlete_development').upsert(payload, { onConflict: 'athlete_id' });
+  if (!error) flashSaved(e.target); else alert('Save failed: ' + error.message);
+});
+
+document.getElementById('save-injuries').addEventListener('click', async (e) => {
+  const payload = { athlete_id: ath.id, injuries: document.getElementById('bio-injuries').value || null, updated_at: new Date().toISOString() };
+  const { error } = await SB.from('athlete_development').upsert(payload, { onConflict: 'athlete_id' });
+  if (!error) flashSaved(e.target); else alert('Save failed: ' + error.message);
+});
+
+document.getElementById('save-critical').addEventListener('click', async (e) => {
+  const payload = { athlete_id: ath.id, critical_factors: document.getElementById('critical-factors').value || null, updated_at: new Date().toISOString() };
+  const { error } = await SB.from('athlete_development').upsert(payload, { onConflict: 'athlete_id' });
+  if (!error) flashSaved(e.target); else alert('Save failed: ' + error.message);
+});
+
+const { data: goals } = await SB.from('athlete_dev_goals')
+  .select('*').eq('athlete_id', ath.id).order('slot', { ascending: true });
+
+const goalGrid = document.getElementById('goal-grid');
+for (let slot = 1; slot <= 3; slot++) {
+  const existing = (goals || []).find(g => g.slot === slot) || {};
+  const col = document.createElement('div');
+  col.className = 'goal-col';
+  col.innerHTML = `
+    <div class="gb-label">Development Goal #${slot}</div>
+    <textarea class="edit-box" id="goal-text-${slot}" placeholder="Not yet entered.">${existing.goal_text || ''}</textarea>
+    <div class="gb-label">Service Provider</div>
+    <textarea class="edit-box" id="goal-provider-${slot}" placeholder="Not yet entered.">${existing.service_provider || ''}</textarea>
+    <div class="gb-label">Action Items</div>
+    <textarea class="edit-box" id="goal-actions-${slot}" placeholder="Not yet entered.">${existing.action_items || ''}</textarea>
+    <button class="btn-save btn-save-sm" id="save-goal-${slot}">Save Goal ${slot}</button>
+  `;
+  goalGrid.appendChild(col);
+
+  document.getElementById(`save-goal-${slot}`).addEventListener('click', async (e) => {
+    const payload = {
+      athlete_id: ath.id,
+      slot,
+      goal_text: document.getElementById(`goal-text-${slot}`).value || null,
+      service_provider: document.getElementById(`goal-provider-${slot}`).value || null,
+      action_items: document.getElementById(`goal-actions-${slot}`).value || null,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await SB.from('athlete_dev_goals').upsert(payload, { onConflict: 'athlete_id,slot' });
+    if (!error) flashSaved(e.target); else alert('Save failed: ' + error.message);
+  });
+}
+
+const { data: lift } = await SB.from('lifting_maxes')
+  .select('clean,squat,bench,deadlift,fsq').eq('athlete_id', ath.id).maybeSingle();
+if (lift) {
+  document.getElementById('wr-clean').textContent = lift.clean ?? '—';
+  document.getElementById('wr-squat').textContent = lift.squat ?? '—';
+  document.getElementById('wr-bench').textContent = lift.bench ?? '—';
+  document.getElementById('wr-deadlift').textContent = lift.deadlift ?? '—';
+  document.getElementById('wr-fsq').textContent = lift.fsq ?? '—';
+}
+
+const { data: cmj } = await SB.from('cmj_tests')
+  .select('test_date,relative_peak_power_w_bm,eccentric_decel_rfd_bm')
+  .ilike('athlete_name', athleteName).order('test_date', { ascending: true }).limit(20);
+
+if (cmj && cmj.length) {
+  const labels = cmj.map(r => r.test_date);
+  line('chart-relpeak', labels, [{ label: 'Rel Peak Power (W/kg)', data: cmj.map(r => r.relative_peak_power_w_bm), borderColor: C.orange, backgroundColor: C.orange, tension: .3, pointRadius: 3 }]);
+  line('chart-eccrfd', labels, [{ label: 'Ecc Braking RFD', data: cmj.map(r => r.eccentric_decel_rfd_bm), borderColor: C.blue, backgroundColor: C.blue, tension: .3, pointRadius: 3 }]);
+  document.getElementById('wr-cmjpeak').textContent = cmj[cmj.length-1].relative_peak_power_w_bm != null
+    ? (+cmj[cmj.length-1].relative_peak_power_w_bm).toFixed(1) + ' W/kg' : '—';
+}
+
+const { data: nord } = await SB.from('nordbord_tests')
+  .select('test_date,left_peak_force_n,right_peak_force_n,lsi_pct')
+  .ilike('athlete_name', athleteName).order('test_date', { ascending: true }).limit(20);
+
+if (nord && nord.length) {
+  const labels = nord.map(r => r.test_date);
+  line('chart-nordic', labels, [
+    { label: 'Left Force (N)', data: nord.map(r => r.left_peak_force_n), borderColor: C.blue, backgroundColor: C.blue, tension: .3, pointRadius: 3, yAxisID: 'y' },
+    { label: 'Right Force (N)', data: nord.map(r => r.right_peak_force_n), borderColor: C.orange, backgroundColor: C.orange, tension: .3, pointRadius: 3, yAxisID: 'y' },
+    { label: 'Asymmetry (LSI %)', data: nord.map(r => r.lsi_pct), borderColor: C.green, backgroundColor: C.green, borderDash: [5,4], tension: .3, pointRadius: 3, yAxisID: 'y1' }
+  ]);
+}
+
+const { data: sessions } = await SB.from('catapult_sessions')
+  .select('session_date,max_velocity')
+  .ilike('athlete_name', athleteName).order('session_date', { ascending: true }).limit(40);
+
+if (sessions && sessions.length) {
+  const filtered = sessions.filter(s => +s.max_velocity > 0);
+  line('chart-maxv', filtered.map(s => s.session_date), [{ label: 'Max Velocity (mph)', data: filtered.map(s => +s.max_velocity), borderColor: C.orange, backgroundColor: C.orange, tension: .3, pointRadius: 2 }]);
+}
+</script>
+</body>
+</html>
