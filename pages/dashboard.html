@@ -372,6 +372,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <div id="roster-ath-name" style="font-family:var(--font-d);font-size:22px;font-weight:800;color:var(--text)"></div>
         <div id="roster-ath-pos" style="font-family:var(--font-m);font-size:10px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase"></div>
       </div>
+      <button onclick="navToIDP(document.getElementById('roster-ath-name').textContent)" style="margin-left:auto;display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--uf-orange);border:none;border-radius:var(--r);font-family:var(--font-d);font-size:12px;font-weight:700;cursor:pointer;color:#fff"><i class="ti ti-clipboard-text"></i> Development Plan</button>
     </div>
     <!-- GPS Section -->
     <div class="panel">
@@ -788,6 +789,56 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel" id="cmp-right"></div>
   </div>
   <div class="panel"><div class="panel-title"><i class="ti ti-chart-radar"></i>GPS Performance Radar</div><div class="chart-wrap h280"><canvas id="cmp-radar"></canvas></div></div>
+</div>
+
+<!-- IDP -->
+<div class="page" id="pg-idp">
+<button onclick="navTo('roster');closeRosterAthlete();" style="margin-bottom:14px;display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface);border:1.5px solid var(--border2);border-radius:var(--r);font-family:var(--font-d);font-size:12px;font-weight:700;cursor:pointer;color:var(--text2)"><i class="ti ti-arrow-left"></i> Back to Roster</button>
+<div style="display:grid;grid-template-columns:260px 1fr 340px;gap:14px;align-items:start">    <div>
+      <div class="panel" style="text-align:center">
+        <div id="idp-headshot" style="width:100%;aspect-ratio:1;border-radius:var(--r2);background:var(--surface2,#F8F9FB);display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:48px;font-weight:800;color:var(--text3);margin-bottom:10px;overflow:hidden"></div>
+        <div id="idp-name" style="font-family:var(--font-d);font-size:20px;font-weight:800">Loading…</div>
+        <div id="idp-pos" style="font-family:var(--font-m);font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-id-badge-2"></i>Bio</div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bg);font-size:12px;align-items:center"><span style="color:var(--text2)">Height (in)</span><input type="number" id="idp-height" style="width:110px;text-align:right;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;font-size:12px"></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bg);font-size:12px"><span style="color:var(--text2)">Weight</span><span id="idp-weight" style="font-weight:600">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bg);font-size:12px;align-items:center"><span style="color:var(--text2)">Lean Mass (lbs)</span><input type="number" id="idp-leanmass" style="width:110px;text-align:right;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;font-size:12px"></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bg);font-size:12px;align-items:center"><span style="color:var(--text2)">Body Comp (%)</span><input type="number" step="0.1" id="idp-bodycomp" style="width:110px;text-align:right;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;font-size:12px"></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bg);font-size:12px;align-items:center"><span style="color:var(--text2)">Year</span><input type="text" id="idp-year" style="width:110px;text-align:right;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;font-size:12px"></div>
+        <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:12px;align-items:center"><span style="color:var(--text2)">Hometown</span><input type="text" id="idp-hometown" style="width:110px;text-align:right;border:1px solid var(--border2);border-radius:6px;padding:3px 7px;font-size:12px"></div>
+        <button id="idp-save-bio" style="width:100%;margin-top:10px;font-family:var(--font-d);font-size:11px;font-weight:700;background:var(--uf-blue);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer">Save Bio</button>
+      </div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-first-aid-kit"></i>Injuries</div>
+        <textarea id="idp-injuries" style="width:100%;min-height:50px;border:1px solid var(--border2);border-radius:6px;padding:8px;font-size:12px" placeholder="No injuries on file."></textarea>
+        <button id="idp-save-injuries" style="margin-top:6px;font-family:var(--font-d);font-size:10px;font-weight:700;background:var(--uf-blue);color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer">Save</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="panel-title"><i class="ti ti-target-arrow"></i>Critical Factors</div>
+        <textarea id="idp-critical" style="width:100%;min-height:50px;border:1px solid var(--border2);border-radius:6px;padding:8px;font-size:12px" placeholder="Not yet entered."></textarea>
+        <button id="idp-save-critical" style="margin-top:6px;font-family:var(--font-d);font-size:10px;font-weight:700;background:var(--uf-blue);color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer">Save</button>
+      </div>
+      <div style="background:var(--uf-navy,#001F5B);color:#fff;border-radius:var(--r);padding:10px 16px;font-family:var(--font-m);font-size:12px;margin-bottom:12px">MAX VELOCITY: <b id="idp-maxv" style="color:var(--uf-orange)">—</b></div>
+      <div style="background:var(--uf-navy,#001F5B);color:#fff;border-radius:var(--r);padding:10px 16px;font-family:var(--font-m);font-size:12px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px 18px">
+        CLEAN: <b id="idp-clean" style="color:var(--uf-orange)">—</b> SQUAT: <b id="idp-squat" style="color:var(--uf-orange)">—</b> BENCH: <b id="idp-bench" style="color:var(--uf-orange)">—</b>
+        DEADLIFT: <b id="idp-deadlift" style="color:var(--uf-orange)">—</b> FSQ: <b id="idp-fsq" style="color:var(--uf-orange)">—</b> CMJ PEAK: <b id="idp-cmjpeak" style="color:var(--uf-orange)">—</b>
+      </div>
+      <div id="idp-goal-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px"></div>
+    </div>
+
+    <div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-bolt"></i>Relative Peak Power / BW</div><div class="chart-wrap" style="height:150px"><canvas id="idp-chart-relpeak"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-arrow-down"></i>Eccentric Braking RFD</div><div class="chart-wrap" style="height:150px"><canvas id="idp-chart-eccrfd"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-activity"></i>NordBord Force / Asymmetry</div><div class="chart-wrap" style="height:150px"><canvas id="idp-chart-nordic"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-gauge"></i>Max Velocity</div><div class="chart-wrap" style="height:150px"><canvas id="idp-chart-maxv"></canvas></div></div>
+    </div>
+
+  </div>
 </div>
 
 </div></div></div>
@@ -1298,8 +1349,7 @@ const tDACWR=gpsChartWks.map((_,i)=>tDACWR_daily[Math.min(i*7+6,tDACWR_daily.len
 const tAACWR=gpsChartWks.map((_,i)=>tAACWR_daily[Math.min(i*7+6,tAACWR_daily.length-1)]);
 
 // ── NAV ───────────────────────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison',sessioncompare:'Session Compare',periodbreakdown:'Period Breakdown'};window.navTo=pg=>document.querySelector(`[data-page="${pg}"]`)?.click();
-let gpsView='team';
+const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison',sessioncompare:'Session Compare',periodbreakdown:'Period Breakdown',idp:'Individual Development Plan'};let gpsView='team';
 window.setGPSView=function(v){
   gpsView=v;
   const viewMap={team:'gps-team-view',player:'gps-individual-view',group:'gps-group-view','90':'gps-90-view'};
@@ -3210,6 +3260,107 @@ window.openPM=function(name){
 window.closePM=function(e,force=false){if(force||e?.target===e?.currentTarget)document.getElementById('pm-overlay').classList.remove('open');};
 window.navToGPS=function(name){navTo('gps');setTimeout(()=>{setGPSView('player');setTimeout(()=>{const s=document.getElementById('gps-sel');if(s){s.value=name;renderGPS();}},80);},80);};
 
+window.navToIDP=function(name){
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.getElementById('pg-idp')?.classList.add('active');
+  document.getElementById('page-title').textContent='Individual Development Plan';
+  document.getElementById('content-area').scrollTop=0;
+  renderIDP(name);
+};
+
+function idpFlashSaved(btn){const orig=btn.textContent;btn.textContent='Saved ✓';btn.style.background='#16A34A';setTimeout(()=>{btn.textContent=orig;btn.style.background='var(--uf-blue)';},1500);}
+
+async function renderIDP(name){
+  const nameUp=(name||'').toUpperCase();
+  document.getElementById('idp-name').textContent='Loading…';
+  document.getElementById('idp-headshot').innerHTML='';
+
+  const{data:ath}=await SB.from('athletes').select('id,name,position,weight_lbs,max_velocity_mph').ilike('name',nameUp).single();
+  if(!ath){document.getElementById('idp-name').textContent='Athlete not found';return;}
+
+  document.getElementById('idp-name').textContent=ath.name;
+  document.getElementById('idp-pos').textContent=ath.position||'';
+  document.getElementById('idp-weight').textContent=ath.weight_lbs?`${ath.weight_lbs} lbs`:'—';
+  document.getElementById('idp-maxv').textContent=ath.max_velocity_mph?`${(+ath.max_velocity_mph).toFixed(2)} mph`:'—';
+  document.getElementById('idp-headshot').textContent=ini(ath.name);
+
+  const{data:dev}=await SB.from('athlete_development').select('*').eq('athlete_id',ath.id).maybeSingle();
+  document.getElementById('idp-height').value=dev?.height_in??'';
+  document.getElementById('idp-leanmass').value=dev?.lean_mass_lbs??'';
+  document.getElementById('idp-bodycomp').value=dev?.body_comp_pct??'';
+  document.getElementById('idp-year').value=dev?.class_year??'';
+  document.getElementById('idp-hometown').value=dev?.hometown??'';
+  document.getElementById('idp-injuries').value=dev?.injuries??'';
+  document.getElementById('idp-critical').value=dev?.critical_factors??'';
+  if(dev?.headshot_url)document.getElementById('idp-headshot').innerHTML=`<img src="${dev.headshot_url}" style="width:100%;height:100%;object-fit:cover">`;
+
+  document.getElementById('idp-save-bio').onclick=async(e)=>{
+    const payload={athlete_id:ath.id,height_in:parseFloat(document.getElementById('idp-height').value)||null,lean_mass_lbs:parseFloat(document.getElementById('idp-leanmass').value)||null,body_comp_pct:parseFloat(document.getElementById('idp-bodycomp').value)||null,class_year:document.getElementById('idp-year').value||null,hometown:document.getElementById('idp-hometown').value||null,updated_at:new Date().toISOString()};
+    const{error}=await SB.from('athlete_development').upsert(payload,{onConflict:'athlete_id'});
+    if(!error)idpFlashSaved(e.target);else alert('Save failed: '+error.message);
+  };
+  document.getElementById('idp-save-injuries').onclick=async(e)=>{
+    const{error}=await SB.from('athlete_development').upsert({athlete_id:ath.id,injuries:document.getElementById('idp-injuries').value||null,updated_at:new Date().toISOString()},{onConflict:'athlete_id'});
+    if(!error)idpFlashSaved(e.target);else alert('Save failed: '+error.message);
+  };
+  document.getElementById('idp-save-critical').onclick=async(e)=>{
+    const{error}=await SB.from('athlete_development').upsert({athlete_id:ath.id,critical_factors:document.getElementById('idp-critical').value||null,updated_at:new Date().toISOString()},{onConflict:'athlete_id'});
+    if(!error)idpFlashSaved(e.target);else alert('Save failed: '+error.message);
+  };
+
+  const{data:goals}=await SB.from('athlete_dev_goals').select('*').eq('athlete_id',ath.id).order('slot',{ascending:true});
+  const grid=document.getElementById('idp-goal-grid');
+  grid.innerHTML='';
+  for(let slot=1;slot<=3;slot++){
+    const g=(goals||[]).find(x=>x.slot===slot)||{};
+    const col=document.createElement('div');
+    col.style.cssText='display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px';
+    col.innerHTML=`
+      <div style="font-family:var(--font-m);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Development Goal #${slot}</div>
+      <textarea id="idp-goal-text-${slot}" style="min-height:44px;border:1px solid var(--border2);border-radius:6px;padding:6px;font-size:11px">${g.goal_text||''}</textarea>
+      <div style="font-family:var(--font-m);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Service Provider</div>
+      <textarea id="idp-goal-provider-${slot}" style="min-height:44px;border:1px solid var(--border2);border-radius:6px;padding:6px;font-size:11px">${g.service_provider||''}</textarea>
+      <div style="font-family:var(--font-m);font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Action Items</div>
+      <textarea id="idp-goal-actions-${slot}" style="min-height:44px;border:1px solid var(--border2);border-radius:6px;padding:6px;font-size:11px">${g.action_items||''}</textarea>
+      <button id="idp-save-goal-${slot}" style="font-family:var(--font-d);font-size:10px;font-weight:700;background:var(--uf-blue);color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer">Save Goal ${slot}</button>`;
+    grid.appendChild(col);
+    document.getElementById(`idp-save-goal-${slot}`).onclick=async(e)=>{
+      const payload={athlete_id:ath.id,slot,goal_text:document.getElementById(`idp-goal-text-${slot}`).value||null,service_provider:document.getElementById(`idp-goal-provider-${slot}`).value||null,action_items:document.getElementById(`idp-goal-actions-${slot}`).value||null,updated_at:new Date().toISOString()};
+      const{error}=await SB.from('athlete_dev_goals').upsert(payload,{onConflict:'athlete_id,slot'});
+      if(!error)idpFlashSaved(e.target);else alert('Save failed: '+error.message);
+    };
+  }
+
+  const{data:lift}=await SB.from('lifting_maxes').select('clean,squat,bench,deadlift,fsq').eq('athlete_id',ath.id).maybeSingle();
+  document.getElementById('idp-clean').textContent=lift?.clean??'—';
+  document.getElementById('idp-squat').textContent=lift?.squat??'—';
+  document.getElementById('idp-bench').textContent=lift?.bench??'—';
+  document.getElementById('idp-deadlift').textContent=lift?.deadlift??'—';
+  document.getElementById('idp-fsq').textContent=lift?.fsq??'—';
+
+  const{data:cmj}=await SB.from('cmj_tests').select('test_date,relative_peak_power_w_bm,eccentric_decel_rfd_bm').ilike('athlete_name',nameUp).order('test_date',{ascending:true}).limit(20);
+  if(cmj&&cmj.length){
+    mk('idp-chart-relpeak',{type:'line',data:{labels:cmj.map(r=>r.test_date),datasets:[{label:'Rel Peak Power',data:cmj.map(r=>r.relative_peak_power_w_bm),borderColor:C.acc,backgroundColor:C.acc,tension:.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+    mk('idp-chart-eccrfd',{type:'line',data:{labels:cmj.map(r=>r.test_date),datasets:[{label:'Ecc Braking RFD',data:cmj.map(r=>r.eccentric_decel_rfd_bm),borderColor:C.blue,backgroundColor:C.blue,tension:.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+    document.getElementById('idp-cmjpeak').textContent=cmj[cmj.length-1].relative_peak_power_w_bm!=null?(+cmj[cmj.length-1].relative_peak_power_w_bm).toFixed(1)+' W/kg':'—';
+  }
+
+  const{data:nord}=await SB.from('nordbord_tests').select('test_date,left_peak_force_n,right_peak_force_n,lsi_pct').ilike('athlete_name',nameUp).order('test_date',{ascending:true}).limit(20);
+  if(nord&&nord.length){
+    mk('idp-chart-nordic',{type:'line',data:{labels:nord.map(r=>r.test_date),datasets:[
+      {label:'Left Force (N)',data:nord.map(r=>r.left_peak_force_n),borderColor:C.blue,backgroundColor:C.blue,tension:.3,pointRadius:3},
+      {label:'Right Force (N)',data:nord.map(r=>r.right_peak_force_n),borderColor:C.acc,backgroundColor:C.acc,tension:.3,pointRadius:3},
+      {label:'Asymmetry (LSI %)',data:nord.map(r=>r.lsi_pct),borderColor:C.green,backgroundColor:C.green,borderDash:[5,4],tension:.3,pointRadius:3}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:8}}}}});
+  }
+
+  const{data:sessions}=await SB.from('catapult_sessions').select('session_date,max_velocity').ilike('athlete_name',nameUp).order('session_date',{ascending:true}).limit(40);
+  if(sessions&&sessions.length){
+    const f=sessions.filter(s=>+s.max_velocity>0);
+    mk('idp-chart-maxv',{type:'line',data:{labels:f.map(s=>s.session_date),datasets:[{label:'Max Velocity',data:f.map(s=>+s.max_velocity),borderColor:C.acc,backgroundColor:C.acc,tension:.3,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
+  }
+}
 // Change password modal
 document.getElementById('change-pw-btn').addEventListener('click', () => {
   document.getElementById('pw-modal').classList.add('visible');
