@@ -500,12 +500,12 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 <div class="page" id="pg-loadmonitor">
   <div class="lm-metric-grid" id="lm-metrics"></div>
 
-  <!-- Summer Load Ramp Up -->
+  <!-- Load Ramp: Summer through Fall Camp -->
   <div class="panel" style="margin-bottom:14px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
       <div>
-        <div style="font-size:13px;font-weight:600">Summer Load Ramp Up</div>
-        <div style="font-size:11px;color:var(--text3);font-family:var(--font-m)">Weekly totals vs fall camp projection</div>
+        <div style="font-size:13px;font-weight:600">Load Ramp — Summer &amp; Fall Camp</div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--font-m)">Weekly position averages, Summer Week 1 through the current Fall Camp week</div>
       </div>
       <button onclick="exportSlruPDF()" style="font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 14px;border-radius:6px;background:var(--uf-blue);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-export" style="font-size:13px"></i>Export All Filters (PDF)</button>
     </div>
@@ -889,29 +889,28 @@ const PH={
   fs:new Date(2025,9,1), fe:new Date(2025,10,29),
   ss:new Date(2026,0,23),se:new Date(2026,3,11),
   us:new Date(2026,4,11),ue:new Date(2026,6,29),
-  cs:new Date(2026,7,5)
+  cs:new Date(2026,7,5), ce:new Date(2030,0,1) // Fall Camp 2026 start; no fixed end yet — update ce when camp transitions to the season
 };
 function phase(d){
   const dt=parseDate(d);if(!dt)return null;
   if(dt>=PH.fs&&dt<=PH.fe)return'Fa';
   if(dt>=PH.ss&&dt<=PH.se)return'Sp';
   if(dt>=PH.us&&dt<=PH.ue)return'Su';
+  if(dt>=PH.cs&&dt<=PH.ce)return'Fc';
   return null;
 }
 function phWk(d){
   const ph=phase(d);if(!ph)return null;
-  const base=ph==='Fa'?PH.fs:ph==='Sp'?PH.ss:PH.us;
+  const base=ph==='Fa'?PH.fs:ph==='Sp'?PH.ss:ph==='Fc'?PH.cs:PH.us;
   const days=Math.floor((parseDate(d)-base)/86400000);
   return`${ph} W${Math.floor(days/7)+1}`;
 }
 function displayWk(wk){
   if(!wk)return null;
   if(wk.startsWith('Sp')||wk.startsWith('Fa'))return wk;
+  if(wk.startsWith('Fc'))return`Camp W${parseInt(wk.replace('Fc W',''))}`;
   const n=parseInt(wk.replace('Su W',''));
-  if(n<=6)return`W${n}`;
-  if(n===7)return null;
-  const map={8:'W7',9:'W8',10:'W9 Peak',11:'W10 Taper'};
-  return map[n]||null;
+  return`Su W${n}`;
 }
 
 // ── FETCH ─────────────────────────────────────────────────────────
@@ -1091,7 +1090,7 @@ raw.forEach(r=>{
 });
 
 // ── ORDERED PHASE WEEKS ───────────────────────────────────────────
-const phWkOrd={'Sp':0,'Su':1,'Fa':2};
+const phWkOrd={'Sp':0,'Su':1,'Fc':2,'Fa':3};
 const allPhWks=[...new Set(raw.map(r=>phWk(r.session_date)).filter(Boolean))].sort((a,b)=>{
   const[ap,an]=[a.slice(0,2),parseInt(a.slice(3))];
   const[bp,bn]=[b.slice(0,2),parseInt(b.slice(3))];
@@ -1102,42 +1101,24 @@ const spWks=allPhWks.filter(w=>w.startsWith('Sp'));
 const suWks=allPhWks.filter(w=>w.startsWith('Su'));
 const faWks=allPhWks.filter(w=>w.startsWith('Fa'));
 
-// ── SLRU dynamic current-week detection ────────────────────────────────────
-function slruWkToSuWk(n){ return n<=6 ? `Su W${n}` : `Su W${n+1}`; }
-const SLRU_LATEST_SU_WK_NUM = suWks.length ? parseInt(suWks[suWks.length-1].replace('Su W','')) : 1;
-const SLRU_CURRENT_WK_NUM = Math.min(10, SLRU_LATEST_SU_WK_NUM<=6 ? SLRU_LATEST_SU_WK_NUM : SLRU_LATEST_SU_WK_NUM-1);
+// ── CURRENT CALENDAR WEEK (real data only — no projections) ────────────────
+const _todayDate=new Date();
+const todayStr=`${String(_todayDate.getMonth()+1).padStart(2,'0')}/${String(_todayDate.getDate()).padStart(2,'0')}/${_todayDate.getFullYear()}`;
+const curCalWk=phWk(todayStr);
+
+// Fall Camp weeks: every real week with synced data, plus the current calendar
+// week so "Fall Camp Week 1" appears the day camp starts even before any
+// sessions have synced yet. Grows automatically as camp goes on.
+const fcDataWks=allPhWks.filter(w=>w.startsWith('Fc'));
+const lastFcN=fcDataWks.length?parseInt(fcDataWks[fcDataWks.length-1].replace('Fc W','')):0;
+const curFcN=curCalWk&&curCalWk.startsWith('Fc')?parseInt(curCalWk.replace('Fc W','')):0;
+const fcWks=Array.from({length:Math.max(lastFcN,curFcN)},(_,i)=>`Fc W${i+1}`);
 
 // GPS charts: Spring W1–W12 + Summer W1–current (no Fall 2025)
 const gpsChartWks=[...spWks,...suWks];
 
-// Load Monitor: Spring W1–W12 + Summer W1–W12 (project remaining) + Fa W1 (fall camp)
-const lastSuN=suWks.length?parseInt(suWks[suWks.length-1].replace('Su W','')):0;
-const suProjWks=Array.from({length:Math.max(0,12-lastSuN)},(_,i)=>`Su W${lastSuN+i+1}`);
-const fcProjWks=['Fa W1']; // just fall camp week 1
-const allLMWks=[...spWks,...suWks,...suProjWks];
-
-// Periodized projection: peak at Su W10-W11 (115% spring avg), taper to Fa W1 (108%)
-function lmProjLoad(spAvg, wkLabel) {
-  if (wkLabel.startsWith('Fa')) return Math.round(spAvg * 1.08);
-  const n = parseInt(wkLabel.replace('Su W',''));
-  if (!wkLabel.startsWith('Su')) return null;
-  // Real summer weeks — no projection
-  if (n <= lastSuN) return null;
-  // Project remaining summer weeks with peak at W10-W11
-  const totalSuWks = 12;
-  const peakWk = 10;
-  if (n <= peakWk) {
-    // Ramp up from current to peak
-    const startPct = 1.05;
-    const peakPct  = 1.15;
-    const t = (n - lastSuN) / (peakWk - lastSuN);
-    return Math.round(spAvg * (startPct + (peakPct - startPct) * t));
-  } else {
-    // Taper from peak toward fall camp
-    const t = (n - peakWk) / (totalSuWks - peakWk + 1);
-    return Math.round(spAvg * (1.15 - (1.15 - 1.08) * t));
-  }
-}
+// Load Monitor: Spring + Summer (real) + Fall Camp (real, growing weekly) — no projections
+const allLMWks=[...spWks,...suWks,...fcWks];
 
 // ── ACWR HELPER ───────────────────────────────────────────────────
 function wkTot(sessions,field,wk){return sessions.filter(s=>s.wk===wk).reduce((t,s)=>t+s[field],0);}
@@ -1246,10 +1227,7 @@ const PLAYERS=Object.values(byPFiltered).map(p=>{
   const allLMVel=allLMWks.map(wk=>velByWk[wk]??null);
   const ci=[...allLMLoad].map((v,i)=>v!=null?i:-1).filter(i=>i>=0).pop()??-1;
   const cl=ci>=0?allLMLoad[ci]??0:0,cd=ci>=0?allLMDist[ci]??0:0,ch2=ci>=0?allLMHSR[ci]??0:0,ca=ci>=0?allLMAccel[ci]??0:0,cde=ci>=0?allLMDecel[ci]??0:0,cv=ci>=0?allLMVel[ci]??0:0;
-  const esP=spAvg>0?Math.round((allLMLoad.filter(v=>v!=null).slice(-1)[0]??0)/spAvg*100):0;
-  const fp=[spAvg*(1.10),spAvg*(1.12),spAvg*(1.13),spAvg*(1.14)].map(v=>Math.round(v));
-  const fW1Pct=spAvg>0?Math.round(fp[0]/spAvg*100):0;
-  return{name:p.name,pos,unit,sessions:p.sessions,dA,aA,lA,hA,dACWR,aACWR,latD,latA,latMaxV,latestHSR,latest,flags,risk,spAvg,curLoad:cl,spPct,acwr4,allLMLoad,allLMDist,allLMHSR,allLMAccel,allLMDecel,allLMVel,cl,cd,ch2,ca,cde,cv,endSumPct:esP,fallProj:fp,fallW1Pct:fW1Pct};
+  return{name:p.name,pos,unit,sessions:p.sessions,dA,aA,lA,hA,dACWR,aACWR,latD,latA,latMaxV,latestHSR,latest,flags,risk,spAvg,curLoad:cl,spPct,acwr4,allLMLoad,allLMDist,allLMHSR,allLMAccel,allLMDecel,allLMVel,cl,cd,ch2,ca,cde,cv};
 }).filter(p=>p.sessions.length>0).sort((a,b)=>a.name.localeCompare(b.name));
 
 // ── TOPBAR ────────────────────────────────────────────────────────
@@ -2311,6 +2289,14 @@ window.renderPeriodBreakdown=async function(){
 };
 
 // ── LOAD MONITOR ──────────────────────────────────────────────────
+// Full display label for a phase-week code — used on Load Monitor axis/table labels
+function lmWkLabel(wk){
+  if(!wk)return'';
+  if(wk.startsWith('Sp'))return`Spring Week ${parseInt(wk.replace('Sp W',''))}`;
+  if(wk.startsWith('Su'))return`Summer Week ${parseInt(wk.replace('Su W',''))}`;
+  if(wk.startsWith('Fc'))return`Fall Camp Week ${parseInt(wk.replace('Fc W',''))}`;
+  return wk;
+}
 let lmUnit='All',lmPos='All',lmAcwr='all',lmMetric='load',lmSelName=null,lmTC=null,lmAC=null,lmPC=null;
 const LMP=PLAYERS.map(p=>({...p,allLoads:p.allLMLoad,allDist:p.allLMDist,allHSR:p.allLMHSR,allAccel:p.allLMAccel,allDecel:p.allLMDecel,allVel:p.allLMVel,acwr:p.acwr4}));
 function lmFilt(){return LMP.filter(p=>{const uOK=lmUnit==='All'||p.unit===lmUnit;const pOK=lmPos==='All'||p.pos===lmPos;const z=lmZone(p.acwr);const aOK=lmAcwr==='all'||z.key===lmAcwr;return uOK&&pOK&&aOK;});}
@@ -2330,41 +2316,23 @@ function renderLMMetrics(){
 }
 function renderLMTeamChart(){
   const fp=lmFilt();if(!fp.length)return;
-  const MCFG={load:{arr:p=>p.allLoads,label:'Team avg player load',color:C.blue,unit:''},dist:{arr:p=>p.allDist,label:'Avg Distance (y)',color:'#4a7fd4',unit:'m'},hsrd:{arr:p=>p.allHSR,label:'Avg HSRD (m)',color:C.green,unit:'m'},accel:{arr:p=>p.allAccel,label:'Avg accel efforts',color:C.yellow,unit:''},decel:{arr:p=>p.allDecel,label:'Avg decel efforts',color:'#9b59b6',unit:''},acwr:{arr:null,label:'Team ACWR',color:C.acc,unit:''}};
+  const MCFG={load:{arr:p=>p.allLoads,label:'Team avg player load',color:C.blue,unit:''},dist:{arr:p=>p.allDist,label:'Avg Distance (y)',color:'#4a7fd4',unit:'m'},hsrd:{arr:p=>p.allHSR,label:'Avg HSRD (m)',color:C.green,unit:'m'},accel:{arr:p=>p.allAccel,label:'Avg accel efforts',color:C.yellow,unit:''},decel:{arr:p=>p.allDecel,label:'Avg decel efforts',color:'#9b59b6',unit:''}};
   const cfg=MCFG[lmMetric]||MCFG.load;
-  const realCount=spWks.length+suWks.length;
-  const allLbls=[...allLMWks,...fcProjWks];
+  const allLbls=allLMWks;
   const spAvgT=Math.round(fp.reduce((a,p)=>a+p.spAvg,0)/fp.length);
-  let primData;
-  if(lmMetric==='acwr'){
-    const la=allLMWks.map((_,i)=>{const v=fp.map(p=>p.allLoads[i]).filter(v=>v!=null);return v.length?v.reduce((a,b)=>a+b)/v.length:null;});
-    const ac2=calcACWR(la.filter(v=>v!=null));
-    primData=[...Array(Math.max(0,realCount-ac2.length)).fill(null),...ac2,...Array(allLMWks.length-realCount+fcProjWks.length).fill(null)];
-  } else {
-    const avgs=allLMWks.map((_,i)=>{const v=fp.map(p=>cfg.arr(p)[i]).filter(v=>v!=null);return v.length?+(v.reduce((a,b)=>a+b)/v.length).toFixed(1):null;});
-    primData=[...avgs,...fcProjWks.map(()=>null)];
-  }
+  const primData=allLMWks.map((_,i)=>{const v=fp.map(p=>cfg.arr(p)[i]).filter(v=>v!=null);return v.length?+(v.reduce((a,b)=>a+b)/v.length).toFixed(1):null;});
   const baseline=allLbls.map(()=>spAvgT);
-  // Projection: use lmProjLoad for remaining summer + fall camp
-  // Include last real week as starting point so line connects to bars
-  const lastRealVal=primData.filter(v=>v!=null).slice(-1)[0]??spAvgT;
-  const projData=allLbls.map((wk,i)=>{
-    if(i<realCount-1) return null;
-    if(i===realCount-1) return lastRealVal;
-    return lmProjLoad(spAvgT, wk);
-  });
-// Bar colors: spring=light blue, summer real=blue, summer proj=orange tint, fall camp=transparent
+  // Bar colors: spring=light blue, summer=blue, fall camp=orange (all real data, no projections)
   const barColors=allLbls.map((_,i)=>
     i<spWks.length?'rgba(0,48,135,0.25)':
-    i<realCount?C.blue:
-    i<allLMWks.length?'rgba(250,70,22,0.15)':
-    'transparent'
+    i<spWks.length+suWks.length?C.blue:
+    C.acc
   );
   if(lmTC){lmTC.destroy();lmTC=null;}
   const el=document.getElementById('lm-team-chart');if(!el)return;
   document.getElementById('lm-chart-title').textContent=cfg.label;
   document.getElementById('lm-legend').innerHTML=[{label:cfg.label,color:cfg.color,dash:false},{label:'Spring baseline',color:'rgba(0,48,135,0.35)',dash:true}].map(d=>`<span class="lm-leg">${d.dash?`<span class="lm-leg-dash" style="border-color:${d.color}"></span>`:`<span class="lm-leg-sq" style="background:${d.color}"></span>`}${d.label}</span>`).join('');
-  lmTC=new Chart(el,{type:'bar',data:{labels:allLbls,datasets:[
+  lmTC=new Chart(el,{type:'bar',data:{labels:allLbls.map(lmWkLabel),datasets:[
     {label:cfg.label,data:primData,backgroundColor:barColors,borderRadius:3,order:3},
     {label:'Spring baseline',data:baseline,type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1},
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}${cfg.unit}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9,family:'DM Mono'},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10,family:'DM Mono'}}}}}});
@@ -2415,13 +2383,13 @@ window.selLMPlayer=function(name){
   if(!p||lmSelName===null){sec.classList.remove('visible');return;}
   sec.classList.add('visible');
   const z=lmZone(p.acwr);
-  document.getElementById('lm-detail-card').innerHTML=`<div class="lm-dh"><div><div class="lm-dn">${p.name}</div><div class="lm-dm">${p.pos} · ${p.unit} · Spring avg: ${p.spAvg}</div></div><span class="pill ${z.cls}" style="font-size:13px;padding:5px 14px">ACWR ${p.acwr} — ${z.label}</span></div><div class="lm-detail-stats"><div class="lm-ds"><div class="dl">Player load</div><div class="dv">${p.cl||'—'}</div></div><div class="lm-ds"><div class="dl">% of spring</div><div class="dv" style="color:${p.spPct>=80?C.green:C.yellow}">${p.spPct}%</div></div><div class="lm-ds"><div class="dl">ACWR (4wk)</div><div class="dv" style="color:${z.color}">${p.acwr}</div></div><div class="lm-ds"><div class="dl">HSRD</div><div class="dv">${p.ch2?Math.round(p.ch2)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Total dist</div><div class="dv">${p.cd?Math.round(p.cd)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Max velo</div><div class="dv" style="color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1)+' mph':'—'}</div></div><div class="lm-ds"><div class="dl">Accel</div><div class="dv">${p.ca||'—'}</div></div><div class="lm-ds"><div class="dl">Decel</div><div class="dv">${p.cde||'—'}</div></div><div class="lm-ds"><div class="dl">End summer proj</div><div class="dv" style="color:${p.endSumPct>=95?C.green:p.endSumPct>=80?C.yellow:C.red}">${p.endSumPct}%</div></div><div class="lm-ds"><div class="dl">Fall W1 proj</div><div class="dv" style="color:${p.fallW1Pct>=105?C.green:p.fallW1Pct>=95?C.yellow:C.red}">${p.fallW1Pct}%</div></div></div><div style="position:relative;height:200px"><canvas id="lm-player-chart"></canvas></div>`;
+  document.getElementById('lm-detail-card').innerHTML=`<div class="lm-dh"><div><div class="lm-dn">${p.name}</div><div class="lm-dm">${p.pos} · ${p.unit} · Spring avg: ${p.spAvg}</div></div><span class="pill ${z.cls}" style="font-size:13px;padding:5px 14px">ACWR ${p.acwr} — ${z.label}</span></div><div class="lm-detail-stats"><div class="lm-ds"><div class="dl">Player load</div><div class="dv">${p.cl||'—'}</div></div><div class="lm-ds"><div class="dl">% of spring</div><div class="dv" style="color:${p.spPct>=80?C.green:C.yellow}">${p.spPct}%</div></div><div class="lm-ds"><div class="dl">ACWR (4wk)</div><div class="dv" style="color:${z.color}">${p.acwr}</div></div><div class="lm-ds"><div class="dl">HSRD</div><div class="dv">${p.ch2?Math.round(p.ch2)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Total dist</div><div class="dv">${p.cd?Math.round(p.cd)+'m':'—'}</div></div><div class="lm-ds"><div class="dl">Max velo</div><div class="dv" style="color:var(--uf-blue)">${p.cv>0?p.cv.toFixed(1)+' mph':'—'}</div></div><div class="lm-ds"><div class="dl">Accel</div><div class="dv">${p.ca||'—'}</div></div><div class="lm-ds"><div class="dl">Decel</div><div class="dv">${p.cde||'—'}</div></div></div><div style="position:relative;height:200px"><canvas id="lm-player-chart"></canvas></div>`;
   if(lmPC){lmPC.destroy();lmPC=null;}
   const allL2=[...allLMWks];const rc2=spWks.length+suWks.length;
-  const bc2=allL2.map((_,i)=>i<spWks.length?'rgba(0,48,135,0.25)':i<rc2?C.blue:i<allLMWks.length?'rgba(250,70,22,0.15)':'transparent');
+  const bc2=allL2.map((_,i)=>i<spWks.length?'rgba(0,48,135,0.25)':i<rc2?C.blue:C.acc);
   const lb2=allL2.map((_,i)=>i<allLMWks.length?(p.allLoads[i]??null):null);
   const el3=document.getElementById('lm-player-chart');if(!el3)return;
-  lmPC=new Chart(el3,{type:'bar',data:{labels:allL2,datasets:[{label:'Load',data:lb2,backgroundColor:bc2,borderRadius:3,order:3},{label:'Spring baseline',data:allL2.map(()=>p.spAvg),type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10}}}}}});
+  lmPC=new Chart(el3,{type:'bar',data:{labels:allL2.map(lmWkLabel),datasets:[{label:'Load',data:lb2,backgroundColor:bc2,borderRadius:3,order:3},{label:'Spring baseline',data:allL2.map(()=>p.spAvg),type:'line',borderColor:C.green,borderDash:[4,3],pointRadius:0,borderWidth:1.5,fill:false,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.raw!=null?Math.round(ctx.raw):'—'}`}}},scales:{x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:9},maxRotation:45,autoSkip:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:C.tick,font:{size:10}}}}}});
   setTimeout(()=>sec.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
 };
 
@@ -2898,64 +2866,48 @@ window.renderVALDGroup=function(){
   ],()=>_valdGrpPrep,renderValdGrpRows);
 };
 
-// ── SUMMER LOAD RAMP UP ───────────────────────────────────────────
-const SLRU_WK_MAP={'Su W8':'W7'}; // Current week only — W1-W6 use static historical data
-const SLRU_HIST_WKS=['W1','W2','W3','W4','W5','W6'];
-const SLRU_CURR_WK='W7';
-const SLRU_PROJ_WKS=['W8','W9','W10','W10 Taper'];
-const SLRU_ALL_WKS=['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W10 Taper'];
-const SLRU_CAMP_WK='Camp Proj';
-
-const SLRU_DATA={
-  'pl-off':{label:'Total Player Load',unit:'',positions:['WR','RB','QB','TE','OL'],
-    campProj:{WR:3361,RB:3010,QB:2757,TE:3033,OL:2606},
-    hist:{WR:[440,671,1132,1762,1642,1653],RB:[484,713,1001,1585,1610,1508],QB:[483,853,997,1423,1166,1524],TE:[386,658,982,1652,1497,1571],OL:[339,574,770,1381,1222,1276]},
-    proj:{WR:[2054.3,2455.6,2856.8,2184.7],RB:[1858.2,2208.3,2558.5,1956.5],QB:[1797.1,2070.3,2343.4,1792],TE:[1906.7,2242.4,2578,1971.5],OL:[1589,1902.1,2215.1,1693.9]}},
-  'pl-def':{label:'Total Player Load',unit:'',positions:['CB','SAF','ILB','OLB','DL'],
-    campProj:{CB:2864,SAF:3075,ILB:2823,OLB:3123,DL:2325},
-    hist:{CB:[400,700,995,1320,1531,1498],SAF:[362,709,963,1295,1532,1485],ILB:[356,641,938,1301,1496,1458],OLB:[430,704,855,1314,1468,1458],DL:[313,600,727,1048,1211,1078]},
-    proj:{CB:[1810.1,2122.3,2434.4,1861.6],SAF:[1861.2,2237.5,2613.8,1998.8],ILB:[1771.8,2085.7,2399.5,1835],OLB:[1856.8,2255.7,2654.5,2030],DL:[1377.4,1676.8,1976.2,1511.2]}},
-  'hsd12-off':{label:'HSD 12-16 mph',unit:'y',positions:['WR','RB','QB','TE','OL'],
-    campProj:{WR:2500,RB:2400,QB:2450,TE:2250,OL:550},
-    hist:{WR:[258,472,951,1562,1703,1400],RB:[254,453,973,1261,1378,1350],QB:[122,393,598,1115,626,1200],TE:[209,364,835,1255,1308,1300],OL:[164,190,242,329,481,800]},
-    proj:{WR:[1641.7,1883.3,2125,1625],RB:[1580,1810,2040,1560],QB:[1494.2,1788.3,2082.5,1592.5],TE:[1504.2,1708.3,1912.5,1462.5],OL:[689.2,578.3,467.5,357.5]}},
-  'hsd12-def':{label:'HSD 12-16 mph',unit:'y',positions:['CB','SAF','ILB','OLB','DL'],
-    campProj:{CB:2300,SAF:2450,ILB:2250,OLB:2200,DL:450},
-    hist:{CB:[238,344,714,1096,1328,1297],SAF:[188,384,673,1161,1416,1277],ILB:[175,295,653,1089,1175,1128],OLB:[198,267,500,1055,1161,1123],DL:[121,187,324,321,585,800]},
-    proj:{CB:[1516.3,1735.7,1955,1495],SAF:[1545.5,1814,2082.5,1592.5],ILB:[1389.5,1651,1912.5,1462.5],OLB:[1372,1621,1870,1430],DL:[660.8,521.7,382.5,292.5]}},
-  'hsd16-off':{label:'HSD 16+ mph',unit:'y',positions:['WR','RB','QB','TE','OL'],
-    campProj:{WR:1400,RB:950,QB:375,TE:475,OL:5},
-    hist:{WR:[76,59,139,110,149,190],RB:[54,53,82,64,101,110],QB:[58,52,55,52,60,90],TE:[33,54,47,37,45,90],OL:[5,8,1,0,2,3]},
-    proj:{WR:[523.3,856.7,1190,910],RB:[342.5,575,807.5,617.5],QB:[166.2,242.5,318.8,243.8],TE:[194.6,299.2,403.8,308.8],OL:[3.4,3.8,4.2,3.2]}},
-  'hsd16-def':{label:'HSD 16+ mph',unit:'y',positions:['CB','SAF','ILB','OLB','DL'],
-    campProj:{CB:750,SAF:725,ILB:450,OLB:250,DL:35},
-    hist:{CB:[81,64,100,100,101,190],SAF:[85,68,85,101,107,160],ILB:[71,55,66,66,79,100],OLB:[55,50,37,61,54,90],DL:[32,23,12,2,4,25]},
-    proj:{CB:[339.2,488.3,637.5,487.5],SAF:[312.1,464.2,616.2,471.2],ILB:[194.2,288.3,382.5,292.5],OLB:[130.8,171.7,212.5,162.5],DL:[26.6,28.2,29.8,22.8]}},
-  'accel-off':{label:'Accelerations',unit:'',positions:['WR','RB','QB','TE','OL'],
-    campProj:{WR:456,RB:340,QB:197,TE:303,OL:122},
-    hist:{WR:[52,82,156,237,213,230],RB:[35,75,117,186,191,195],QB:[27,69,88,154,85,150],TE:[35,59,120,173,186,185],OL:[23,55,68,138,117,100]},
-    proj:{WR:[282.5,335.1,387.6,296.4],RB:[226.3,257.7,289,221],QB:[155.8,161.6,167.4,128.1],TE:[209.2,233.4,257.6,197],OL:[101.2,102.5,103.7,79.3]}},
-  'accel-def':{label:'Accelerations',unit:'',positions:['CB','SAF','ILB','OLB','DL'],
-    campProj:{CB:355,SAF:370,ILB:308,OLB:292,DL:148},
-    hist:{CB:[50,82,125,151,176,200],SAF:[42,100,122,166,210,200],ILB:[34,74,110,167,186,160],OLB:[48,100,99,165,178,175],DL:[22,54,60,94,138,90]},
-    proj:{CB:[233.9,267.8,301.8,230.8],SAF:[238.2,276.3,314.5,240.5],ILB:[193.9,227.9,261.8,200.2],OLB:[199.4,223.8,248.2,189.8],DL:[101.9,113.9,125.8,96.2]}},
-  'decel-off':{label:'Decelerations',unit:'',positions:['WR','RB','QB','TE','OL'],
-    campProj:{WR:323,RB:230,QB:104,TE:225,OL:72},
-    hist:{WR:[30,50,117,161,156,160],RB:[18,44,93,129,141,160],QB:[16,41,57,90,50,100],TE:[15,31,88,112,128,130],OL:[9,40,42,90,68,60]},
-    proj:{WR:[198.2,236.4,274.6,210],RB:[171.8,183.7,195.5,149.5],QB:[96.1,92.3,88.4,67.6],TE:[150.4,170.8,191.2,146.2],OL:[60.4,60.8,61.2,46.8]}},
-  'decel-def':{label:'Decelerations',unit:'',positions:['CB','SAF','ILB','OLB','DL'],
-    campProj:{CB:267,SAF:267,ILB:230,OLB:176,DL:88},
-    hist:{CB:[24,50,93,111,124,130],SAF:[21,62,84,109,142,140],ILB:[18,52,83,111,138,115],OLB:[20,60,64,94,109,120],DL:[12,39,42,58,90,55]},
-    proj:{CB:[162.3,194.6,226.9,173.6],SAF:[169,198,226.9,173.6],ILB:[141.8,168.7,195.5,149.5],OLB:[129.9,139.7,149.6,114.4],DL:[61.6,68.2,74.8,57.2]}}
+// ── LOAD RAMP: SUMMER → FALL CAMP (real weekly data only, no projections) ──
+const SLRU_TABS={
+  'pl-off':{label:'Total Player Load',unit:'',positions:['WR','RB','QB','TE','OL']},
+  'pl-def':{label:'Total Player Load',unit:'',positions:['CB','SAF','ILB','OLB','DL']},
+  'hsd12-off':{label:'HSD 12-16 mph',unit:'y',positions:['WR','RB','QB','TE','OL']},
+  'hsd12-def':{label:'HSD 12-16 mph',unit:'y',positions:['CB','SAF','ILB','OLB','DL']},
+  'hsd16-off':{label:'HSD 16+ mph',unit:'y',positions:['WR','RB','QB','TE','OL']},
+  'hsd16-def':{label:'HSD 16+ mph',unit:'y',positions:['CB','SAF','ILB','OLB','DL']},
+  'accel-off':{label:'Accelerations',unit:'',positions:['WR','RB','QB','TE','OL']},
+  'accel-def':{label:'Accelerations',unit:'',positions:['CB','SAF','ILB','OLB','DL']},
+  'decel-off':{label:'Decelerations',unit:'',positions:['WR','RB','QB','TE','OL']},
+  'decel-def':{label:'Decelerations',unit:'',positions:['CB','SAF','ILB','OLB','DL']}
 };
 
 const SLRU_POS_MAP={'SAF':'S','OLB':'EDGE'};
 let slruActive='pl-off';
 
+// Every real week shown in this panel: Summer Week 1 through today, then
+// Fall Camp Week 1 onward — grows on its own as camp goes on, no projected
+// weeks or camp targets baked in.
+const SLRU_WEEKS=[...suWks,...fcWks];
+const SLRU_CURR_WK=SLRU_WEEKS[SLRU_WEEKS.length-1]||null;
+
+// Two-line "Summer / Week N" or "Fall Camp / Week N" label — used for table headers,
+// where each part gets its own real HTML line via <br>.
+function slruWkParts(wk){
+  if(wk.startsWith('Su'))return['Summer',`Week ${parseInt(wk.replace('Su W',''))}`];
+  if(wk.startsWith('Fc'))return['Fall Camp',`Week ${parseInt(wk.replace('Fc W',''))}`];
+  return[wk];
+}
+// Compact single-line "Sum W1" / "Camp W1" label — used for chart axis ticks, since
+// Chart.js can't rotate multi-line array labels and they overlap once there are many weeks.
+function slruWkShort(wk){
+  if(wk.startsWith('Su'))return`Sum W${parseInt(wk.replace('Su W',''))}`;
+  if(wk.startsWith('Fc'))return`Camp W${parseInt(wk.replace('Fc W',''))}`;
+  return wk;
+}
+
 window.setSlruTab=function(tab){
   slruActive=tab;
+  const tabs=Object.keys(SLRU_TABS);
   document.querySelectorAll('.slru-tab').forEach((b,i)=>{
-    const tabs=['pl-off','pl-def','hsd12-off','hsd12-def','hsd16-off','hsd16-def','accel-off','accel-def','decel-off','decel-def'];
     b.classList.toggle('active',tabs[i]===tab);
   });
   renderSlru();
@@ -2970,12 +2922,12 @@ function getSlruField(tabId){
   return'load';
 }
 
-function getSlruWeekActuals(suWkLabel,positions,field){
+function getSlruWeekActuals(wkLabel,positions,field){
   const result={};
   positions.forEach(pos=>{
     const dbPos=SLRU_POS_MAP[pos]||pos;
     const posPlayers=PLAYERS.filter(p=>p.pos===dbPos);
-    const nonRehabSessions=p=>p.sessions.filter(s=>s.wk===suWkLabel&&s.tag!=='Rehab');
+    const nonRehabSessions=p=>p.sessions.filter(s=>s.wk===wkLabel&&s.tag!=='Rehab');
     const activePlayers=posPlayers.filter(p=>nonRehabSessions(p).length>0);
     const total=posPlayers.reduce((t,p)=>t+nonRehabSessions(p).reduce((st,s)=>st+(s[field]||0),0),0);
     result[pos]=activePlayers.length>0?Math.round(total/activePlayers.length):null;
@@ -2983,80 +2935,33 @@ function getSlruWeekActuals(suWkLabel,positions,field){
   return result;
 }
 
-function pctBg(pct){
-  if(pct==null)return'';
-  if(pct<50)return'background:rgba(220,38,38,0.12)';
-  if(pct<80)return'background:rgba(217,119,6,0.12)';
-  return'background:rgba(22,163,74,0.12)';
-}
-function pctColor(pct){
-  if(pct==null)return'';
-  if(pct<50)return'color:#B91C1C;font-weight:600';
-  if(pct<80)return'color:#92400E;font-weight:600';
-  return'color:#15803D;font-weight:600';
-}
-
 function getSlruTableHTML(tabId){
-  const cfg=SLRU_DATA[tabId];
+  const cfg=SLRU_TABS[tabId];
   const field=getSlruField(tabId);
-  const histBg='rgba(0,48,135,0.08)';
-  const currBg='rgba(250,70,22,0.08)';
-  const projBg='rgba(250,70,22,0.05)';
-  const campBg='rgba(22,163,74,0.08)';
-  const curN=SLRU_CURRENT_WK_NUM;
+  const suBg='rgba(0,48,135,0.08)';
+  const fcBg='rgba(250,70,22,0.06)';
+  const currBg='rgba(250,70,22,0.16)';
 
-  let weekTh='';
-  for(let n=1;n<=10;n++){
-    if(n<curN) weekTh+=`<th style="font-size:10px;background:${histBg}">W${n}</th>`;
-    else if(n===curN) weekTh+=`<th style="font-size:10px;background:${currBg};font-weight:800">W${n}<br><span style="font-size:9px;opacity:.7">Current</span></th>`;
-    else weekTh+=`<th style="font-size:10px;background:${projBg};color:var(--text3)">W${n}</th>`;
-  }
-  let pctTh='';
-  for(let n=1;n<=curN;n++){
-    pctTh+=`<th style="font-size:9px;color:${n===curN?'var(--uf-orange)':'var(--text3)'};font-weight:${n===curN?700:400}">%W${n}</th>`;
-  }
+  const weekTh=SLRU_WEEKS.map(wk=>{
+    const isCur=wk===SLRU_CURR_WK,isFc=wk.startsWith('Fc');
+    const bg=isCur?currBg:isFc?fcBg:suBg;
+    const[line1,line2]=slruWkParts(wk);
+    return`<th style="font-size:10px;background:${bg};${isCur?'font-weight:800':''};white-space:nowrap">${line1}<br>${line2}${isCur?'<br><span style="font-size:9px;opacity:.7">Current</span>':''}</th>`;
+  }).join('');
 
-  const thead=`<th style="min-width:70px">Position</th>`+weekTh+
-    `<th style="font-size:10px;background:${campBg};color:#15803D;font-weight:700">Camp</th>`+pctTh;
+  const thead=`<th style="min-width:70px">Position</th>`+weekTh;
 
   const tbody=cfg.positions.map(pos=>{
-    const campProj=cfg.campProj[pos];
-    const histVals=cfg.hist[pos];   // static W1-W6
-    const projVals=cfg.proj[pos];   // [W7proj, W8, W9, W10]
-
-    function weekVal(n){
-      if(n<=6) return histVals[n-1];
-      if(n>=7&&n<=10){
-        if(n<curN){
-          const live=getSlruWeekActuals(slruWkToSuWk(n),[pos],field)[pos];
-          return live!=null?live:projVals[n-7];
-        }
-        if(n===curN) return getSlruWeekActuals(slruWkToSuWk(n),[pos],field)[pos];
-        return projVals[n-7];
-      }
-      return null;
-    }
-
-    let weekTds='';
-    for(let n=1;n<=10;n++){
-      const v=weekVal(n);
-      const bg=n<curN?histBg:n===curN?currBg:projBg;
-      const style=n===curN?`background:${bg};font-weight:700;color:var(--uf-orange)`:n<curN?`background:${bg}`:`background:${bg};color:var(--text3)`;
-      weekTds+=`<td class="mono" style="${style}">${v!=null?Math.round(v).toLocaleString():'—'}</td>`;
-    }
-
-    let pctTds='';
-    for(let n=1;n<=curN;n++){
-      const v=weekVal(n);
-      const pct=v!=null&&campProj>0?Math.round(v/campProj*100):null;
-      pctTds+=`<td class="mono" style="${pctBg(pct)};${pctColor(pct)}">${pct!=null?pct+'%':'—'}</td>`;
-    }
-
+    const weekTds=SLRU_WEEKS.map(wk=>{
+      const isCur=wk===SLRU_CURR_WK,isFc=wk.startsWith('Fc');
+      const bg=isCur?currBg:isFc?fcBg:suBg;
+      const v=getSlruWeekActuals(wk,[pos],field)[pos];
+      const style=isCur?`background:${bg};font-weight:700;color:var(--uf-orange)`:`background:${bg}`;
+      return`<td class="mono" style="${style}">${v!=null?Math.round(v).toLocaleString():'—'}</td>`;
+    }).join('');
     return`<tr>
       <td style="font-weight:700;color:var(--uf-blue);min-width:50px">${pos}</td>
       ${weekTds}
-      <td class="mono" style="background:${campBg};font-weight:700;color:#15803D">${campProj.toLocaleString()}</td>
-      ${pctTds}
     </tr>`;
   }).join('');
 
@@ -3064,53 +2969,28 @@ function getSlruTableHTML(tabId){
 }
 
 function renderSlruCharts(containerId,tabId,idPrefix){
-  const cfg=SLRU_DATA[tabId];
+  const cfg=SLRU_TABS[tabId];
   const field=getSlruField(tabId);
   const container=document.getElementById(containerId);
   if(!container)return;
-  const curN=SLRU_CURRENT_WK_NUM;
 
   container.innerHTML=cfg.positions.map(pos=>`
     <div class="panel" style="margin-bottom:0">
-      <div style="font-family:var(--font-d);font-size:12px;font-weight:700;color:var(--uf-blue);margin-bottom:8px">${pos} — % of Camp Proj</div>
+      <div style="font-family:var(--font-d);font-size:12px;font-weight:700;color:var(--uf-blue);margin-bottom:8px">${pos} — ${cfg.label}${cfg.unit?` (${cfg.unit})`:''}</div>
       <div class="chart-wrap h180"><canvas id="${idPrefix}${pos}"></canvas></div>
     </div>`).join('');
 
   cfg.positions.forEach(pos=>{
-    const campProj=cfg.campProj[pos];
-    const histVals=cfg.hist[pos];
-    const projVals=cfg.proj[pos];
+    const labels=SLRU_WEEKS.map(slruWkShort);
+    const values=SLRU_WEEKS.map(wk=>getSlruWeekActuals(wk,[pos],field)[pos]);
+    const colors=SLRU_WEEKS.map(wk=>wk===SLRU_CURR_WK?C.acc:wk.startsWith('Fc')?'rgba(250,70,22,0.5)':C.blue);
 
-    function weekVal(n){
-      if(n<=6) return histVals[n-1];
-      if(n>=7&&n<=10){
-        if(n<curN){
-          const live=getSlruWeekActuals(slruWkToSuWk(n),[pos],field)[pos];
-          return live!=null?live:projVals[n-7];
-        }
-        if(n===curN) return getSlruWeekActuals(slruWkToSuWk(n),[pos],field)[pos];
-        return projVals[n-7];
-      }
-      return null;
-    }
-
-    const labels=['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','Camp'];
-    const values=[];
-    const colors=[];
-    for(let n=1;n<=10;n++){
-      const v=weekVal(n);
-      const pct=v!=null&&campProj>0?Math.round(v/campProj*100):0;
-      values.push(pct);
-      colors.push(n<curN?'#003087':n===curN?'#FA4616':'rgba(250,70,22,0.5)');
-    }
-    values.push(100); colors.push('#22C55E');
-
-    mk(`${idPrefix}${pos}`,{type:'bar',data:{
+    mk(`${idPrefix}${pos}`,{type:'bar',plugins:[ChartDataLabels],data:{
       labels,
-      datasets:[{data:values,backgroundColor:colors,borderRadius:3}]
-    },options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw}% of camp proj`}}},scales:{
-      x:{ticks:{color:C.tick,font:{size:9}},grid:{color:C.grid}},
-      y:{ticks:{color:C.tick,font:{size:9},callback:v=>v+'%'},grid:{color:C.grid},min:0,max:110}
+      datasets:[{data:values,backgroundColor:colors,borderRadius:3,datalabels:{anchor:'end',align:'top',offset:2,color:C.tick,font:{size:8,family:'DM Mono',weight:'bold'},formatter:v=>v!=null?Math.round(v).toLocaleString():''}}]
+    },options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:14}},plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx=>lmWkLabel(SLRU_WEEKS[ctx[0].dataIndex]),label:ctx=>`${ctx.raw!=null?Math.round(ctx.raw).toLocaleString():'—'}${cfg.unit}`}}},scales:{
+      x:{ticks:{color:C.tick,font:{size:9},minRotation:60,maxRotation:60,autoSkip:false},grid:{color:C.grid}},
+      y:{ticks:{color:C.tick,font:{size:9}},grid:{color:C.grid}}
     }}});
   });
 }
@@ -3124,9 +3004,9 @@ function renderSlru(){
 }
 window.renderSlru=renderSlru;
 
-// ── EXPORT ALL SLRU FILTERS TO PDF ─────────────────────────────────
+// ── EXPORT ALL FILTERS TO PDF ─────────────────────────────────
 window.exportSlruPDF=async function(){
-  const allTabs=['pl-off','pl-def','hsd12-off','hsd12-def','hsd16-off','hsd16-def','accel-off','accel-def','decel-off','decel-def'];
+  const allTabs=Object.keys(SLRU_TABS);
   const tabLabels={
     'pl-off':'Player Load — Offense','pl-def':'Player Load — Defense',
     'hsd12-off':'HSD 12-16 mph — Offense','hsd12-def':'HSD 12-16 mph — Defense',
@@ -3140,7 +3020,7 @@ window.exportSlruPDF=async function(){
   container=document.createElement('div');
   container.id='slru-export-container';
   container.innerHTML=`<div style="padding:24px">
-    <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;margin-bottom:4px;color:#0F1923">Summer Load Ramp Up — Full Report</h1>
+    <h1 style="font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:800;margin-bottom:4px;color:#0F1923">Load Ramp — Summer &amp; Fall Camp — Full Report</h1>
     <div style="font-family:'DM Mono',monospace;font-size:11px;color:#475569;margin-bottom:20px">Generated ${new Date().toLocaleDateString()}</div>`+
     allTabs.map(tabId=>`
       <div style="margin-bottom:36px;page-break-inside:avoid">
