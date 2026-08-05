@@ -755,6 +755,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   <div class="sel-row" style="margin-bottom:16px">
     <select class="data-sel" id="periodbd-date-sel" onchange="renderPeriodBreakdown()" style="min-width:200px"></select>
     <select class="data-sel" id="periodbd-pos-sel" onchange="renderPeriodBreakdown()" style="min-width:200px"></select>
+    <select class="data-sel" id="periodbd-name-sel" onchange="renderPeriodBreakdown()" style="min-width:220px"></select>
   </div>
   <div class="lm-phase-tags" style="margin-bottom:10px">
     <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#0F1923;display:inline-block;border-radius:2px"></span>Player Load</span>
@@ -2130,6 +2131,7 @@ let _periodBdChart=null;
 window.initPeriodBreakdown=function(){
   const selD=document.getElementById('periodbd-date-sel');
   const selP=document.getElementById('periodbd-pos-sel');
+  const selN=document.getElementById('periodbd-name-sel');
   if(selD.options.length===0){
     const dates=getSessionCompareDates();
     dates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;selD.appendChild(o);});
@@ -2139,14 +2141,26 @@ window.initPeriodBreakdown=function(){
     const posOrder=['WR','RB','QB','TE','OL','CB','SAF','ILB','OLB','DL'];
     posOrder.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;selP.appendChild(o);});
   }
+  if(selN.options.length===0){
+    const o0=document.createElement('option');o0.value='';o0.textContent='— All Players (by Position) —';selN.appendChild(o0);
+    [...PLAYERS].map(p=>p.name).sort((a,b)=>a.localeCompare(b)).forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;selN.appendChild(o);});
+  }
   renderPeriodBreakdown();
 };
 window.renderPeriodBreakdown=async function(){
   const date=document.getElementById('periodbd-date-sel').value;
   const pos=document.getElementById('periodbd-pos-sel').value;
-  if(!date||!pos)return;
+  const name=document.getElementById('periodbd-name-sel').value;
+  if(!date||(!pos&&!name))return;
 
-  document.getElementById('periodbd-chart-title').innerHTML=`<i class="ti ti-chart-bar"></i>${pos} — Period Breakdown — ${date}`;
+  // Selecting a specific player overrides the position filter — grey out the
+  // position select while a player is chosen so it's clear which mode is active.
+  const selPEl=document.getElementById('periodbd-pos-sel');
+  selPEl.disabled=!!name;
+  selPEl.style.opacity=name?0.45:1;
+
+  const titleLbl=name||pos;
+  document.getElementById('periodbd-chart-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Period Breakdown — ${date}`;
 
   const {data:periodRows,error}=await SB.from('catapult_period_stats')
     .select('athlete_name,period_id,period_name,start_time_h,end_time_h,total_player_load,max_velocity')
@@ -2159,7 +2173,9 @@ window.renderPeriodBreakdown=async function(){
   }
 
   const dbPos=SLRU_POS_MAP[pos]||pos;
-  const posFiltered=periodRows.filter(r=>lkPos(normName(r.athlete_name))===dbPos&&!(r.period_name||'').toLowerCase().includes('auto created period'));
+  const posFiltered=name
+    ? periodRows.filter(r=>normName(r.athlete_name)===name&&!(r.period_name||'').toLowerCase().includes('auto created period'))
+    : periodRows.filter(r=>lkPos(normName(r.athlete_name))===dbPos&&!(r.period_name||'').toLowerCase().includes('auto created period'));
 
   const periods={};
   posFiltered.forEach(r=>{
@@ -2223,13 +2239,13 @@ window.renderPeriodBreakdown=async function(){
     });
   }
 
- // ── Summary table: whole-session totals for this position on this date ──
+ // ── Summary table: whole-session totals for this position (or player) on this date ──
   const dayRows=raw.filter(r=>r.session_date===date&&r.participation_tag!=='Rehab');
   const summaryRows=dayRows
     .map(r=>{
       const nm=normName(r.athlete_name);
       const rPos=lkPos(nm)||'UNK';
-      if(rPos!==dbPos)return null;
+      if(name){if(nm!==name)return null;}else{if(rPos!==dbPos)return null;}
       const dur=+r.total_duration||0;
       const pl=+r.total_player_load||0;
       return{
@@ -2265,7 +2281,7 @@ window.renderPeriodBreakdown=async function(){
         <td class="mono">${r.accelEff??'—'}</td>
         <td class="mono">${r.decelEff??'—'}</td>
       </tr>`).join('')
-    : `<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text3)">No session data for this position on this date.</td></tr>`;
+    : `<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text3)">No session data for ${name?'this player':'this position'} on this date.</td></tr>`;
 
   makeSortableTable('periodbd-summary-thead',[
     r=>r.name,r=>r.pos,r=>r.dur,r=>r.pl,r=>r.plMin,r=>r.dist,r=>r.maxV,r=>r.maxAccel,r=>r.maxDecel,r=>r.hsd1216,r=>r.hsd16,r=>r.accelEff,r=>r.decelEff
