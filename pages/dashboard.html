@@ -963,7 +963,13 @@ const NAME_MAP={
 };
 function normName(n){
   if(!n)return n;
-  const u=n.trim().toUpperCase();
+  // Collapse ANY whitespace run (regular spaces, double spaces, non-breaking spaces,
+  // tabs) to a single space before trimming/uppercasing. Some Catapult activities —
+  // e.g. a period synced as its own separate activity, like a post-break "Team" period —
+  // can carry a stray double space or non-breaking space in athlete_name that .trim()
+  // alone doesn't catch, which silently breaks exact-name-match filters elsewhere
+  // (like the Period Breakdown player select) even though the name looks identical.
+  const u=n.replace(/\s+/g,' ').trim().toUpperCase();
   return NAME_MAP[u]||u;
 }
 
@@ -2162,9 +2168,21 @@ window.renderPeriodBreakdown=async function(){
   const titleLbl=name||pos;
   document.getElementById('periodbd-chart-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Period Breakdown — ${date}`;
 
-  const {data:periodRows,error}=await SB.from('catapult_period_stats')
-    .select('athlete_name,period_id,period_name,start_time_h,end_time_h,total_player_load,max_velocity')
-    .eq('session_date',date);
+  // Paginate — a full practice day (many players × ~15-20 periods) can easily exceed
+  // Supabase's default 1000-row cap, which silently truncates the tail of the result
+  // (the last periods of the day) for whichever rows happen to sort past the cutoff.
+  let periodRows=[],_pbPage=0,_pbDone=false,periodError=null;
+  while(!_pbDone){
+    const{data:chunk,error:pbErr}=await SB.from('catapult_period_stats')
+      .select('athlete_name,period_id,period_name,start_time_h,end_time_h,total_player_load,max_velocity')
+      .eq('session_date',date)
+      .order('start_time_h',{ascending:true})
+      .range(_pbPage*1000,(_pbPage+1)*1000-1);
+    if(pbErr){periodError=pbErr;_pbDone=true;}
+    else if(!chunk||chunk.length===0){_pbDone=true;}
+    else{periodRows=[...periodRows,...chunk];if(chunk.length<1000)_pbDone=true;_pbPage++;}
+  }
+  const error=periodError;
 
   if(error||!periodRows){
     document.getElementById('periodbd-summary-body').innerHTML=`<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--text3)">Error loading data.</td></tr>`;
@@ -2177,10 +2195,31 @@ window.renderPeriodBreakdown=async function(){
     ? periodRows.filter(r=>normName(r.athlete_name)===name&&!(r.period_name||'').toLowerCase().includes('auto created period'))
     : periodRows.filter(r=>lkPos(normName(r.athlete_name))===dbPos&&!(r.period_name||'').toLowerCase().includes('auto created period'));
 
+  // Canonical period name per period_id, voted from EVERY athlete's row that day (not just
+  // the filtered subset). A single athlete can occasionally sync with a stale/mismatched
+  // period_name (e.g. the period got renamed in Catapult after that athlete's row already
+  // synced) — using the name the rest of the team agrees on avoids that one row dictating
+  // the label, which matters most in single-player mode where there's no other row to fall
+  // back on.
+  const periodNameVotes={};
+  periodRows.forEach(r=>{
+    if(!r.period_id)return;
+    const nm=(r.period_name||'').trim();
+    if(!nm)return;
+    (periodNameVotes[r.period_id]||(periodNameVotes[r.period_id]={}))[nm]=((periodNameVotes[r.period_id]||{})[nm]||0)+1;
+  });
+  function canonicalPeriodName(periodId,fallback){
+    const votes=periodNameVotes[periodId];
+    if(!votes)return fallback;
+    let best=fallback,bestCount=-1;
+    Object.entries(votes).forEach(([nm,count])=>{if(count>bestCount){best=nm;bestCount=count;}});
+    return best;
+  }
+
   const periods={};
   posFiltered.forEach(r=>{
     if(!periods[r.period_id]){
-      periods[r.period_id]={period_name:r.period_name,start_time_h:r.start_time_h,end_time_h:r.end_time_h,loads:[],vels:[]};
+      periods[r.period_id]={period_name:canonicalPeriodName(r.period_id,r.period_name),start_time_h:r.start_time_h,end_time_h:r.end_time_h,loads:[],vels:[]};
     }
     const p=periods[r.period_id];
     if(r.total_player_load!=null)p.loads.push(+r.total_player_load);
