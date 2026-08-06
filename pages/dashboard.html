@@ -308,6 +308,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="nav-item" data-page="leaderboards"><i class="ti ti-trophy"></i>Leaderboards</div>
     <div class="nav-item" data-page="sessioncompare"><i class="ti ti-arrows-left-right"></i>Session Compare</div>
     <div class="nav-item" data-page="periodbreakdown"><i class="ti ti-chart-histogram"></i>Period Breakdown</div>
+    <div class="nav-item" data-page="weeklybreakdown"><i class="ti ti-calendar-stats"></i>Weekly Breakdown</div>
   </div>
   <div class="nav-section">
     <div class="nav-label">Health &amp; Analytics</div>
@@ -787,6 +788,45 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <th>Max Vel</th><th>Max Accel</th><th>Max Decel</th><th>HSD 12-16</th><th>HSD 16+</th>
       <th>Accel Eff</th><th>Decel Eff</th>
     </tr></thead><tbody id="periodbd-summary-body"></tbody></table></div>
+  </div>
+</div>
+
+<!-- WEEKLY BREAKDOWN -->
+<div class="page" id="pg-weeklybreakdown">
+  <div class="sel-row" style="margin-bottom:16px">
+    <select class="data-sel" id="weeklybd-pos-sel" onchange="renderWeeklyBreakdown()" style="min-width:200px"></select>
+    <select class="data-sel" id="weeklybd-name-sel" onchange="renderWeeklyBreakdown()" style="min-width:220px"></select>
+  </div>
+  <div class="lm-phase-tags" style="margin-bottom:10px">
+    <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#D97706;display:inline-block;border-radius:2px"></span>HSD 12-16 mph</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:12px;height:12px;background:#003087;display:inline-block;border-radius:2px"></span>HSD 16+ mph</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:10px;background:rgba(15,25,35,0.22);border-bottom:2px solid #0F1923;display:inline-block"></span>Player Load</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#16A34A;display:inline-block"></span>Accel Total Efforts</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#DC2626;border-top:2px dashed #DC2626;display:inline-block"></span>Decel Total Efforts</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px;color:var(--text3);font-size:11px">(Summer Week 1 through the current week — grows automatically as new weeks sync)</span>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="weeklybd-chart-title"><i class="ti ti-chart-bar"></i>Weekly Breakdown</div>
+    <div class="chart-wrap h320"><canvas id="weeklybd-chart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="weeklybd-split-load-title"><i class="ti ti-chart-bar"></i>Player Load (AU)</div>
+    <div class="chart-wrap" style="height:280px"><canvas id="weeklybd-split-load"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="weeklybd-split-hsd-title"><i class="ti ti-chart-bar"></i>High Speed Distance (yd)</div>
+    <div class="chart-wrap" style="height:280px"><canvas id="weeklybd-split-hsd"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="weeklybd-split-effort-title"><i class="ti ti-chart-bar"></i>Accel / Decel Total Efforts</div>
+    <div class="chart-wrap" style="height:280px"><canvas id="weeklybd-split-effort"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title"><i class="ti ti-table"></i>Weekly Summary</div>
+    <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="weeklybd-summary-thead"><tr>
+      <th>Week</th><th>Sessions</th><th>Player Load</th><th>Distance (y)</th>
+      <th>Max Vel</th><th>HSD 12-16</th><th>HSD 16+</th><th>Accel Eff</th><th>Decel Eff</th>
+    </tr></thead><tbody id="weeklybd-summary-body"></tbody></table></div>
   </div>
 </div>
 
@@ -1347,7 +1387,7 @@ const tDACWR=gpsChartWks.map((_,i)=>tDACWR_daily[Math.min(i*7+6,tDACWR_daily.len
 const tAACWR=gpsChartWks.map((_,i)=>tAACWR_daily[Math.min(i*7+6,tAACWR_daily.length-1)]);
 
 // ── NAV ───────────────────────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison',sessioncompare:'Session Compare',periodbreakdown:'Period Breakdown',idp:'Individual Development Plan'};let gpsView='team';
+const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison',sessioncompare:'Session Compare',periodbreakdown:'Period Breakdown',weeklybreakdown:'Weekly Breakdown',idp:'Individual Development Plan'};let gpsView='team';
 window.setGPSView=function(v){
   gpsView=v;
   const viewMap={team:'gps-team-view',player:'gps-individual-view',group:'gps-group-view','90':'gps-90-view'};
@@ -1371,7 +1411,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
     document.getElementById('pg-'+pg)?.classList.add('active');
     document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
     document.getElementById('content-area').scrollTop=0;
-    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},lifting:renderLifting,sessioncompare:initSessionCompare,periodbreakdown:initPeriodBreakdown};
+    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},lifting:renderLifting,sessioncompare:initSessionCompare,periodbreakdown:initPeriodBreakdown,weeklybreakdown:initWeeklyBreakdown};
     if(map[pg])setTimeout(map[pg],60);
   });
 });
@@ -2429,6 +2469,188 @@ window.renderPeriodBreakdown=async function(){
       <td class="mono">${r.accelEff??'—'}</td>
       <td class="mono">${r.decelEff??'—'}</td>
     </tr>`).join('');
+  });
+};
+
+// ── WEEKLY BREAKDOWN ──────────────────────────────────────────────
+// Same idea as Period Breakdown, but rolled up week-by-week instead of period-by-period
+// within a single day. Uses the same SLRU_WEEKS list (Summer Week 1 through the current
+// Fall Camp week) so it automatically grows as new weeks sync — no new query needed,
+// everything comes from the catapult_sessions data already loaded into PLAYERS.
+let _weeklyBdChart=null;
+let _weeklyBdSplitLoadChart=null,_weeklyBdSplitHsdChart=null,_weeklyBdSplitEffortChart=null;
+
+window.initWeeklyBreakdown=function(){
+  const selP=document.getElementById('weeklybd-pos-sel');
+  const selN=document.getElementById('weeklybd-name-sel');
+  if(selP.options.length===0){
+    const posOrder=['WR','RB','QB','TE','OL','CB','SAF','ILB','OLB','DL'];
+    posOrder.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;selP.appendChild(o);});
+  }
+  if(selN.options.length===0){
+    const o0=document.createElement('option');o0.value='';o0.textContent='— All Players (by Position) —';selN.appendChild(o0);
+    [...PLAYERS].map(p=>p.name).sort((a,b)=>a.localeCompare(b)).forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;selN.appendChild(o);});
+  }
+  renderWeeklyBreakdown();
+};
+
+// For a position, mirrors the same "average per active (non-Rehab) player that week"
+// convention already used by the Load Ramp panel (getSlruWeekActuals) — so a bye week
+// or a smaller position group doesn't skew the number. For a single player, this
+// collapses to just their own weekly totals.
+function getWeeklyBreakdownRows(pos,name){
+  const dbPos=SLRU_POS_MAP[pos]||pos;
+  const relevant=name?PLAYERS.filter(p=>p.name===name):PLAYERS.filter(p=>p.pos===dbPos);
+  return SLRU_WEEKS.map(wk=>{
+    const nonRehab=p=>p.sessions.filter(s=>s.wk===wk&&s.tag!=='Rehab');
+    const active=relevant.filter(p=>nonRehab(p).length>0);
+    const sum=field=>relevant.reduce((t,p)=>t+nonRehab(p).reduce((st,s)=>st+(s[field]||0),0),0);
+    const avg=field=>active.length?sum(field)/active.length:null;
+    const sessionCount=relevant.reduce((t,p)=>t+nonRehab(p).length,0);
+    const maxVs=relevant.flatMap(p=>nonRehab(p).map(s=>s.maxV||0)).filter(v=>v>0);
+    return{
+      wk,sessionCount,
+      load:avg('load'),dist:avg('dist'),
+      hsd1216:avg('hsr12'),hsd16:avg('hsr'),
+      accel:avg('accel'),decel:avg('decel'),
+      maxV:maxVs.length?Math.max(...maxVs):null,
+    };
+  });
+}
+
+window.renderWeeklyBreakdown=function(){
+  const pos=document.getElementById('weeklybd-pos-sel').value;
+  const name=document.getElementById('weeklybd-name-sel').value;
+  if(!pos&&!name)return;
+
+  const selPEl=document.getElementById('weeklybd-pos-sel');
+  selPEl.disabled=!!name;
+  selPEl.style.opacity=name?0.45:1;
+
+  const titleLbl=name||pos;
+  document.getElementById('weeklybd-chart-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Weekly Breakdown`;
+  document.getElementById('weeklybd-split-load-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Player Load (AU)`;
+  document.getElementById('weeklybd-split-hsd-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — High Speed Distance (yd)`;
+  document.getElementById('weeklybd-split-effort-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Accel / Decel Total Efforts`;
+
+  const rows=getWeeklyBreakdownRows(pos,name);
+  const labels=rows.map(r=>slruWkShort(r.wk));
+  const loads=rows.map(r=>r.load);
+  const accel=rows.map(r=>r.accel);
+  const decel=rows.map(r=>r.decel);
+  const hsd1216=rows.map(r=>r.hsd1216);
+  const hsd16=rows.map(r=>r.hsd16);
+
+  const dlBaseMain={font:{size:9,family:'DM Mono',weight:'bold'},formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''};
+
+  if(_weeklyBdChart){_weeklyBdChart.destroy();_weeklyBdChart=null;}
+  _weeklyBdChart=new Chart(document.getElementById('weeklybd-chart'),{
+    data:{
+      labels,
+      datasets:[
+        {type:'bar',label:'HSD 12-16 mph (yd)',data:hsd1216,yAxisID:'yHSD',backgroundColor:'#D97706',borderRadius:3,order:4,barPercentage:.7,categoryPercentage:.5,
+          datalabels:{...dlBaseMain,anchor:'end',align:'top',color:'#D97706'}},
+        {type:'bar',label:'HSD 16+ mph (yd)',data:hsd16,yAxisID:'yHSD',backgroundColor:C.blue,borderRadius:3,order:5,barPercentage:.7,categoryPercentage:.5,
+          datalabels:{...dlBaseMain,anchor:'end',align:'top',color:C.blue}},
+        {type:'line',label:'Player Load',data:loads,yAxisID:'yLoad',fill:true,backgroundColor:'rgba(15,25,35,0.22)',borderColor:'#0F1923',borderWidth:2,pointRadius:3,pointBackgroundColor:'#0F1923',tension:.3,order:3,
+          datalabels:{...dlBaseMain,anchor:'end',align:'top',offset:6,color:'#0F1923'}},
+        {type:'line',label:'Accel Total Efforts',data:accel,yAxisID:'yEfforts',borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
+          datalabels:{...dlBaseMain,anchor:'start',align:'bottom',offset:4,color:C.green}},
+        {type:'line',label:'Decel Total Efforts',data:decel,yAxisID:'yEfforts',borderColor:C.red,backgroundColor:C.red,pointRadius:3,pointBackgroundColor:C.red,borderWidth:2,borderDash:[4,3],tension:.3,order:0,
+          datalabels:{...dlBaseMain,anchor:'start',align:'bottom',offset:16,color:C.red}},
+      ]
+    },
+    plugins:[ChartDataLabels],
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      layout:{padding:{top:20,bottom:20}},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>{
+          const v=ctx.raw;
+          if(v==null)return`${ctx.dataset.label}: —`;
+          return`${ctx.dataset.label}: ${v.toFixed(2)}`;
+        }}}
+      },
+      scales:{
+        x:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:50,minRotation:30,autoSkip:false},grid:{display:false}},
+        yHSD:{display:false,beginAtZero:true},
+        yLoad:{display:false,beginAtZero:true},
+        yEfforts:{display:false,beginAtZero:true},
+      }
+    }
+  });
+
+  // ── Split view: one real axis per metric family, same as Period Breakdown's split panels ──
+  if(_weeklyBdSplitLoadChart){_weeklyBdSplitLoadChart.destroy();_weeklyBdSplitLoadChart=null;}
+  if(_weeklyBdSplitHsdChart){_weeklyBdSplitHsdChart.destroy();_weeklyBdSplitHsdChart=null;}
+  if(_weeklyBdSplitEffortChart){_weeklyBdSplitEffortChart.destroy();_weeklyBdSplitEffortChart=null;}
+
+  const dlBase=(clr)=>({font:{size:9,family:'DM Mono',weight:'bold'},color:clr,anchor:'end',align:'top',formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''});
+  const xAxis={ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:50,minRotation:30,autoSkip:false},grid:{display:false}};
+  const yAxis={beginAtZero:true,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{color:C.grid}};
+
+  _weeklyBdSplitLoadChart=new Chart(document.getElementById('weeklybd-split-load'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Player Load',data:loads,backgroundColor:'#0F1923',borderRadius:3,barPercentage:.55,
+      datalabels:dlBase('#0F1923')}]},
+    plugins:[ChartDataLabels],
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Player Load: ${ctx.raw!=null?ctx.raw.toFixed(2):'—'}`}}},
+      scales:{x:xAxis,y:yAxis}}
+  });
+
+  _weeklyBdSplitHsdChart=new Chart(document.getElementById('weeklybd-split-hsd'),{
+    data:{labels,datasets:[
+      {type:'bar',label:'HSD 12-16 mph',data:hsd1216,backgroundColor:'#D97706',borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+        datalabels:dlBase('#D97706')},
+      {type:'bar',label:'HSD 16+ mph',data:hsd16,backgroundColor:C.blue,borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+        datalabels:dlBase(C.blue)},
+    ]},
+    plugins:[ChartDataLabels],
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}}},
+      scales:{x:xAxis,y:yAxis}}
+  });
+
+  _weeklyBdSplitEffortChart=new Chart(document.getElementById('weeklybd-split-effort'),{
+    data:{labels,datasets:[
+      {type:'line',label:'Accel Total Efforts',data:accel,borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
+        datalabels:{...dlBase(C.green),offset:6}},
+      {type:'line',label:'Decel Total Efforts',data:decel,borderColor:C.red,backgroundColor:C.red,pointRadius:3,pointBackgroundColor:C.red,borderWidth:2,borderDash:[4,3],tension:.3,order:0,
+        datalabels:{...dlBase(C.red),offset:20}},
+    ]},
+    plugins:[ChartDataLabels],
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24,bottom:8}},
+      interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false}},
+      scales:{x:xAxis,y:yAxis}}
+  });
+
+  // ── Weekly Summary table ──
+  const wkLbl=r=>`${slruWkParts(r.wk).join(' — ')}${r.wk===SLRU_CURR_WK?' <span style="color:var(--uf-orange);font-size:10px;font-weight:800">(Current)</span>':''}`;
+  const rowHTML=r=>`<tr>
+        <td style="font-weight:600">${wkLbl(r)}</td>
+        <td class="mono">${r.sessionCount}</td>
+        <td class="mono">${r.load!=null?r.load.toFixed(1):'—'}</td>
+        <td class="mono">${r.dist!=null?Math.round(r.dist).toLocaleString():'—'}</td>
+        <td class="mono acc">${r.maxV!=null?r.maxV.toFixed(2):'—'}</td>
+        <td class="mono">${r.hsd1216!=null?Math.round(r.hsd1216).toLocaleString():'—'}</td>
+        <td class="mono">${r.hsd16!=null?Math.round(r.hsd16).toLocaleString():'—'}</td>
+        <td class="mono">${r.accel!=null?r.accel.toFixed(1):'—'}</td>
+        <td class="mono">${r.decel!=null?r.decel.toFixed(1):'—'}</td>
+      </tr>`;
+
+  document.getElementById('weeklybd-summary-body').innerHTML=rows.length
+    ? rows.map(rowHTML).join('')
+    : `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--text3)">No data yet.</td></tr>`;
+
+  makeSortableTable('weeklybd-summary-thead',[
+    r=>r.wk,r=>r.sessionCount,r=>r.load,r=>r.dist,r=>r.maxV,r=>r.hsd1216,r=>r.hsd16,r=>r.accel,r=>r.decel
+  ],()=>rows,(sortedRows)=>{
+    document.getElementById('weeklybd-summary-body').innerHTML=sortedRows.map(rowHTML).join('');
   });
 };
 
