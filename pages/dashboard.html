@@ -758,13 +758,6 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <select class="data-sel" id="periodbd-pos-sel" onchange="renderPeriodBreakdown()" style="min-width:200px"></select>
     <select class="data-sel" id="periodbd-name-sel" onchange="renderPeriodBreakdown()" style="min-width:220px"></select>
   </div>
-  <div class="lm-phase-tags" style="margin-bottom:10px">
-    <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#D97706;display:inline-block;border-radius:2px"></span>HSD 12-16 mph</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:12px;height:12px;background:#003087;display:inline-block;border-radius:2px"></span>HSD 16+ mph</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:10px;background:rgba(15,25,35,0.22);border-bottom:2px solid #0F1923;display:inline-block"></span>Player Load</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#16A34A;display:inline-block"></span>Accel Total Efforts</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#DC2626;border-top:2px dashed #DC2626;display:inline-block"></span>Decel Total Efforts</span>
-  </div>
   <div class="panel">
     <div class="panel-title" id="periodbd-chart-title"><i class="ti ti-chart-bar"></i>Period Breakdown</div>
     <div class="chart-wrap h320"><canvas id="periodbd-chart"></canvas></div>
@@ -797,14 +790,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <select class="data-sel" id="weeklybd-pos-sel" onchange="renderWeeklyBreakdown()" style="min-width:200px"></select>
     <select class="data-sel" id="weeklybd-name-sel" onchange="renderWeeklyBreakdown()" style="min-width:220px"></select>
   </div>
-  <div class="lm-phase-tags" style="margin-bottom:10px">
-    <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#D97706;display:inline-block;border-radius:2px"></span>HSD 12-16 mph</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:12px;height:12px;background:#003087;display:inline-block;border-radius:2px"></span>HSD 16+ mph</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:10px;background:rgba(15,25,35,0.22);border-bottom:2px solid #0F1923;display:inline-block"></span>Player Load</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#16A34A;display:inline-block"></span>Accel Total Efforts</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#DC2626;border-top:2px dashed #DC2626;display:inline-block"></span>Decel Total Efforts</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px;color:var(--text3);font-size:11px">(Summer Week 1 through the current week — grows automatically as new weeks sync)</span>
-  </div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Summer Week 1 through the current week — grows automatically as new weeks sync.</div>
   <div class="panel">
     <div class="panel-title" id="weeklybd-chart-title"><i class="ti ti-chart-bar"></i>Weekly Breakdown</div>
     <div class="chart-wrap h320"><canvas id="weeklybd-chart"></canvas></div>
@@ -2325,9 +2311,9 @@ window.renderPeriodBreakdown=async function(){
       options:{
         responsive:true,maintainAspectRatio:false,
         interaction:{mode:'index',intersect:false},
-        layout:{padding:{top:20,bottom:20}},
+        layout:{padding:{top:20,bottom:8}},
         plugins:{
-          legend:{display:false},
+          legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}},
           tooltip:{callbacks:{label:ctx=>{
             const v=ctx.raw;
             if(v==null)return`${ctx.dataset.label}: —`;
@@ -2394,15 +2380,15 @@ window.renderPeriodBreakdown=async function(){
 
     _periodBdSplitEffortChart=new Chart(elEffort,{
       data:{labels,datasets:[
-        {type:'line',label:'Accel Total Efforts',data:accel,borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
-          datalabels:{...dlBase(C.green),offset:6}},
-        {type:'line',label:'Decel Total Efforts',data:decel,borderColor:C.red,backgroundColor:C.red,pointRadius:3,pointBackgroundColor:C.red,borderWidth:2,borderDash:[4,3],tension:.3,order:0,
-          datalabels:{...dlBase(C.red),offset:20}},
+        {type:'bar',label:'Accel Total Efforts',data:accel,backgroundColor:C.green,borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+          datalabels:dlBase(C.green)},
+        {type:'bar',label:'Decel Total Efforts',data:decel,backgroundColor:C.red,borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+          datalabels:dlBase(C.red)},
       ]},
       plugins:[ChartDataLabels],
-      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24,bottom:8}},
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
         interaction:{mode:'index',intersect:false},
-        plugins:{legend:{display:false}},
+        plugins:{legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}}},
         scales:{x:xAxis,y:yAxis}}
     });
   }
@@ -2564,9 +2550,9 @@ window.renderWeeklyBreakdown=function(){
     options:{
       responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
-      layout:{padding:{top:20,bottom:20}},
+      layout:{padding:{top:20,bottom:8}},
       plugins:{
-        legend:{display:false},
+        legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}},
         tooltip:{callbacks:{label:ctx=>{
           const v=ctx.raw;
           if(v==null)return`${ctx.dataset.label}: —`;
@@ -2617,15 +2603,15 @@ window.renderWeeklyBreakdown=function(){
 
   _weeklyBdSplitEffortChart=new Chart(document.getElementById('weeklybd-split-effort'),{
     data:{labels,datasets:[
-      {type:'line',label:'Accel Total Efforts',data:accel,borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
-        datalabels:{...dlBase(C.green),offset:6}},
-      {type:'line',label:'Decel Total Efforts',data:decel,borderColor:C.red,backgroundColor:C.red,pointRadius:3,pointBackgroundColor:C.red,borderWidth:2,borderDash:[4,3],tension:.3,order:0,
-        datalabels:{...dlBase(C.red),offset:20}},
+      {type:'bar',label:'Accel Total Efforts',data:accel,backgroundColor:C.green,borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+        datalabels:dlBase(C.green)},
+      {type:'bar',label:'Decel Total Efforts',data:decel,backgroundColor:C.red,borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+        datalabels:dlBase(C.red)},
     ]},
     plugins:[ChartDataLabels],
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24,bottom:8}},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
       interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false}},
+      plugins:{legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}}},
       scales:{x:xAxis,y:yAxis}}
   });
 
