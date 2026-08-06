@@ -758,14 +758,27 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <select class="data-sel" id="periodbd-name-sel" onchange="renderPeriodBreakdown()" style="min-width:220px"></select>
   </div>
   <div class="lm-phase-tags" style="margin-bottom:10px">
-    <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#0F1923;display:inline-block;border-radius:2px"></span>Player Load</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:12px;height:12px;background:#CBD5E1;display:inline-block;border-radius:2px"></span>Period Duration</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#16A34A;display:inline-block"></span>Intensity (Load/Min)</span>
-    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#DC2626;display:inline-block"></span>Max Velocity</span>
+    <span style="display:inline-flex;align-items:center;gap:5px"><span style="width:12px;height:12px;background:#D97706;display:inline-block;border-radius:2px"></span>HSD 12-16 mph</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:12px;height:12px;background:#003087;display:inline-block;border-radius:2px"></span>HSD 16+ mph</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:10px;background:rgba(15,25,35,0.22);border-bottom:2px solid #0F1923;display:inline-block"></span>Player Load</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#16A34A;display:inline-block"></span>Accel Total Efforts</span>
+    <span style="display:inline-flex;align-items:center;gap:5px;margin-left:14px"><span style="width:16px;height:2px;background:#DC2626;border-top:2px dashed #DC2626;display:inline-block"></span>Decel Total Efforts</span>
   </div>
   <div class="panel">
     <div class="panel-title" id="periodbd-chart-title"><i class="ti ti-chart-bar"></i>Period Breakdown</div>
     <div class="chart-wrap h320"><canvas id="periodbd-chart"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="periodbd-split-load-title"><i class="ti ti-chart-bar"></i>Player Load (AU)</div>
+    <div class="chart-wrap" style="height:280px"><canvas id="periodbd-split-load"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="periodbd-split-hsd-title"><i class="ti ti-chart-bar"></i>High Speed Distance (yd)</div>
+    <div class="chart-wrap" style="height:280px"><canvas id="periodbd-split-hsd"></canvas></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="periodbd-split-effort-title"><i class="ti ti-chart-bar"></i>Accel / Decel Total Efforts</div>
+    <div class="chart-wrap" style="height:280px"><canvas id="periodbd-split-effort"></canvas></div>
   </div>
   <div class="panel">
     <div class="panel-title"><i class="ti ti-table"></i>Session Summary — Filtered Athletes</div>
@@ -833,10 +846,10 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     </div>
 
     <div>
-      <div class="panel"><div class="panel-title"><i class="ti ti-bolt"></i>Relative Peak Power / BW</div><div class="chart-wrap" style="height:150px"><canvas id="idp-chart-relpeak"></canvas></div></div>
-      <div class="panel"><div class="panel-title"><i class="ti ti-arrow-down"></i>Eccentric Braking RFD</div><div class="chart-wrap" style="height:150px"><canvas id="idp-chart-eccrfd"></canvas></div></div>
-      <div class="panel"><div class="panel-title"><i class="ti ti-activity"></i>NordBord Force / Asymmetry</div><div class="chart-wrap" style="height:150px"><canvas id="idp-chart-nordic"></canvas></div></div>
-      <div class="panel"><div class="panel-title"><i class="ti ti-gauge"></i>Max Velocity</div><div class="chart-wrap" style="height:150px"><canvas id="idp-chart-maxv"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-bolt"></i>Relative Peak Power / BW</div><div class="chart-wrap" style="height:280px"><canvas id="idp-chart-relpeak"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-arrow-down"></i>Eccentric Braking RFD</div><div class="chart-wrap" style="height:280px"><canvas id="idp-chart-eccrfd"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-activity"></i>NordBord Force / Asymmetry</div><div class="chart-wrap" style="height:280px"><canvas id="idp-chart-nordic"></canvas></div></div>
+      <div class="panel"><div class="panel-title"><i class="ti ti-gauge"></i>Max Velocity</div><div class="chart-wrap" style="height:280px"><canvas id="idp-chart-maxv"></canvas></div></div>
     </div>
 
   </div>
@@ -2134,6 +2147,7 @@ function hhmmssToMinutes(t){
 }
 const PERIODBD_POS_LABELS={QB:'Quarterbacks',RB:'Running Backs',WR:'Wide Receivers',TE:'Tight Ends',OL:'Offensive Line',DL:'Defensive Line',EDGE:'Edge Rushers',LB:'Linebackers',ILB:'Inside Linebackers',CB:'Cornerbacks',S:'Safeties',ST:'Special Teams'};
 let _periodBdChart=null;
+let _periodBdSplitLoadChart=null,_periodBdSplitHsdChart=null,_periodBdSplitEffortChart=null;
 window.initPeriodBreakdown=function(){
   const selD=document.getElementById('periodbd-date-sel');
   const selP=document.getElementById('periodbd-pos-sel');
@@ -2167,6 +2181,9 @@ window.renderPeriodBreakdown=async function(){
 
   const titleLbl=name||pos;
   document.getElementById('periodbd-chart-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Period Breakdown — ${date}`;
+  document.getElementById('periodbd-split-load-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Player Load (AU) — ${date}`;
+  document.getElementById('periodbd-split-hsd-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — High Speed Distance (yd) — ${date}`;
+  document.getElementById('periodbd-split-effort-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Accel / Decel Total Efforts — ${date}`;
 
   // Paginate — a full practice day (many players × ~15-20 periods) can easily exceed
   // Supabase's default 1000-row cap, which silently truncates the tail of the result
@@ -2174,7 +2191,7 @@ window.renderPeriodBreakdown=async function(){
   let periodRows=[],_pbPage=0,_pbDone=false,periodError=null;
   while(!_pbDone){
     const{data:chunk,error:pbErr}=await SB.from('catapult_period_stats')
-      .select('athlete_name,period_id,period_name,start_time_h,end_time_h,total_player_load,max_velocity')
+      .select('athlete_name,period_id,period_name,start_time_h,end_time_h,total_player_load,max_velocity,accel_total_efforts,decel_total_efforts,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance')
       .eq('session_date',date)
       .order('start_time_h',{ascending:true})
       .range(_pbPage*1000,(_pbPage+1)*1000-1);
@@ -2219,11 +2236,15 @@ window.renderPeriodBreakdown=async function(){
   const periods={};
   posFiltered.forEach(r=>{
     if(!periods[r.period_id]){
-      periods[r.period_id]={period_name:canonicalPeriodName(r.period_id,r.period_name),start_time_h:r.start_time_h,end_time_h:r.end_time_h,loads:[],vels:[]};
+      periods[r.period_id]={period_name:canonicalPeriodName(r.period_id,r.period_name),start_time_h:r.start_time_h,end_time_h:r.end_time_h,loads:[],vels:[],accel:[],decel:[],hsd1216:[],hsd16:[]};
     }
     const p=periods[r.period_id];
     if(r.total_player_load!=null)p.loads.push(+r.total_player_load);
     if(r.max_velocity!=null)p.vels.push(+r.max_velocity);
+    if(r.accel_total_efforts!=null)p.accel.push(+r.accel_total_efforts);
+    if(r.decel_total_efforts!=null)p.decel.push(+r.decel_total_efforts);
+    p.hsd1216.push(+r.velocity_band3_distance||0);
+    p.hsd16.push((+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0));
   });
 
   const periodList=Object.values(periods).sort((a,b)=>(a.start_time_h||'').localeCompare(b.start_time_h||''));
@@ -2234,31 +2255,37 @@ window.renderPeriodBreakdown=async function(){
   if(!periodList.length){
     if(el){const ctx=el.getContext('2d');ctx.clearRect(0,0,el.width,el.height);}
   } else {
+    const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
     const labels=periodList.map(p=>p.period_name);
-    const durations=periodList.map(p=>{
-      const s=hhmmssToMinutes(p.start_time_h),e=hhmmssToMinutes(p.end_time_h);
-      return(s!=null&&e!=null)?Math.max(0,e-s):null;
-    });
-    const loads=periodList.map(p=>p.loads.length?p.loads.reduce((a,b)=>a+b,0)/p.loads.length:null);
-    const vels=periodList.map(p=>p.vels.length?p.vels.reduce((a,b)=>a+b,0)/p.vels.length:null);
-    const intensity=periodList.map((p,i)=>{
-      const d=durations[i],l=loads[i];
-      return(d&&d>0&&l!=null)?l/d:null;
-    });
+    const loads=periodList.map(p=>avg(p.loads));
+    const accel=periodList.map(p=>avg(p.accel));
+    const decel=periodList.map(p=>avg(p.decel));
+    const hsd1216=periodList.map(p=>avg(p.hsd1216));
+    const hsd16=periodList.map(p=>avg(p.hsd16));
+
+    const dlBase={font:{size:9,family:'DM Mono',weight:'bold'},formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''};
 
     _periodBdChart=new Chart(el,{
       data:{
         labels,
         datasets:[
-          {type:'line',label:'Duration (min)',data:durations,yAxisID:'yDur',fill:true,backgroundColor:'rgba(203,213,225,0.55)',borderColor:'rgba(203,213,225,0.8)',borderWidth:1,pointRadius:0,tension:.3,order:3},
-          {type:'bar',label:'Player Load',data:loads,yAxisID:'yLoad',backgroundColor:'#0F1923',borderRadius:3,order:2,barPercentage:.55},
-          {type:'line',label:'Intensity (Load/Min)',data:intensity,yAxisID:'yInt',borderColor:'#16A34A',backgroundColor:'#16A34A',pointRadius:3,pointBackgroundColor:'#16A34A',borderWidth:2,tension:.3,order:1},
-          {type:'line',label:'Max Velocity (mph)',data:vels,yAxisID:'yVel',borderColor:'#DC2626',backgroundColor:'#DC2626',pointRadius:3,pointBackgroundColor:'#DC2626',borderWidth:2,tension:.3,order:0},
+          {type:'bar',label:'HSD 12-16 mph (yd)',data:hsd1216,yAxisID:'yHSD',backgroundColor:'#D97706',borderRadius:3,order:4,barPercentage:.7,categoryPercentage:.5,
+            datalabels:{...dlBase,anchor:'end',align:'top',color:'#D97706'}},
+          {type:'bar',label:'HSD 16+ mph (yd)',data:hsd16,yAxisID:'yHSD',backgroundColor:C.blue,borderRadius:3,order:5,barPercentage:.7,categoryPercentage:.5,
+            datalabels:{...dlBase,anchor:'end',align:'top',color:C.blue}},
+          {type:'line',label:'Player Load',data:loads,yAxisID:'yLoad',fill:true,backgroundColor:'rgba(15,25,35,0.22)',borderColor:'#0F1923',borderWidth:2,pointRadius:3,pointBackgroundColor:'#0F1923',tension:.3,order:3,
+            datalabels:{...dlBase,anchor:'end',align:'top',offset:6,color:'#0F1923'}},
+          {type:'line',label:'Accel Total Efforts',data:accel,yAxisID:'yEfforts',borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
+            datalabels:{...dlBase,anchor:'start',align:'bottom',offset:4,color:C.green}},
+          {type:'line',label:'Decel Total Efforts',data:decel,yAxisID:'yEfforts',borderColor:C.red,backgroundColor:C.red,pointRadius:3,pointBackgroundColor:C.red,borderWidth:2,borderDash:[4,3],tension:.3,order:0,
+            datalabels:{...dlBase,anchor:'start',align:'bottom',offset:16,color:C.red}},
         ]
       },
+      plugins:[ChartDataLabels],
       options:{
         responsive:true,maintainAspectRatio:false,
         interaction:{mode:'index',intersect:false},
+        layout:{padding:{top:20,bottom:20}},
         plugins:{
           legend:{display:false},
           tooltip:{callbacks:{label:ctx=>{
@@ -2269,12 +2296,74 @@ window.renderPeriodBreakdown=async function(){
         },
         scales:{
           x:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:50,minRotation:30,autoSkip:false},grid:{display:false}},
-          yDur:{display:false,beginAtZero:true},
+          yHSD:{display:false,beginAtZero:true},
           yLoad:{display:false,beginAtZero:true},
-          yInt:{display:false,beginAtZero:true},
-          yVel:{display:false,beginAtZero:true},
+          yEfforts:{display:false,beginAtZero:true},
         }
       }
+    });
+  }
+
+  // ── Split view: same data, one real (visible) axis per metric family instead of
+  // everything overlaid on hidden axes — Player Load, HSD (stacked), Accel/Decel.
+  if(_periodBdSplitLoadChart){_periodBdSplitLoadChart.destroy();_periodBdSplitLoadChart=null;}
+  if(_periodBdSplitHsdChart){_periodBdSplitHsdChart.destroy();_periodBdSplitHsdChart=null;}
+  if(_periodBdSplitEffortChart){_periodBdSplitEffortChart.destroy();_periodBdSplitEffortChart=null;}
+  const elLoad=document.getElementById('periodbd-split-load');
+  const elHsd=document.getElementById('periodbd-split-hsd');
+  const elEffort=document.getElementById('periodbd-split-effort');
+
+  if(!periodList.length){
+    [elLoad,elHsd,elEffort].forEach(c=>{if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}});
+  } else {
+    const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;
+    const labels=periodList.map(p=>p.period_name);
+    const loads=periodList.map(p=>avg(p.loads));
+    const accel=periodList.map(p=>avg(p.accel));
+    const decel=periodList.map(p=>avg(p.decel));
+    const hsd1216=periodList.map(p=>avg(p.hsd1216));
+    const hsd16=periodList.map(p=>avg(p.hsd16));
+
+    const dlBase=(clr)=>({font:{size:9,family:'DM Mono',weight:'bold'},color:clr,anchor:'end',align:'top',formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''});
+    const xAxis={ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:50,minRotation:30,autoSkip:false},grid:{display:false}};
+    const yAxis={beginAtZero:true,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{color:C.grid}};
+
+    _periodBdSplitLoadChart=new Chart(elLoad,{
+      type:'bar',
+      data:{labels,datasets:[{label:'Player Load',data:loads,backgroundColor:'#0F1923',borderRadius:3,barPercentage:.55,
+        datalabels:dlBase('#0F1923')}]},
+      plugins:[ChartDataLabels],
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`Player Load: ${ctx.raw!=null?ctx.raw.toFixed(2):'—'}`}}},
+        scales:{x:xAxis,y:yAxis}}
+    });
+
+    _periodBdSplitHsdChart=new Chart(elHsd,{
+      data:{labels,datasets:[
+        {type:'bar',label:'HSD 12-16 mph',data:hsd1216,backgroundColor:'#D97706',borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+          datalabels:dlBase('#D97706')},
+        {type:'bar',label:'HSD 16+ mph',data:hsd16,backgroundColor:C.blue,borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+          datalabels:dlBase(C.blue)},
+      ]},
+      plugins:[ChartDataLabels],
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}}},
+        scales:{x:xAxis,y:yAxis}}
+    });
+
+    _periodBdSplitEffortChart=new Chart(elEffort,{
+      data:{labels,datasets:[
+        {type:'line',label:'Accel Total Efforts',data:accel,borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
+          datalabels:{...dlBase(C.green),offset:6}},
+        {type:'line',label:'Decel Total Efforts',data:decel,borderColor:C.red,backgroundColor:C.red,pointRadius:3,pointBackgroundColor:C.red,borderWidth:2,borderDash:[4,3],tension:.3,order:0,
+          datalabels:{...dlBase(C.red),offset:20}},
+      ]},
+      plugins:[ChartDataLabels],
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:24,bottom:8}},
+        interaction:{mode:'index',intersect:false},
+        plugins:{legend:{display:false}},
+        scales:{x:xAxis,y:yAxis}}
     });
   }
 
