@@ -759,6 +759,14 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <select class="data-sel" id="periodbd-name-sel" onchange="renderPeriodBreakdown()" style="min-width:220px"></select>
   </div>
   <div class="panel">
+    <div class="panel-title"><i class="ti ti-table"></i>Session Summary — Filtered Athletes</div>
+    <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="periodbd-summary-thead"><tr>
+      <th>Athlete</th><th>Pos</th><th>Tot Dur</th><th>Player Load</th><th>PL/Min</th><th>Dist (y)</th>
+      <th>Max Vel</th><th>Max Accel</th><th>Max Decel</th><th>HSD 12-16</th><th>HSD 16+</th>
+      <th>Accel Eff</th><th>Decel Eff</th>
+    </tr></thead><tbody id="periodbd-summary-body"></tbody></table></div>
+  </div>
+  <div class="panel">
     <div class="panel-title" id="periodbd-chart-title"><i class="ti ti-chart-bar"></i>Period Breakdown</div>
     <div class="chart-wrap h320"><canvas id="periodbd-chart"></canvas></div>
   </div>
@@ -773,14 +781,6 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   <div class="panel">
     <div class="panel-title" id="periodbd-split-effort-title"><i class="ti ti-chart-bar"></i>Accel / Decel Total Efforts</div>
     <div class="chart-wrap" style="height:280px"><canvas id="periodbd-split-effort"></canvas></div>
-  </div>
-  <div class="panel">
-    <div class="panel-title"><i class="ti ti-table"></i>Session Summary — Filtered Athletes</div>
-    <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="periodbd-summary-thead"><tr>
-      <th>Athlete</th><th>Pos</th><th>Tot Dur</th><th>Player Load</th><th>PL/Min</th><th>Dist (y)</th>
-      <th>Max Vel</th><th>Max Accel</th><th>Max Decel</th><th>HSD 12-16</th><th>HSD 16+</th>
-      <th>Accel Eff</th><th>Decel Eff</th>
-    </tr></thead><tbody id="periodbd-summary-body"></tbody></table></div>
   </div>
 </div>
 
