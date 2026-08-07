@@ -117,10 +117,6 @@ tbody tr:last-child td{border-bottom:none}
 .sesscmp-tbl td{padding:5px 7px;font-size:10px}
 .sesscmp-tbl tbody tr:nth-child(odd){background:#ffffff}
 .sesscmp-tbl tbody tr:nth-child(even){background:#f8f9fb}
-.sesscmp-cell{position:relative;cursor:help}
-.sesscmp-tip{display:none;position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:4px 9px;border-radius:6px;font-size:10px;font-family:var(--font-m);white-space:nowrap;z-index:50;margin-bottom:5px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-.sesscmp-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1e293b}
-.sesscmp-cell:hover .sesscmp-tip{display:block}
 td.pct90{background:rgba(22,163,74,.12);color:#15803D;font-weight:700}
 td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.danger{color:#B91C1C;font-weight:600}td.acc{color:var(--uf-orange);font-weight:600}
 .roster-search{width:100%;background:var(--surface);border:1.5px solid var(--border2);color:var(--text);padding:9px 14px;border-radius:var(--r);font-family:var(--font-b);font-size:13px;margin-bottom:14px;outline:none;box-shadow:var(--shadow)}
@@ -726,13 +722,16 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 
 <!-- SESSION COMPARE -->
 <div class="page" id="pg-sessioncompare">
+  <div class="sel-row" style="margin-bottom:14px">
+    <select class="data-sel" id="sesscmp-player-sel" onchange="sesscmpRefreshPlayerFilter()" style="min-width:220px"></select>
+  </div>
   <div class="two-col">
     <div>
       <select class="data-sel" id="sesscmp-date-a" onchange="renderSessionCompareSide('a')" style="width:100%;margin-bottom:14px"></select>
       <div class="panel" style="padding:10px">
         <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="sesscmp-thead-a"><tr>
           <th>Athlete</th><th>Pos</th><th>Tot Dur</th><th>Player Load</th><th>PL/Min</th><th>Dist (y)</th>
-          <th>Max Vel</th><th>Max Accel</th><th>Max Decel</th><th>HSD 12-16</th><th>HSD 16+</th>
+          <th>Max Vel</th><th>HSD 12-16</th><th>HSD 16+</th>
           <th>Accel Eff</th><th>Decel Eff</th>
         </tr></thead><tbody id="sesscmp-body-a"></tbody></table></div>
       </div>
@@ -743,7 +742,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="panel" style="padding:10px">
         <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="sesscmp-thead-b"><tr>
           <th>Athlete</th><th>Pos</th><th>Tot Dur</th><th>Player Load</th><th>PL/Min</th><th>Dist (y)</th>
-          <th>Max Vel</th><th>Max Accel</th><th>Max Decel</th><th>HSD 12-16</th><th>HSD 16+</th>
+          <th>Max Vel</th><th>HSD 12-16</th><th>HSD 16+</th>
           <th>Accel Eff</th><th>Decel Eff</th>
         </tr></thead><tbody id="sesscmp-body-b"></tbody></table></div>
       </div>
@@ -2005,8 +2004,6 @@ const SESSCMP_METRICS=[
   {key:'plMin',label:'PL/Min',fmt:v=>v!=null?v.toFixed(2):'—'},
   {key:'dist',label:'Dist (y)',fmt:v=>v!=null?Math.round(v).toLocaleString():'—'},
   {key:'maxV',label:'Max Vel',fmt:v=>v!=null?v.toFixed(2):'—'},
-  {key:'maxAccel',label:'Max Accel',fmt:v=>v!=null?v.toFixed(2):'—'},
-  {key:'maxDecel',label:'Max Decel',fmt:v=>v!=null?v.toFixed(2):'—'},
   {key:'hsd1216',label:'HSD 12-16',fmt:v=>v!=null?Math.round(v).toLocaleString():'—'},
   {key:'hsd16',label:'HSD 16+',fmt:v=>v!=null?Math.round(v).toLocaleString():'—'},
   {key:'accelEff',label:'Accel Eff',fmt:v=>v!=null?v:'—'},
@@ -2015,12 +2012,6 @@ const SESSCMP_METRICS=[
 function sesscmpPct(curr,other){
   if(curr==null||other==null||other===0)return null;
   return((curr-other)/Math.abs(other))*100;
-}
-function sesscmpPctHTML(pct){
-  if(pct==null)return`<span style="color:#94A3B8">NA</span>`;
-  const color=pct>0?'#4ADE80':pct<0?'#F87171':'#94A3B8';
-  const sign=pct>0?'+':'';
-  return`<span style="color:${color};font-weight:700">${sign}${pct.toFixed(1)}%</span>`;
 }
 function sesscmpPctInline(pct){
   if(pct==null)return`<span style="color:var(--text3)">NA</span>`;
@@ -2046,26 +2037,28 @@ function buildSesscmpData(date){
     const pl=+r.total_player_load||0;
     const dist=+r.total_distance||0;
     const maxV=+r.max_velocity||0;
-    const maxAccel=r.max_accel!=null?+r.max_accel:null;
-    const maxDecel=r.max_decel!=null?+r.max_decel:null;
     const hsd1216=+r.velocity_band3_distance||0;
     const hsd16=(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0);
     const accelEff=r.accel_total_efforts!=null?+r.accel_total_efforts:null;
     const decelEff=r.decel_total_efforts!=null?+r.decel_total_efforts:null;
     if(!byName.has(nm)){
-      byName.set(nm,{name:nm,pos,dur:0,pl:0,dist:0,maxV:0,maxAccel:null,maxDecel:null,hsd1216:0,hsd16:0,accelEff:null,decelEff:null});
+      byName.set(nm,{name:nm,pos,dur:0,pl:0,dist:0,maxV:0,hsd1216:0,hsd16:0,accelEff:null,decelEff:null});
     }
     const m=byName.get(nm);
     m.dur+=dur;m.pl+=pl;m.dist+=dist;m.hsd1216+=hsd1216;m.hsd16+=hsd16;
     if(maxV>m.maxV)m.maxV=maxV;
-    if(maxAccel!=null&&(m.maxAccel==null||maxAccel>m.maxAccel))m.maxAccel=maxAccel;
-    if(maxDecel!=null&&(m.maxDecel==null||maxDecel>m.maxDecel))m.maxDecel=maxDecel;
     if(accelEff!=null)m.accelEff=(m.accelEff??0)+accelEff;
     if(decelEff!=null)m.decelEff=(m.decelEff??0)+decelEff;
   });
   byName.forEach(m=>{m.plMin=m.dur>0?(m.pl/(m.dur/60)):null;});
   const rowsArr=[...byName.values()];
   return{byName,rows:sesscmpDefaultSort(rowsArr),date};
+}
+
+function sesscmpApplyPlayerFilter(rows){
+  const sel=document.getElementById('sesscmp-player-sel');
+  const v=sel?sel.value:'';
+  return v?rows.filter(r=>r.name===v):rows;
 }
 
 function renderSesscmpBody(side,rows){
@@ -2075,9 +2068,12 @@ function renderSesscmpBody(side,rows){
     const otherR=other?other.byName.get(r.name):null;
     const tds=SESSCMP_METRICS.map(m=>{
       const val=r[m.key];
-      const pct=other&&otherR?sesscmpPct(val,otherR[m.key]):null;
-      const tip=other?`<div class="sesscmp-tip">${otherR?sesscmpPctHTML(pct):'<span style="color:#94A3B8">NA</span>'}</div>`:'';
-      return`<td class="mono sesscmp-cell">${m.fmt(val)}${tip}</td>`;
+      let pctSpan='';
+      if(other){
+        const pct=otherR?sesscmpPct(val,otherR[m.key]):null;
+        pctSpan=` <span style="font-size:9px">(${sesscmpPctInline(pct)})</span>`;
+      }
+      return`<td class="mono">${m.fmt(val)}${pctSpan}</td>`;
     }).join('');
     return`<tr>
       <td style="font-weight:600">${r.name}</td>
@@ -2130,6 +2126,11 @@ window.initSessionCompare=function(){
     if(dates.length>0)selA.value=dates[0];
     if(dates.length>1)selB.value=dates[1];
   }
+  const selP=document.getElementById('sesscmp-player-sel');
+  if(selP.options.length===0){
+    const o0=document.createElement('option');o0.value='';o0.textContent='— All Players —';selP.appendChild(o0);
+    [...PLAYERS].map(p=>p.name).sort((a,b)=>a.localeCompare(b)).forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;selP.appendChild(o);});
+  }
   renderSessionCompareSide('a');
   renderSessionCompareSide('b');
 };
@@ -2143,21 +2144,32 @@ window.renderSessionCompareSide=function(side){
   } else {
     const data=buildSesscmpData(date);
     if(side==='a')_sesscmpDataA=data; else _sesscmpDataB=data;
-    renderSesscmpBody(side,data.rows);
+    renderSesscmpBody(side,sesscmpApplyPlayerFilter(data.rows));
     makeSortableTable(`sesscmp-thead-${side}`,[
-      r=>r.name,r=>r.pos,r=>r.dur,r=>r.pl,r=>r.plMin,r=>r.dist,r=>r.maxV,r=>r.maxAccel,r=>r.maxDecel,r=>r.hsd1216,r=>r.hsd16,r=>r.accelEff,r=>r.decelEff
+      r=>r.name,r=>r.pos,r=>r.dur,r=>r.pl,r=>r.plMin,r=>r.dist,r=>r.maxV,r=>r.hsd1216,r=>r.hsd16,r=>r.accelEff,r=>r.decelEff
     ],
-    ()=>data.rows,
+    ()=>sesscmpApplyPlayerFilter(data.rows),
     (rows)=>renderSesscmpBody(side,rows));
     renderSesscmpSummary(side);
   }
-  // Refresh the OTHER side too, since its tooltips/summary % depend on this side's data
+  // Refresh the OTHER side too, since its inline % deltas and summary depend on this side's data
   const otherSide=side==='a'?'b':'a';
   const otherData=otherSide==='a'?_sesscmpDataA:_sesscmpDataB;
   if(otherData){
-    renderSesscmpBody(otherSide,otherSide==='a'?_sesscmpDisplayA:_sesscmpDisplayB);
+    renderSesscmpBody(otherSide,sesscmpApplyPlayerFilter(otherData.rows));
     renderSesscmpSummary(otherSide);
   }
+};
+
+// Re-applies the player filter to both sides without re-fetching/re-sorting — called when
+// the player dropdown changes.
+window.sesscmpRefreshPlayerFilter=function(){
+  ['a','b'].forEach(side=>{
+    const data=side==='a'?_sesscmpDataA:_sesscmpDataB;
+    if(!data)return;
+    renderSesscmpBody(side,sesscmpApplyPlayerFilter(data.rows));
+    renderSesscmpSummary(side);
+  });
 };
 
 /// ── GPS 90% MAX VELOCITY FLAGS (resets every Sunday, per-athlete) ──────────
