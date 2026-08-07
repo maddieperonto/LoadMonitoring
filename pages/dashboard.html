@@ -2033,29 +2033,38 @@ let _sesscmpDataA=null,_sesscmpDataB=null,_sesscmpDisplayA=[],_sesscmpDisplayB=[
 
 function buildSesscmpData(date){
   const dayRows=raw.filter(r=>r.session_date===date&&r.participation_tag!=='Rehab');
+  // A player can have more than one Catapult activity on the same date (e.g. a
+  // "pre-practice" sub-activity plus the main practice) — combine them into a single
+  // row per athlete instead of showing one row per activity. Durations/loads/distances/
+  // HSD/effort counts are summed across that day's activities; max-value metrics take
+  // the max across them; PL/Min is recomputed from the combined totals.
   const byName=new Map();
-  const rowsArr=[];
   dayRows.forEach(r=>{
     const nm=normName(r.athlete_name);
     const pos=lkPos(nm)||'UNK';
     const dur=+r.total_duration||0;
     const pl=+r.total_player_load||0;
-    const metrics={
-      name:nm,pos,
-      dur,pl,
-      plMin:dur>0?(pl/(dur/60)):null,
-      dist:+r.total_distance||0,
-      maxV:+r.max_velocity||0,
-      maxAccel:r.max_accel!=null?+r.max_accel:null,
-      maxDecel:r.max_decel!=null?+r.max_decel:null,
-      hsd1216:+r.velocity_band3_distance||0,
-      hsd16:(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0),
-      accelEff:r.accel_total_efforts??null,
-      decelEff:r.decel_total_efforts??null,
-    };
-    byName.set(nm,metrics);
-    rowsArr.push(metrics);
+    const dist=+r.total_distance||0;
+    const maxV=+r.max_velocity||0;
+    const maxAccel=r.max_accel!=null?+r.max_accel:null;
+    const maxDecel=r.max_decel!=null?+r.max_decel:null;
+    const hsd1216=+r.velocity_band3_distance||0;
+    const hsd16=(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0);
+    const accelEff=r.accel_total_efforts!=null?+r.accel_total_efforts:null;
+    const decelEff=r.decel_total_efforts!=null?+r.decel_total_efforts:null;
+    if(!byName.has(nm)){
+      byName.set(nm,{name:nm,pos,dur:0,pl:0,dist:0,maxV:0,maxAccel:null,maxDecel:null,hsd1216:0,hsd16:0,accelEff:null,decelEff:null});
+    }
+    const m=byName.get(nm);
+    m.dur+=dur;m.pl+=pl;m.dist+=dist;m.hsd1216+=hsd1216;m.hsd16+=hsd16;
+    if(maxV>m.maxV)m.maxV=maxV;
+    if(maxAccel!=null&&(m.maxAccel==null||maxAccel>m.maxAccel))m.maxAccel=maxAccel;
+    if(maxDecel!=null&&(m.maxDecel==null||maxDecel>m.maxDecel))m.maxDecel=maxDecel;
+    if(accelEff!=null)m.accelEff=(m.accelEff??0)+accelEff;
+    if(decelEff!=null)m.decelEff=(m.decelEff??0)+decelEff;
   });
+  byName.forEach(m=>{m.plMin=m.dur>0?(m.pl/(m.dur/60)):null;});
+  const rowsArr=[...byName.values()];
   return{byName,rows:sesscmpDefaultSort(rowsArr),date};
 }
 
