@@ -754,8 +754,11 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 
 <!-- PERIOD BREAKDOWN -->
 <div class="page" id="pg-periodbreakdown">
-  <div class="sel-row" style="margin-bottom:16px">
-    <select class="data-sel" id="periodbd-date-sel" onchange="renderPeriodBreakdown()" style="min-width:200px"></select>
+  <div class="sel-row" style="margin-bottom:16px;flex-wrap:wrap;row-gap:10px">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <input type="date" class="data-sel" id="periodbd-date-sel" onchange="renderPeriodBreakdown()" style="min-width:170px">
+      <span id="periodbd-date-dow" style="font-size:11px;color:var(--text3);padding-left:2px"></span>
+    </div>
     <select class="data-sel" id="periodbd-pos-sel" onchange="renderPeriodBreakdown()" style="min-width:200px"></select>
     <select class="data-sel" id="periodbd-name-sel" onchange="renderPeriodBreakdown()" style="min-width:220px"></select>
   </div>
@@ -2228,14 +2231,32 @@ function hhmmssToMinutes(t){
 const PERIODBD_POS_LABELS={QB:'Quarterbacks',RB:'Running Backs',WR:'Wide Receivers',TE:'Tight Ends',OL:'Offensive Line',DL:'Defensive Line',EDGE:'Edge Rushers',LB:'Linebackers',ILB:'Inside Linebackers',CB:'Cornerbacks',S:'Safeties',ST:'Special Teams'};
 let _periodBdChart=null;
 let _periodBdSplitLoadChart=null,_periodBdSplitHsdChart=null,_periodBdSplitEffortChart=null;
+
+// Convert between the site's internal "MM/DD/YYYY" date strings (how session_date is
+// stored) and the native <input type="date"> value format ("YYYY-MM-DD").
+function mdyToInputDate(mdy){
+  if(!mdy)return'';
+  const[m,d,y]=mdy.split('/').map(Number);
+  return`${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function inputDateToMDY(v){
+  if(!v)return null;
+  const[y,m,d]=v.split('-').map(Number);
+  return`${String(m).padStart(2,'0')}/${String(d).padStart(2,'0')}/${y}`;
+}
+function inputDateDowLabel(v){
+  if(!v)return'';
+  const[y,m,d]=v.split('-').map(Number);
+  return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric',year:'numeric'});
+}
+
 window.initPeriodBreakdown=function(){
   const selD=document.getElementById('periodbd-date-sel');
   const selP=document.getElementById('periodbd-pos-sel');
   const selN=document.getElementById('periodbd-name-sel');
-  if(selD.options.length===0){
+  if(!selD.value){
     const dates=getSessionCompareDates();
-    dates.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;selD.appendChild(o);});
-    if(dates.length>0)selD.value=dates[0];
+    if(dates.length>0)selD.value=mdyToInputDate(dates[0]);
   }
   if(selP.options.length===0){
     const posOrder=['WR','RB','QB','TE','OL','CB','SAF','ILB','OLB','DL'];
@@ -2248,7 +2269,9 @@ window.initPeriodBreakdown=function(){
   renderPeriodBreakdown();
 };
 window.renderPeriodBreakdown=async function(){
-  const date=document.getElementById('periodbd-date-sel').value;
+  const dateInputVal=document.getElementById('periodbd-date-sel').value;
+  const date=inputDateToMDY(dateInputVal);
+  document.getElementById('periodbd-date-dow').textContent=inputDateDowLabel(dateInputVal);
   const pos=document.getElementById('periodbd-pos-sel').value;
   const name=document.getElementById('periodbd-name-sel').value;
   if(!date||(!pos&&!name))return;
@@ -2735,6 +2758,27 @@ window.initDailyBreakdown=function(){
   renderDailyBreakdown();
 };
 
+// Merges same-day Catapult activities that represent one practice but were split into
+// separate activities on the Catapult side (e.g. a "pre-practice" sub-activity plus the
+// main activity). Add an entry here — source name (as it appears in Catapult) → canonical
+// display name — to fold it into the canonical activity on Daily/Period Breakdown.
+// Lookup ignores case AND punctuation/spacing (hyphens vs spaces vs "#"), since staff don't
+// always type activity names into Catapult identically every time.
+const ACTIVITY_MERGE_MAP={
+  'FALL CAMP #3 PRE PRACTICE':'FALL CAMP 3',
+  'FALL CAMP 3 PRE PRACTICE':'FALL CAMP 3',
+};
+function normActivityKey(s){
+  return (s||'').toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();
+}
+const ACTIVITY_MERGE_LOOKUP={};
+Object.entries(ACTIVITY_MERGE_MAP).forEach(([k,v])=>{ACTIVITY_MERGE_LOOKUP[normActivityKey(k)]=v;});
+function canonicalActivityName(name){
+  if(!name)return name;
+  const mapped=ACTIVITY_MERGE_LOOKUP[normActivityKey(name)];
+  return mapped||name;
+}
+
 function getDailyBreakdownRows(pos,name,fromMs,toMs){
   const dbPos=SLRU_POS_MAP[pos]||pos;
   const relevant=name?PLAYERS.filter(p=>p.name===name):PLAYERS.filter(p=>p.pos===dbPos);
@@ -2746,12 +2790,14 @@ function getDailyBreakdownRows(pos,name,fromMs,toMs){
       if(ms==null)return;
       if(fromMs!=null&&ms<fromMs)return;
       if(toMs!=null&&ms>toMs)return;
-      const key=s.activityId||`${s.date}__${s.activityName||'untitled'}`;
+      const displayName=canonicalActivityName(s.activityName)||'Untitled Activity';
+      const key=`${s.date}__${displayName}`;
       if(!byActivity[key]){
-        byActivity[key]={key,date:s.date,ms,startTime:s.startTime,activityName:s.activityName||'Untitled Activity',
+        byActivity[key]={key,date:s.date,ms,startTime:s.startTime,activityName:displayName,
           players:new Set(),load:0,dist:0,hsd1216:0,hsd16:0,accel:0,decel:0,maxV:0};
       }
       const a=byActivity[key];
+      if(s.startTime&&(!a.startTime||s.startTime<a.startTime))a.startTime=s.startTime;
       a.players.add(p.name);
       a.load+=s.load||0;a.dist+=s.dist||0;
       a.hsd1216+=s.hsr12||0;a.hsd16+=s.hsr||0;
