@@ -480,6 +480,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   </div>
   <div id="gps-90-view" style="display:none">
     <div class="sel-row" style="margin-bottom:14px">
+      <select class="data-sel" id="gps-90-week-sel" onchange="renderGPS90()" style="min-width:220px"></select>
       <span class="tbb info" id="gps-90-badge">—</span>
     </div>
     <div class="stat-row" id="gps-90-stats"></div>
@@ -701,6 +702,15 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 <!-- INJURY RISK -->
 <div class="page" id="pg-injury">
   <div class="stat-row" id="injury-stats"></div>
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-title"><i class="ti ti-flame" style="color:var(--acc5)"></i>Biggest ACWR Spikes This Week
+      <span style="font-weight:400;font-size:10px;color:var(--text3);margin-left:8px">Ranked by each athlete's single highest ACWR across Load, Distance, HSD 12-16, HSD 16+, and Accel/Decel — use this to prioritize who needs reps managed first</span>
+    </div>
+    <div class="tbl-wrap"><table><thead><tr>
+      <th>Athlete</th><th>Pos</th><th>Unit</th><th>Worst Metric</th>
+      <th>Load</th><th>Dist</th><th>HSD 12-16</th><th>HSD 16+</th><th>Accel/Decel</th>
+    </tr></thead><tbody id="injury-spike-table"></tbody></table></div>
+  </div>
   <div class="two-col">
     <div class="panel"><div class="panel-title"><i class="ti ti-alert-triangle" style="color:var(--acc5)"></i>High Risk Athletes</div><div id="injury-high-list"></div></div>
     <div class="panel"><div class="panel-title"><i class="ti ti-alert-circle" style="color:var(--acc4)"></i>Moderate Risk Athletes</div><div id="injury-mod-list"></div></div>
@@ -1285,6 +1295,12 @@ const PLAYERS=Object.values(byPFiltered).map(p=>{
   const aACWR=playerDailyACWR(p.sessions,'accel',DAILY_DAYS);
   const latD=rollingACWR(p.sessions,'dist',TODAY_MS);
   const latA=rollingACWR(p.sessions,'accel',TODAY_MS);
+  // Additional ACWR metrics (Load, HSD 12-16, HSD 16+) — same 7-day-acute / 4-week-chronic
+  // rolling method as latD/latA, just applied to the other session fields. Used to flag
+  // athletes whose spike shows up in high-speed running or total load rather than distance.
+  const latL=rollingACWR(p.sessions,'load',TODAY_MS);
+  const latH12=rollingACWR(p.sessions,'hsr12',TODAY_MS);
+  const latH16=rollingACWR(p.sessions,'hsr',TODAY_MS);
   const allMaxVs=p.sessions.map(s=>s.maxV).filter(v=>v>0&&v<=25);
  const latMaxV=allMaxVs.length?Math.max(...allMaxVs):0;
   const latest=[...p.sessions].sort((a,b)=>{
@@ -1306,7 +1322,18 @@ const PLAYERS=Object.values(byPFiltered).map(p=>{
   if(latD<0.8&&latD>0)flags.push({t:'Undertraining',c:'y'});
   if(latA>1.5)flags.push({t:'ACWR A&D High',c:'r'});
   else if(latA>1.3)flags.push({t:'ACWR A&D Caution',c:'y'});
+  if(latL>1.5)flags.push({t:'ACWR Load High',c:'r'});
+  else if(latL>1.3)flags.push({t:'ACWR Load Caution',c:'y'});
+  if(latH12>1.5)flags.push({t:'ACWR HSD 12-16 High',c:'r'});
+  else if(latH12>1.3)flags.push({t:'ACWR HSD 12-16 Caution',c:'y'});
+  if(latH16>1.5)flags.push({t:'ACWR HSD 16+ High',c:'r'});
+  else if(latH16>1.3)flags.push({t:'ACWR HSD 16+ Caution',c:'y'});
   const risk=flags.some(f=>f.c==='r')?'high':flags.length?'mod':'low';
+  // Single highest ACWR across all five tracked metrics, plus which metric it is — powers
+  // the "Biggest ACWR Spikes" outlier panel so staff can see who to target first and why.
+  const acwrEntries=[{k:'Load',v:latL},{k:'Dist',v:latD},{k:'HSD 12-16',v:latH12},{k:'HSD 16+',v:latH16},{k:'Accel/Decel',v:latA}];
+  const maxACWREntry=acwrEntries.reduce((best,e)=>e.v>best.v?e:best,acwrEntries[0]);
+  const maxACWR=maxACWREntry.v,maxACWRField=maxACWREntry.k;
   // LM arrays use allLMWks (Spring + Summer real + Summer projected)
   const allLMLoad=allLMWks.map(wk=>wkTot(p.sessions,'load',wk)||null);
   const allLMDist=allLMWks.map(wk=>wkTot(p.sessions,'dist',wk)||null);
@@ -1317,7 +1344,7 @@ const PLAYERS=Object.values(byPFiltered).map(p=>{
   const allLMVel=allLMWks.map(wk=>velByWk[wk]??null);
   const ci=[...allLMLoad].map((v,i)=>v!=null?i:-1).filter(i=>i>=0).pop()??-1;
   const cl=ci>=0?allLMLoad[ci]??0:0,cd=ci>=0?allLMDist[ci]??0:0,ch2=ci>=0?allLMHSR[ci]??0:0,ca=ci>=0?allLMAccel[ci]??0:0,cde=ci>=0?allLMDecel[ci]??0:0,cv=ci>=0?allLMVel[ci]??0:0;
-  return{name:p.name,pos,unit,sessions:p.sessions,dA,aA,lA,hA,dACWR,aACWR,latD,latA,latMaxV,latestHSR,latest,flags,risk,spAvg,curLoad:cl,spPct,acwr4,allLMLoad,allLMDist,allLMHSR,allLMAccel,allLMDecel,allLMVel,cl,cd,ch2,ca,cde,cv};
+  return{name:p.name,pos,unit,sessions:p.sessions,dA,aA,lA,hA,dACWR,aACWR,latD,latA,latL,latH12,latH16,maxACWR,maxACWRField,latMaxV,latestHSR,latest,flags,risk,spAvg,curLoad:cl,spPct,acwr4,allLMLoad,allLMDist,allLMHSR,allLMAccel,allLMDecel,allLMVel,cl,cd,ch2,ca,cde,cv};
 }).filter(p=>p.sessions.length>0).sort((a,b)=>a.name.localeCompare(b.name));
 
 // ── TOPBAR ────────────────────────────────────────────────────────
@@ -2202,11 +2229,50 @@ function getSundayWeekStart(){
   sunday.setHours(0,0,0,0);
   return sunday;
 }
-function renderGPS90(){
-  const weekStart=getSundayWeekStart();
-  const weekStartMs=weekStart.getTime();
-  const todayStr=`${weekStart.getMonth()+1}/${weekStart.getDate()}/${String(weekStart.getFullYear()).slice(2)}`;
-  document.getElementById('gps-90-badge').textContent=`Since ${todayStr}`;
+// Every Sunday-starting week that has session data, from the earliest synced session
+// through the current (in-progress) week — most recent first. This is what powers the
+// week-picker, since the 90% table used to only ever show the current week and reset
+// every Sunday with no way to look back at what happened the prior week.
+function getGPS90WeekOptions(){
+  const day=86400000;
+  function sundayOf(ms){
+    const d=new Date(ms);
+    const dow=d.getDay();
+    const sunday=new Date(d.getFullYear(),d.getMonth(),d.getDate()-dow);
+    sunday.setHours(0,0,0,0);
+    return sunday.getTime();
+  }
+  let minMs=null;
+  raw.forEach(r=>{const ms=dateToMs(r.session_date);if(ms==null)return;if(minMs==null||ms<minMs)minMs=ms;});
+  const nowSunday=getSundayWeekStart().getTime();
+  if(minMs==null)return[nowSunday];
+  const firstSunday=sundayOf(minMs);
+  const weeks=[];
+  for(let ms=nowSunday;ms>=firstSunday;ms-=7*day)weeks.push(ms);
+  return weeks;
+}
+function fmtGPS90WeekLabel(startMs,isCurrent){
+  const start=new Date(startMs);
+  const end=new Date(startMs+6*86400000);
+  const startStr=start.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  const endStr=end.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  return`${startStr} – ${endStr}${isCurrent?' (Current Week)':''}`;
+}
+window.renderGPS90=function(){
+  const sel=document.getElementById('gps-90-week-sel');
+  const weekOptions=getGPS90WeekOptions();
+  if(sel.options.length===0){
+    weekOptions.forEach((ws,i)=>{
+      const o=document.createElement('option');
+      o.value=String(ws);
+      o.textContent=fmtGPS90WeekLabel(ws,i===0);
+      sel.appendChild(o);
+    });
+  }
+  const weekStartMs=sel.value?+sel.value:weekOptions[0];
+  const weekEndMs=weekStartMs+7*86400000; // exclusive — next Sunday 00:00
+  const isCurrent=weekStartMs===weekOptions[0];
+  document.getElementById('gps-90-badge').textContent=isCurrent?'Current week — resets next Sunday':'Past week — final';
 
   const athMaxMap={};
   (aths||[]).forEach(a=>{athMaxMap[a.name]=a.max_velocity_mph!=null?+a.max_velocity_mph:null;});
@@ -2217,7 +2283,7 @@ function renderGPS90(){
     if(profileMax==null)return;
     const wkSessions=p.sessions.filter(s=>{
       const ms=dateToMs(s.date);
-      return ms!=null&&ms>=weekStartMs&&s.maxV>0;
+      return ms!=null&&ms>=weekStartMs&&ms<weekEndMs&&s.maxV>0;
     });
     if(!wkSessions.length)return;
     const best=wkSessions.reduce((a,b)=>b.maxV>a.maxV?b:a);
@@ -2240,7 +2306,7 @@ function renderGPS90(){
   makeSortableTable('gps-90-thead',[
     r=>r.name,r=>r.pos,r=>r.unit,r=>r.sessionCount,r=>r.bestMax,r=>dateToMs(r.bestDate),r=>r.profileMax,r=>r.pct,r=>r.hit
   ],()=>_gps90Rows,renderGps90Rows);
-}
+};
 
 // ── PERIOD BREAKDOWN ──────────────────────────────────────────────────────
 function hhmmssToMinutes(t){
@@ -3805,6 +3871,21 @@ window.sortInjury=function(col){if(injSort.col===col)injSort.dir=injSort.dir==='
 window.renderInjury=function(){
   const high=PLAYERS.filter(p=>p.risk==='high'),mod=PLAYERS.filter(p=>p.risk==='mod'),low=PLAYERS.filter(p=>p.risk==='low');
   document.getElementById('injury-stats').innerHTML=`<div class="stat-card danger"><div class="sc-label">High Risk</div><div class="sc-val danger">${high.length}</div><div class="sc-sub">Immediate attention</div></div><div class="stat-card warn"><div class="sc-label">Moderate Risk</div><div class="sc-val warn">${mod.length}</div><div class="sc-sub">Monitor closely</div></div><div class="stat-card ok"><div class="sc-label">Low Risk</div><div class="sc-val ok">${low.length}</div><div class="sc-sub">Full training</div></div><div class="stat-card blue"><div class="sc-label">Total Athletes</div><div class="sc-val blue">${PLAYERS.length}</div><div class="sc-sub">with session data</div></div>`;
+
+  // ── Biggest ACWR Spikes — outlier panel, sorted by each athlete's single worst metric ──
+  const spikeCell=v=>{
+    if(!v||v<=0)return`<td class="mono" style="color:var(--text3)">—</td>`;
+    return`<td class="mono ${acwrSt(v).cls}">${v.toFixed(2)}</td>`;
+  };
+  const spikeRanked=[...PLAYERS].filter(p=>p.maxACWR>0).sort((a,b)=>b.maxACWR-a.maxACWR).slice(0,12);
+  document.getElementById('injury-spike-table').innerHTML=spikeRanked.length?spikeRanked.map(p=>`<tr onclick="openPM('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer">
+      <td style="font-weight:600;color:var(--uf-blue)">${p.name}</td>
+      <td>${pill('info',p.pos)}</td>
+      <td style="font-size:10px;color:var(--text3)">${p.unit}</td>
+      <td>${pill(acwrSt(p.maxACWR).cls,p.maxACWRField)}</td>
+      ${spikeCell(p.latL)}${spikeCell(p.latD)}${spikeCell(p.latH12)}${spikeCell(p.latH16)}${spikeCell(p.latA)}
+    </tr>`).join(''):'<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text3)">No ACWR data yet.</td></tr>';
+
   const rRow=p=>`<div class="risk-row" onclick="openPM('${p.name.replace(/'/g,"\\'")}');" style="cursor:pointer"><div class="avatar" style="background:${p.risk==='high'?'rgba(220,38,38,.1)':'rgba(217,119,6,.1)'};color:${p.risk==='high'?'#B91C1C':'#92400E'}">${ini(p.name)}</div><div class="rnb"><div class="rname">${p.name}</div><div class="rpos">${p.pos} · ${p.unit}</div><div class="flags">${p.flags.map(f=>`<span class="flag ${f.c}">${f.t}</span>`).join('')}</div></div></div>`;
   document.getElementById('injury-high-list').innerHTML=high.length?high.map(rRow).join(''):'<div style="color:var(--acc3);font-size:12px;font-weight:600;padding:.5rem 0">✓ No high risk athletes</div>';
   document.getElementById('injury-mod-list').innerHTML=mod.length?mod.map(rRow).join(''):'<div style="color:var(--acc3);font-size:12px;font-weight:600;padding:.5rem 0">✓ No moderate risk athletes</div>';
