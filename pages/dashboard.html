@@ -481,6 +481,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   <div id="gps-90-view" style="display:none">
     <div class="sel-row" style="margin-bottom:14px">
       <select class="data-sel" id="gps-90-week-sel" onchange="renderGPS90()" style="min-width:220px"></select>
+      <select class="data-sel" id="gps-90-pos-sel" onchange="renderGPS90()" style="min-width:180px"></select>
       <span class="tbb info" id="gps-90-badge">—</span>
     </div>
     <div class="stat-row" id="gps-90-stats"></div>
@@ -2274,11 +2275,21 @@ window.renderGPS90=function(){
   const isCurrent=weekStartMs===weekOptions[0];
   document.getElementById('gps-90-badge').textContent=isCurrent?'Current week — resets next Sunday':'Past week — final';
 
+  const posSel=document.getElementById('gps-90-pos-sel');
+  if(posSel.options.length===0){
+    const o0=document.createElement('option');o0.value='';o0.textContent='— All Positions —';posSel.appendChild(o0);
+    const posOrder=['WR','RB','QB','TE','OL','CB','SAF','ILB','OLB','DL'];
+    posOrder.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;posSel.appendChild(o);});
+  }
+  const selPos=posSel.value;
+  const dbPos=selPos?(SLRU_POS_MAP[selPos]||selPos):'';
+
   const athMaxMap={};
   (aths||[]).forEach(a=>{athMaxMap[a.name]=a.max_velocity_mph!=null?+a.max_velocity_mph:null;});
 
   const rows=[];
   PLAYERS.forEach(p=>{
+    if(dbPos&&p.pos!==dbPos)return;
     const profileMax=athMaxMap[p.name]??null;
     if(profileMax==null)return;
     const wkSessions=p.sessions.filter(s=>{
