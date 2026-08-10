@@ -1007,6 +1007,18 @@ function displayWk(wk){
   return`Su W${n}`;
 }
 
+// ── KNOWN-BAD CATAPULT ACTIVITY IDS ─────────────────────────────────
+// Catapult occasionally re-syncs the same recording window under a brand-new
+// catapult_activity_id (e.g. after boundaries get adjusted/reprocessed on their side),
+// leaving a stale duplicate activity sitting alongside the corrected one. Since both
+// share the same date/athletes, every page that sums by date or by week double-counts
+// unless the stale copy is dropped here, once, upstream of everything else.
+// Fall Camp 4 (8/8/26): ac90b579-... was the stale first sync (lower HSD/effort counts
+// across the board); e7b5c267-... is the corrected one, confirmed against Catapult Cloud.
+const EXCLUDED_ACTIVITY_IDS=new Set([
+  'ac90b579-1d7a-4bd7-ae7d-b17ccdb3b1a9',
+]);
+
 // ── FETCH ─────────────────────────────────────────────────────────
 let raw=[], _page=0, _done=false;
 while(!_done){
@@ -1017,6 +1029,7 @@ while(!_done){
   if(eR2||!chunk||chunk.length===0)_done=true;
   else{raw=[...raw,...chunk];if(chunk.length<1000)_done=true;_page++;}
 }
+raw=raw.filter(r=>!EXCLUDED_ACTIVITY_IDS.has(r.catapult_activity_id));
 const eR=null;
 const {data:aths}=await SB.from('athletes').select('name,position,weight_lbs,max_velocity_mph');
 if(!raw.length){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data returned from Supabase.</div>`;throw 0;}
@@ -1637,11 +1650,12 @@ window.openRosterAthlete=async function(name){
   document.getElementById('roster-ath-pos').textContent=ath?ath.position:'';
 
   // GPS sessions
-  const{data:sessions}=await SB.from('catapult_sessions')
-    .select('session_date,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts')
+  const{data:sessionsRaw}=await SB.from('catapult_sessions')
+    .select('session_date,catapult_activity_id,total_player_load,total_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts')
     .ilike('athlete_name',name)
     .gt('total_distance',0)
     .order('session_date',{ascending:false});
+  const sessions=(sessionsRaw||[]).filter(s=>!EXCLUDED_ACTIVITY_IDS.has(s.catapult_activity_id));
 
   const sorted=(sessions||[]).sort((a,b)=>{
     const[am,ad,ay]=a.session_date.split('/').map(Number);
@@ -2392,7 +2406,7 @@ window.renderPeriodBreakdown=async function(){
   let periodRows=[],_pbPage=0,_pbDone=false,periodError=null;
   while(!_pbDone){
     const{data:chunk,error:pbErr}=await SB.from('catapult_period_stats')
-      .select('athlete_name,period_id,period_name,start_time_h,end_time_h,total_player_load,max_velocity,accel_total_efforts,decel_total_efforts,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance')
+      .select('athlete_name,catapult_activity_id,period_id,period_name,start_time_h,end_time_h,total_player_load,max_velocity,accel_total_efforts,decel_total_efforts,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance')
       .eq('session_date',date)
       .order('start_time_h',{ascending:true})
       .range(_pbPage*1000,(_pbPage+1)*1000-1);
@@ -2400,6 +2414,7 @@ window.renderPeriodBreakdown=async function(){
     else if(!chunk||chunk.length===0){_pbDone=true;}
     else{periodRows=[...periodRows,...chunk];if(chunk.length<1000)_pbDone=true;_pbPage++;}
   }
+  periodRows=periodRows.filter(r=>!EXCLUDED_ACTIVITY_IDS.has(r.catapult_activity_id));
   const error=periodError;
 
   if(error||!periodRows){
@@ -4034,7 +4049,8 @@ async function renderIDP(name){
     ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:9},boxWidth:8}}}}});
   }
 
-  const{data:sessions}=await SB.from('catapult_sessions').select('session_date,max_velocity').ilike('athlete_name',nameUp).order('session_date',{ascending:true}).limit(40);
+  const{data:sessionsRaw}=await SB.from('catapult_sessions').select('session_date,catapult_activity_id,max_velocity').ilike('athlete_name',nameUp).order('session_date',{ascending:true}).limit(40);
+  const sessions=(sessionsRaw||[]).filter(s=>!EXCLUDED_ACTIVITY_IDS.has(s.catapult_activity_id));
   if(sessions&&sessions.length){
     const f=sessions.filter(s=>+s.max_velocity>0);
     mk('idp-chart-maxv',{type:'line',data:{labels:f.map(s=>s.session_date),datasets:[{label:'Max Velocity',data:f.map(s=>+s.max_velocity),borderColor:C.acc,backgroundColor:C.acc,tension:.3,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
