@@ -163,7 +163,7 @@ repeat {
   current_from <- page_df$modifiedDateUtc[nrow(page_df)]
   Sys.sleep(0.25)
 }
-fd_raw <- if (length(all_fd_rows) > 0) do.call(rbind, all_fd_rows) else NULL
+fd_raw <- if (length(all_fd_rows) > 0) bind_rows(all_fd_rows) else NULL
 cat("[VALD Sync] Total ForceDecks tests fetched:", if (!is.null(fd_raw)) nrow(fd_raw) else 0, "\n")
 
 if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
@@ -256,10 +256,10 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
         )
       })
 
-      do.call(rbind, per_trial)
+      bind_rows(per_trial)
     })
 
-    cmj_rows <- do.call(rbind, Filter(Negate(is.null), cmj_trial_rows)) |>
+    cmj_rows <- bind_rows(Filter(Negate(is.null), cmj_trial_rows)) |>
       mutate(across(where(is.numeric), ~ ifelse(is.nan(.), NA_real_, .))) |>
       filter(!is.na(test_date))
 
@@ -341,7 +341,7 @@ repeat {
   current_from_nb <- page_df_nb$modifiedDateUtc[nrow(page_df_nb)]
   Sys.sleep(0.5)
 }
-nb_raw <- if (length(all_nb_rows) > 0) do.call(rbind, all_nb_rows) else NULL
+nb_raw <- if (length(all_nb_rows) > 0) bind_rows(all_nb_rows) else NULL
 cat("[VALD Sync] Total NordBord tests fetched:", if (!is.null(nb_raw)) nrow(nb_raw) else 0, "\n")
 
 if (!is.null(nb_raw) && nrow(nb_raw) > 0) {
