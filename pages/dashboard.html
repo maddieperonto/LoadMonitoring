@@ -1015,8 +1015,13 @@ function displayWk(wk){
 // unless the stale copy is dropped here, once, upstream of everything else.
 // Fall Camp 4 (8/8/26): ac90b579-... was the stale first sync (lower HSD/effort counts
 // across the board); e7b5c267-... is the corrected one, confirmed against Catapult Cloud.
+// Fall Camp 5 (8/10/26): 809b793c-... was a stale RE-sync that landed ~19hrs after the
+// original (lower max velocity/HSD/effort counts across the board, e.g. 14.0mph vs the
+// true 18.3mph); 79fcedc5-... is the corrected one — Catapult Cloud only shows one
+// activity for this date, confirmed at 18.3mph max velocity.
 const EXCLUDED_ACTIVITY_IDS=new Set([
   'ac90b579-1d7a-4bd7-ae7d-b17ccdb3b1a9',
+  '809b793c-0013-4b22-aaaf-28b7d0382d71',
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
