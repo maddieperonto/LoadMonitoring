@@ -2444,9 +2444,19 @@ window.renderPeriodBreakdown=async function(){
   }
 
   const dbPos=SLRU_POS_MAP[pos]||pos;
+
+  // RTP (Return to Play) players train on modified/individualized loads that don't
+  // represent the group's real training stimulus, so they're excluded from position-group
+  // views here — but if a specific RTP player is selected by name, their own data still
+  // shows (that's the whole point of looking at one player). catapult_period_stats doesn't
+  // carry its own participation_tag, so this cross-references the per-session tags already
+  // loaded in `raw` for this date.
+  const rtpNamesForDate=new Set(
+    raw.filter(r=>r.session_date===date&&r.participation_tag==='RTP').map(r=>normName(r.athlete_name))
+  );
   const posFiltered=name
     ? periodRows.filter(r=>normName(r.athlete_name)===name&&!(r.period_name||'').toLowerCase().includes('auto created period'))
-    : periodRows.filter(r=>lkPos(normName(r.athlete_name))===dbPos&&!(r.period_name||'').toLowerCase().includes('auto created period'));
+    : periodRows.filter(r=>lkPos(normName(r.athlete_name))===dbPos&&!(r.period_name||'').toLowerCase().includes('auto created period')&&!rtpNamesForDate.has(normName(r.athlete_name)));
 
   // Canonical period name per period_id, voted from EVERY athlete's row that day (not just
   // the filtered subset). A single athlete can occasionally sync with a stale/mismatched
@@ -2609,7 +2619,9 @@ window.renderPeriodBreakdown=async function(){
     .map(r=>{
       const nm=normName(r.athlete_name);
       const rPos=lkPos(nm)||'UNK';
-      if(name){if(nm!==name)return null;}else{if(rPos!==dbPos)return null;}
+      // Same RTP exclusion as the charts above: skip RTP players from the position-group
+      // summary (skews the group's numbers), but still show them when individually selected.
+      if(name){if(nm!==name)return null;}else{if(rPos!==dbPos)return null;if(r.participation_tag==='RTP')return null;}
       const dur=+r.total_duration||0;
       const pl=+r.total_player_load||0;
       return{
