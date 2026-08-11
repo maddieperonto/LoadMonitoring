@@ -995,8 +995,23 @@ function phase(d){
 }
 function phWk(d){
   const ph=phase(d);if(!ph)return null;
-  const base=ph==='Fa'?PH.fs:ph==='Sp'?PH.ss:ph==='Fc'?PH.cs:PH.us;
-  const days=Math.floor((parseDate(d)-base)/86400000);
+  const dt=parseDate(d);
+  if(ph==='Fc'){
+    // Fall Camp weeks are calendar (Monday–Sunday) weeks, not a rolling 7-day count from
+    // the camp start date — camp doesn't start on a Monday, so a pure "days since start /
+    // 7" count drifts away from real weeks (e.g. it kept Mon 8/10 in Week 1 instead of
+    // rolling into Week 2). Week 1 runs from the camp start date through the following
+    // Sunday (a short first week); every week after that is a full Monday–Sunday week,
+    // and this keeps working correctly for W3, W4, etc. as camp continues.
+    const start=PH.cs;
+    const daysToMonday=(8-start.getDay())%7; // start.getDay(): 0=Sun..6=Sat
+    const firstMonday=new Date(start.getFullYear(),start.getMonth(),start.getDate()+daysToMonday);
+    if(dt<firstMonday)return'Fc W1';
+    const days=Math.floor((dt-firstMonday)/86400000);
+    return`Fc W${Math.floor(days/7)+2}`;
+  }
+  const base=ph==='Fa'?PH.fs:ph==='Sp'?PH.ss:PH.us;
+  const days=Math.floor((dt-base)/86400000);
   return`${ph} W${Math.floor(days/7)+1}`;
 }
 function displayWk(wk){
