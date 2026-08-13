@@ -1381,6 +1381,40 @@ const PLAYERS=Object.values(byPFiltered).map(p=>{
   return{name:p.name,pos,unit,sessions:p.sessions,dA,aA,lA,hA,dACWR,aACWR,latD,latA,latL,latH12,latH16,maxACWR,maxACWRField,latMaxV,latestHSR,latest,flags,risk,spAvg,curLoad:cl,spPct,acwr4,allLMLoad,allLMDist,allLMHSR,allLMAccel,allLMDecel,allLMVel,cl,cd,ch2,ca,cde,cv};
 }).filter(p=>p.sessions.length>0).sort((a,b)=>a.name.localeCompare(b.name));
 
+// ── DIAGNOSTICS (browser console only — no UI impact) ────────────────────
+// Exposes the roster/session data already loaded in memory so a "why doesn't X show up
+// here" question can be answered from devtools instead of a database query every time.
+// Usage, from the browser console on any page once the dashboard has loaded:
+//   __DEBUG.gps90Report()                 — current week
+//   __DEBUG.gps90Report(+new Date(2026,7,10))  — a specific week (pass that week's Sunday)
+window.__DEBUG={
+  get PLAYERS(){return PLAYERS;},get aths(){return aths;},get raw(){return raw;},
+  gps90Report(weekStartMs){
+    const athMaxMap={};
+    (aths||[]).forEach(a=>{athMaxMap[a.name]=a.max_velocity_mph!=null?+a.max_velocity_mph:null;});
+    const wkStart=weekStartMs??getSundayWeekStart().getTime();
+    const wkEnd=wkStart+7*86400000;
+    const tracked=[],noProfileMax=[],noValidSessionThisWeek=[];
+    PLAYERS.forEach(p=>{
+      const profileMax=athMaxMap[p.name]??null;
+      if(profileMax==null){noProfileMax.push(p.name);return;}
+      const allWkSessions=p.sessions.filter(s=>{const ms=dateToMs(s.date);return ms!=null&&ms>=wkStart&&ms<wkEnd;});
+      const wkSessions=allWkSessions.filter(s=>s.maxV>0);
+      if(!wkSessions.length){
+        noValidSessionThisWeek.push({name:p.name,sessionsThisWeek:allWkSessions.length,maxVsSeen:allWkSessions.map(s=>`${s.date}: ${s.maxV}`)});
+        return;
+      }
+      tracked.push(p.name);
+    });
+    console.log(`Week: ${new Date(wkStart).toLocaleDateString()} – ${new Date(wkEnd-1).toLocaleDateString()}`);
+    console.log('Tracked:',tracked.length);console.log(tracked);
+    console.log('Excluded — no profile max velocity set:',noProfileMax.length);console.log(noProfileMax);
+    console.log('Excluded — has profile max, but no positive max-velocity session this week:',noValidSessionThisWeek.length);
+    console.table(noValidSessionThisWeek);
+    return{tracked,noProfileMax,noValidSessionThisWeek};
+  }
+};
+
 // ── TOPBAR ────────────────────────────────────────────────────────
 const now=new Date();
 const today=`${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')}/${now.getFullYear()}`;
