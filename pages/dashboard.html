@@ -1186,6 +1186,11 @@ const GPS_ROSTER = new Set([
   'VINCENT BROWN JR',
   'EVAN PRYOR',
   'MICAH MAYS JR', 'JAREYLAN MCCOY','CHARLES EMANUEL III','CORMANI MCCLAIN',
+  // Added 8/13/26 — active in practice with real synced data, but missing from this
+  // manually-maintained list (see rosterGapReport diagnostic), so they weren't showing up
+  // anywhere GPS-based, including the 90% Max Velocity panel.
+  'ANTHONY RUBIO','JAVIER JONES','AARON WILLIAMS','JAVION TOOMBS','DIJON JOHNSON',
+  'JAHARI MEDLOCK-WILSON','ACE CIONGOLI','ERIC PARKS','JAYDEN GROSS','JAYLEN JORDAN',
 ]);
 
 // ── POSITION LOOKUP ───────────────────────────────────────────────
@@ -1412,6 +1417,25 @@ window.__DEBUG={
     console.log('Excluded — has profile max, but no positive max-velocity session this week:',noValidSessionThisWeek.length);
     console.table(noValidSessionThisWeek);
     return{tracked,noProfileMax,noValidSessionThisWeek};
+  },
+  // Finds athletes with real synced Catapult session data who never make it into PLAYERS
+  // at all — i.e. dropped before the 90% panel (or any GPS view) even runs, because
+  // byPFiltered requires BOTH rosterNames (the athletes table) AND the hardcoded
+  // GPS_ROSTER allowlist to contain their name. Flags which of the two is missing them.
+  rosterGapReport(){
+    const trackedNames=new Set(PLAYERS.map(p=>p.name));
+    const seen={};
+    raw.forEach(r=>{
+      const nm=normName(r.athlete_name);
+      if(trackedNames.has(nm))return;
+      if(!seen[nm])seen[nm]={name:nm,sessions:0,lastDate:null,inAthletesTable:rosterNames.has(nm),inGpsRosterList:GPS_ROSTER.has(nm)};
+      seen[nm].sessions++;
+      if(!seen[nm].lastDate||dateToMs(r.session_date)>dateToMs(seen[nm].lastDate))seen[nm].lastDate=r.session_date;
+    });
+    const gap=Object.values(seen).sort((a,b)=>b.sessions-a.sessions);
+    console.log('Players with real Catapult session data but NOT in the app roster (PLAYERS):',gap.length);
+    console.table(gap);
+    return gap;
   }
 };
 
