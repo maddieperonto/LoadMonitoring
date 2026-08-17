@@ -1034,9 +1034,13 @@ function displayWk(wk){
 // original (lower max velocity/HSD/effort counts across the board, e.g. 14.0mph vs the
 // true 18.3mph); 79fcedc5-... is the corrected one — Catapult Cloud only shows one
 // activity for this date, confirmed at 18.3mph max velocity.
+// Fall Camp 8 (8/14/26): 350820a0-... was a stale RE-sync that landed 3 days later
+// (lower HSD/effort counts across the board, and a distorted total_distance — 5015 vs
+// the true 4853); 0c75e7eb-... is the corrected one, confirmed at 4853yd total distance.
 const EXCLUDED_ACTIVITY_IDS=new Set([
   'ac90b579-1d7a-4bd7-ae7d-b17ccdb3b1a9',
   '809b793c-0013-4b22-aaaf-28b7d0382d71',
+  '350820a0-081c-43a5-9b58-338b2cb133a7',
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
