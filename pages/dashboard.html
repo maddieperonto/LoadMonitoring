@@ -807,7 +807,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <span style="color:var(--text3);font-size:12px;align-self:center">to</span>
     <input type="date" class="data-sel" id="dailybd-to-sel" onchange="renderDailyBreakdown()" style="min-width:150px">
   </div>
-  <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Each bar/column is one Catapult activity within the selected date range, named exactly as it's named in Catapult Cloud.</div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Each bar/column is one Catapult activity within the selected date range (defaults to every session on record — narrow it with the date pickers above, or scroll the charts below), named exactly as it's named in Catapult Cloud.</div>
   <div class="panel">
     <div class="panel-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleCollapsePanel('dailybd-summary')">
       <span><i class="ti ti-table"></i>Daily Summary</span>
@@ -822,7 +822,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   </div>
   <div class="panel">
     <div class="panel-title" id="dailybd-chart-title"><i class="ti ti-chart-bar"></i>Daily Breakdown</div>
-    <div class="chart-wrap h320"><canvas id="dailybd-chart"></canvas></div>
+    <div class="chart-wrap h320" style="overflow-x:auto"><div id="dailybd-chart-inner" style="height:100%"><canvas id="dailybd-chart"></canvas></div></div>
   </div>
   <div class="panel">
     <div class="panel-title" id="dailybd-split-load-title"><i class="ti ti-chart-bar"></i>Player Load (AU)</div>
@@ -832,7 +832,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
       <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
-    <div class="chart-wrap" style="height:280px"><canvas id="dailybd-split-load"></canvas></div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-load-inner" style="height:100%"><canvas id="dailybd-split-load"></canvas></div></div>
   </div>
   <div class="panel">
     <div class="panel-title" id="dailybd-split-hsd1216-title"><i class="ti ti-chart-bar"></i>HSD 12-16 mph (yd)</div>
@@ -842,7 +842,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
       <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
-    <div class="chart-wrap" style="height:280px"><canvas id="dailybd-split-hsd1216"></canvas></div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-hsd1216-inner" style="height:100%"><canvas id="dailybd-split-hsd1216"></canvas></div></div>
   </div>
   <div class="panel">
     <div class="panel-title" id="dailybd-split-hsd16-title"><i class="ti ti-chart-bar"></i>HSD 16+ mph (yd)</div>
@@ -852,7 +852,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
       <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
-    <div class="chart-wrap" style="height:280px"><canvas id="dailybd-split-hsd16"></canvas></div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-hsd16-inner" style="height:100%"><canvas id="dailybd-split-hsd16"></canvas></div></div>
   </div>
   <div class="panel">
     <div class="panel-title" id="dailybd-split-accel-title"><i class="ti ti-chart-bar"></i>Accel Total Efforts</div>
@@ -862,7 +862,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
       <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
-    <div class="chart-wrap" style="height:280px"><canvas id="dailybd-split-accel"></canvas></div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-accel-inner" style="height:100%"><canvas id="dailybd-split-accel"></canvas></div></div>
   </div>
   <div class="panel">
     <div class="panel-title" id="dailybd-split-decel-title"><i class="ti ti-chart-bar"></i>Decel Total Efforts</div>
@@ -872,7 +872,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
       <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
-    <div class="chart-wrap" style="height:280px"><canvas id="dailybd-split-decel"></canvas></div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-decel-inner" style="height:100%"><canvas id="dailybd-split-decel"></canvas></div></div>
   </div>
 </div>
 
@@ -2998,6 +2998,28 @@ function dailyBdAxisRange(stats){
   const hi=Math.max(stats.mean+3*stats.std,stats.max||0);
   return{axisMin:0,axisMax:hi>0?hi*1.15:1};
 }
+// Daily Breakdown defaults to FULL history (no date range), so a chart can end up
+// with far more bars than fit legibly in the panel width. Rather than squeezing bars
+// down to illegible slivers, give each bar a fixed minimum pixel width and let the
+// wrapping .chart-wrap (overflow-x:auto) scroll horizontally once content exceeds
+// the visible width. Falls back to the container's own width when there's too few
+// bars to need scrolling, so small selections still fill the panel like before.
+function sizeScrollChart(innerId,n,pxPerBar){
+  const inner=document.getElementById(innerId);
+  if(!inner)return;
+  const wrap=inner.parentElement;
+  const containerW=wrap?wrap.clientWidth:0;
+  inner.style.width=Math.max(containerW,n*pxPerBar)+'px';
+}
+// Re-render on window resize while this page is visible, so the "no scroll needed"
+// case (few sessions) still fills the newly available width instead of staying
+// stuck at whatever width it was last sized to.
+let _dailyBdResizeTimer=null;
+window.addEventListener('resize',()=>{
+  if(!document.getElementById('pg-dailybreakdown')?.classList.contains('active'))return;
+  clearTimeout(_dailyBdResizeTimer);
+  _dailyBdResizeTimer=setTimeout(()=>{if(typeof window.renderDailyBreakdown==='function')window.renderDailyBreakdown();},200);
+});
 // Generic version of the rppBandsPlugin below — takes an array of per-axis configs.
 // Every Daily Breakdown split chart is now single-metric (see buildDailyBdZChart),
 // so in practice each chart only ever passes one config; the array shape is kept in
@@ -3069,13 +3091,11 @@ window.initDailyBreakdown=function(){
     const o0=document.createElement('option');o0.value='';o0.textContent='— All Players (by Position) —';selN.appendChild(o0);
     [...PLAYERS].map(p=>p.name).sort((a,b)=>a.localeCompare(b)).forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;selN.appendChild(o);});
   }
-  // Default range: trailing 14 days through today, so the page shows something useful
-  // without making the user pick dates first. They can widen it from there.
-  if(!selFrom.value&&!selTo.value){
-    const todayMs=new Date(new Date().toDateString()).getTime();
-    selTo.value=msToInputDate(todayMs);
-    selFrom.value=msToInputDate(todayMs-13*86400000);
-  }
+  // No default date range — leave From/To blank so the page loads FULL history
+  // (every session ever recorded) rather than a trailing window. The charts and
+  // table are horizontally/vertically scrollable (see sizeScrollChart below), so
+  // showing everything by default doesn't require squeezing bars to fit; the date
+  // pickers are still there for anyone who wants to narrow to a specific window.
   renderDailyBreakdown();
 };
 
@@ -3177,6 +3197,7 @@ window.renderDailyBreakdown=function(){
   if(!rows.length){
     if(elMain){const ctx=elMain.getContext('2d');ctx.clearRect(0,0,elMain.width,elMain.height);}
   } else {
+    sizeScrollChart('dailybd-chart-inner',rows.length,90);
     _dailyBdChart=new Chart(elMain,{
       data:{
         labels,
@@ -3248,7 +3269,8 @@ window.renderDailyBreakdown=function(){
 
     // Shared builder for every single-metric split chart — bands drawn directly
     // against that metric's own full-history mean/std, no other metric involved.
-    function buildDailyBdZChart(el,label,data,color){
+    function buildDailyBdZChart(el,wrapInnerId,label,data,color){
+      sizeScrollChart(wrapInnerId,rows.length,60);
       const stats=mStats[label.key],range=dailyBdAxisRange(stats);
       return new Chart(el,{
         type:'bar',
@@ -3268,11 +3290,11 @@ window.renderDailyBreakdown=function(){
       });
     }
 
-    _dailyBdSplitLoadChart=buildDailyBdZChart(elLoad,{key:'load',text:'Player Load'},loads,'#0F1923');
-    _dailyBdSplitHsd1216Chart=buildDailyBdZChart(elHsd1216,{key:'hsd1216',text:'HSD 12-16 mph'},hsd1216,'#D97706');
-    _dailyBdSplitHsd16Chart=buildDailyBdZChart(elHsd16,{key:'hsd16',text:'HSD 16+ mph'},hsd16,C.blue);
-    _dailyBdSplitAccelChart=buildDailyBdZChart(elAccel,{key:'accel',text:'Accel Total Efforts'},accel,C.green);
-    _dailyBdSplitDecelChart=buildDailyBdZChart(elDecel,{key:'decel',text:'Decel Total Efforts'},decel,C.red);
+    _dailyBdSplitLoadChart=buildDailyBdZChart(elLoad,'dailybd-split-load-inner',{key:'load',text:'Player Load'},loads,'#0F1923');
+    _dailyBdSplitHsd1216Chart=buildDailyBdZChart(elHsd1216,'dailybd-split-hsd1216-inner',{key:'hsd1216',text:'HSD 12-16 mph'},hsd1216,'#D97706');
+    _dailyBdSplitHsd16Chart=buildDailyBdZChart(elHsd16,'dailybd-split-hsd16-inner',{key:'hsd16',text:'HSD 16+ mph'},hsd16,C.blue);
+    _dailyBdSplitAccelChart=buildDailyBdZChart(elAccel,'dailybd-split-accel-inner',{key:'accel',text:'Accel Total Efforts'},accel,C.green);
+    _dailyBdSplitDecelChart=buildDailyBdZChart(elDecel,'dailybd-split-decel-inner',{key:'decel',text:'Decel Total Efforts'},decel,C.red);
   }
 
   // ── Daily Summary table ──
