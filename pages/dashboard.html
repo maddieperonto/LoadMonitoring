@@ -826,14 +826,36 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   </div>
   <div class="panel">
     <div class="panel-title" id="dailybd-split-load-title"><i class="ti ti-chart-bar"></i>Player Load (AU)</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#0F1923"></div>Player Load</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
+    </div>
     <div class="chart-wrap" style="height:280px"><canvas id="dailybd-split-load"></canvas></div>
   </div>
   <div class="panel">
     <div class="panel-title" id="dailybd-split-hsd-title"><i class="ti ti-chart-bar"></i>High Speed Distance (yd)</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#D97706"></div>HSD 12–16 mph</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.4)"></div>12–16: 1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.8)"></div>12–16: 2–3 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:#003087"></div>HSD 16+ mph</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(0,48,135,.4)"></div>16+: 1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(0,48,135,.8)"></div>16+: 2–3 SD</div>
+    </div>
     <div class="chart-wrap" style="height:280px"><canvas id="dailybd-split-hsd"></canvas></div>
   </div>
   <div class="panel">
     <div class="panel-title" id="dailybd-split-effort-title"><i class="ti ti-chart-bar"></i>Accel / Decel Total Efforts</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#16A34A"></div>Accel Efforts</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(22,163,74,.4)"></div>Accel: 1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(22,163,74,.8)"></div>Accel: 2–3 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:#DC2626"></div>Decel Efforts</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.4)"></div>Decel: 1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.8)"></div>Decel: 2–3 SD</div>
+    </div>
     <div class="chart-wrap" style="height:280px"><canvas id="dailybd-split-effort"></canvas></div>
   </div>
 </div>
@@ -2963,6 +2985,16 @@ function dailyBdAxisRange(stats){
 // Generic version of the rppBandsPlugin below — takes an array of per-axis configs
 // so a chart with multiple metrics on separate (possibly hidden) axes, like the HSD
 // and Accel/Decel split charts, can show independent bands per metric.
+// Converts a '#rrggbb' hex color into rgba() strings for the 1-2 SD ("warn") and
+// 2-3 SD ("danger") band shades — same hue as the metric's own bar/mean color, just
+// more opaque the further out the zone is. Used so a chart with two metrics (HSD,
+// Accel/Decel) gets visibly distinct band colors per metric instead of both metrics
+// sharing one generic orange/red scheme.
+function zoneColorsFromHex(hex,warnA,dangerA){
+  const n=parseInt(hex.replace('#',''),16);
+  const r=(n>>16)&255,g=(n>>8)&255,b=n&255;
+  return{warn:`rgba(${r},${g},${b},${warnA})`,danger:`rgba(${r},${g},${b},${dangerA})`};
+}
 const zBandsPlugin={
   id:'zBands',
   beforeDatasetsDraw(chart,args,opts){
@@ -2974,11 +3006,13 @@ const zBandsPlugin={
       const yScale=scales[cfg.yAxisID];
       if(!yScale||!cfg.std)return;
       const{mean,std,axisMin,axisMax}=cfg;
+      const warnColor=cfg.warnColor||'rgba(217,119,6,.15)';
+      const dangerColor=cfg.dangerColor||'rgba(220,38,38,.15)';
       const zones=[
-        [mean-3*std,mean-2*std,'rgba(220,38,38,.15)'],
-        [mean-2*std,mean-1*std,'rgba(217,119,6,.15)'],
-        [mean+1*std,mean+2*std,'rgba(217,119,6,.15)'],
-        [mean+2*std,mean+3*std,'rgba(220,38,38,.15)'],
+        [mean-3*std,mean-2*std,dangerColor],
+        [mean-2*std,mean-1*std,warnColor],
+        [mean+1*std,mean+2*std,warnColor],
+        [mean+2*std,mean+3*std,dangerColor],
       ];
       zones.forEach(([lo,hi,color])=>{
         const loC=Math.max(axisMin,Math.min(axisMax,lo));
@@ -3216,6 +3250,8 @@ window.renderDailyBreakdown=function(){
     // only its own mean/std, the same way RPP overlays Bodyweight on a separate axis) ──
     const hsd1216Stats=mStats.hsd1216,hsd1216Range=dailyBdAxisRange(hsd1216Stats);
     const hsd16Stats=mStats.hsd16,hsd16Range=dailyBdAxisRange(hsd16Stats);
+    const hsd1216ZoneColors=zoneColorsFromHex('#D97706','.15','.32');
+    const hsd16ZoneColors=zoneColorsFromHex(C.blue,'.15','.32');
     _dailyBdSplitHsdChart=new Chart(elHsd,{
       data:{labels,datasets:[
         meanDs('HSD 12-16 mph (mean)',hsd1216Stats.mean,'yHsd1216','#D97706'),
@@ -3231,8 +3267,8 @@ window.renderDailyBreakdown=function(){
         plugins:{
           legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12,filter:legendFilter}},
           zBands:{configs:[
-            {yAxisID:'yHsd1216',mean:hsd1216Stats.mean,std:hsd1216Stats.std,axisMin:hsd1216Range.axisMin,axisMax:hsd1216Range.axisMax},
-            {yAxisID:'yHsd16',mean:hsd16Stats.mean,std:hsd16Stats.std,axisMin:hsd16Range.axisMin,axisMax:hsd16Range.axisMax},
+            {yAxisID:'yHsd1216',mean:hsd1216Stats.mean,std:hsd1216Stats.std,axisMin:hsd1216Range.axisMin,axisMax:hsd1216Range.axisMax,warnColor:hsd1216ZoneColors.warn,dangerColor:hsd1216ZoneColors.danger},
+            {yAxisID:'yHsd16',mean:hsd16Stats.mean,std:hsd16Stats.std,axisMin:hsd16Range.axisMin,axisMax:hsd16Range.axisMax,warnColor:hsd16ZoneColors.warn,dangerColor:hsd16ZoneColors.danger},
           ]},
           tooltip:{filter:tooltipFilter,callbacks:{title:dateTooltip,
             label:dailyBdZTooltipLabel({'HSD 12-16 mph':hsd1216Stats,'HSD 16+ mph':hsd16Stats})}}
@@ -3246,6 +3282,8 @@ window.renderDailyBreakdown=function(){
     // ── Accel / Decel (same per-metric-axis treatment as HSD above) ──
     const accelStats=mStats.accel,accelRange=dailyBdAxisRange(accelStats);
     const decelStats=mStats.decel,decelRange=dailyBdAxisRange(decelStats);
+    const accelZoneColors=zoneColorsFromHex(C.green,'.15','.32');
+    const decelZoneColors=zoneColorsFromHex(C.red,'.15','.32');
     _dailyBdSplitEffortChart=new Chart(elEffort,{
       data:{labels,datasets:[
         meanDs('Accel Total Efforts (mean)',accelStats.mean,'yAccel',C.green),
@@ -3261,8 +3299,8 @@ window.renderDailyBreakdown=function(){
         plugins:{
           legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12,filter:legendFilter}},
           zBands:{configs:[
-            {yAxisID:'yAccel',mean:accelStats.mean,std:accelStats.std,axisMin:accelRange.axisMin,axisMax:accelRange.axisMax},
-            {yAxisID:'yDecel',mean:decelStats.mean,std:decelStats.std,axisMin:decelRange.axisMin,axisMax:decelRange.axisMax},
+            {yAxisID:'yAccel',mean:accelStats.mean,std:accelStats.std,axisMin:accelRange.axisMin,axisMax:accelRange.axisMax,warnColor:accelZoneColors.warn,dangerColor:accelZoneColors.danger},
+            {yAxisID:'yDecel',mean:decelStats.mean,std:decelStats.std,axisMin:decelRange.axisMin,axisMax:decelRange.axisMax,warnColor:decelZoneColors.warn,dangerColor:decelZoneColors.danger},
           ]},
           tooltip:{filter:tooltipFilter,callbacks:{title:dateTooltip,
             label:dailyBdZTooltipLabel({'Accel Total Efforts':accelStats,'Decel Total Efforts':decelStats})}}
