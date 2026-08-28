@@ -154,7 +154,6 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
 .zone-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
 .zl{display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:9px;color:var(--text2)}
 .zl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.zl-dash{width:14px;height:0;border-top-width:2px;border-top-style:dashed;flex-shrink:0}
 .sel-row{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
 .data-sel{background:var(--surface);color:var(--text);border:1.5px solid var(--border2);padding:8px 12px;border-radius:var(--r);font-family:var(--font-b);font-size:12px;outline:none;cursor:pointer;min-width:200px;box-shadow:var(--shadow)}
 .data-sel:focus{border-color:var(--uf-orange);box-shadow:0 0 0 3px rgba(250,70,22,.1)}
@@ -829,9 +828,9 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel-title" id="dailybd-split-load-title"><i class="ti ti-chart-bar"></i>Player Load (AU)</div>
     <div class="zone-legend" style="margin-bottom:10px">
       <div class="zl"><div class="zl-dot" style="background:#0F1923"></div>Player Load</div>
-      <div class="zl"><div class="zl-dash" style="border-color:#94A3B8"></div>Mean</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(217,119,6,.85)"></div>±1 SD</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(220,38,38,.85)"></div>±2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
     <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-load-inner" style="height:100%"><canvas id="dailybd-split-load"></canvas></div></div>
   </div>
@@ -839,9 +838,9 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel-title" id="dailybd-split-hsd1216-title"><i class="ti ti-chart-bar"></i>HSD 12-16 mph (yd)</div>
     <div class="zone-legend" style="margin-bottom:10px">
       <div class="zl"><div class="zl-dot" style="background:#D97706"></div>HSD 12–16 mph</div>
-      <div class="zl"><div class="zl-dash" style="border-color:#94A3B8"></div>Mean</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(217,119,6,.85)"></div>±1 SD</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(220,38,38,.85)"></div>±2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
     <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-hsd1216-inner" style="height:100%"><canvas id="dailybd-split-hsd1216"></canvas></div></div>
   </div>
@@ -849,9 +848,9 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel-title" id="dailybd-split-hsd16-title"><i class="ti ti-chart-bar"></i>HSD 16+ mph (yd)</div>
     <div class="zone-legend" style="margin-bottom:10px">
       <div class="zl"><div class="zl-dot" style="background:#003087"></div>HSD 16+ mph</div>
-      <div class="zl"><div class="zl-dash" style="border-color:#94A3B8"></div>Mean</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(217,119,6,.85)"></div>±1 SD</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(220,38,38,.85)"></div>±2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
     <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-hsd16-inner" style="height:100%"><canvas id="dailybd-split-hsd16"></canvas></div></div>
   </div>
@@ -859,9 +858,9 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel-title" id="dailybd-split-accel-title"><i class="ti ti-chart-bar"></i>Accel Total Efforts</div>
     <div class="zone-legend" style="margin-bottom:10px">
       <div class="zl"><div class="zl-dot" style="background:#16A34A"></div>Accel Total Efforts</div>
-      <div class="zl"><div class="zl-dash" style="border-color:#94A3B8"></div>Mean</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(217,119,6,.85)"></div>±1 SD</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(220,38,38,.85)"></div>±2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
     <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-accel-inner" style="height:100%"><canvas id="dailybd-split-accel"></canvas></div></div>
   </div>
@@ -869,9 +868,9 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel-title" id="dailybd-split-decel-title"><i class="ti ti-chart-bar"></i>Decel Total Efforts</div>
     <div class="zone-legend" style="margin-bottom:10px">
       <div class="zl"><div class="zl-dot" style="background:#DC2626"></div>Decel Total Efforts</div>
-      <div class="zl"><div class="zl-dash" style="border-color:#94A3B8"></div>Mean</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(217,119,6,.85)"></div>±1 SD</div>
-      <div class="zl"><div class="zl-dash" style="border-color:rgba(220,38,38,.85)"></div>±2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
     <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-decel-inner" style="height:100%"><canvas id="dailybd-split-decel"></canvas></div></div>
   </div>
@@ -3031,43 +3030,36 @@ window.addEventListener('resize',()=>{
 // Every Daily Breakdown split chart is now single-metric (see buildDailyBdZChart),
 // so in practice each chart only ever passes one config; the array shape is kept in
 // case a future chart needs bands on more than one axis at once.
-// Drawn as dotted horizontal reference lines at ±1 SD and ±2 SD from the mean,
-// rather than shaded zones — a shaded zone drawn behind the bars gets fully hidden
-// wherever a bar is tall enough to cover it, and reads as a solid block rather than
-// a threshold. Lines are drawn AFTER the bars (afterDatasetsDraw) so they stay
-// visible crossing over every bar regardless of height.
 const zBandsPlugin={
   id:'zBands',
-  afterDatasetsDraw(chart,args,opts){
+  beforeDatasetsDraw(chart,args,opts){
     const{ctx,chartArea,scales}=chart;
     if(!chartArea)return;
     const configs=opts.configs||[];
+    ctx.save();
     configs.forEach(cfg=>{
       const yScale=scales[cfg.yAxisID];
       if(!yScale||!cfg.std)return;
       const{mean,std,axisMin,axisMax}=cfg;
-      const warnColor=cfg.warnColor||'rgba(217,119,6,.85)';
-      const dangerColor=cfg.dangerColor||'rgba(220,38,38,.85)';
-      const lines=[
-        [mean-2*std,dangerColor],
-        [mean-1*std,warnColor],
-        [mean+1*std,warnColor],
-        [mean+2*std,dangerColor],
+      const warnColor=cfg.warnColor||'rgba(217,119,6,.15)';
+      const dangerColor=cfg.dangerColor||'rgba(220,38,38,.15)';
+      const zones=[
+        [mean-3*std,mean-2*std,dangerColor],
+        [mean-2*std,mean-1*std,warnColor],
+        [mean+1*std,mean+2*std,warnColor],
+        [mean+2*std,mean+3*std,dangerColor],
       ];
-      lines.forEach(([val,color])=>{
-        if(val<axisMin||val>axisMax)return;
-        const y=yScale.getPixelForValue(val);
-        ctx.save();
-        ctx.setLineDash([5,3]);
-        ctx.lineWidth=1.5;
-        ctx.strokeStyle=color;
-        ctx.beginPath();
-        ctx.moveTo(chartArea.left,y);
-        ctx.lineTo(chartArea.right,y);
-        ctx.stroke();
-        ctx.restore();
+      zones.forEach(([lo,hi,color])=>{
+        const loC=Math.max(axisMin,Math.min(axisMax,lo));
+        const hiC=Math.max(axisMin,Math.min(axisMax,hi));
+        if(hiC<=loC)return;
+        const yTop=yScale.getPixelForValue(hiC);
+        const yBottom=yScale.getPixelForValue(loC);
+        ctx.fillStyle=color;
+        ctx.fillRect(chartArea.left,yTop,chartArea.right-chartArea.left,yBottom-yTop);
       });
     });
+    ctx.restore();
   }
 };
 function dailyBdZTooltipLabel(statsByLabel){
