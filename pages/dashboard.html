@@ -2938,6 +2938,73 @@ window.renderWeeklyBreakdown=function(){
 let _dailyBdChart=null;
 let _dailyBdSplitLoadChart=null,_dailyBdSplitHsdChart=null,_dailyBdSplitEffortChart=null;
 
+// ── Z-SCORE / STD-DEV BANDS ─────────────────────────────────────────
+// Same visual language as the Relative Peak Power bands in VALD Testing: colored
+// zones behind the bars showing how far a value sits from this player's/position's
+// own historical mean, in standard deviations (orange = 1-2 std, red = 2-3 std).
+// The baseline is always the FULL history for the current position/player selection
+// — not just the currently displayed date range — so the bands represent a stable
+// "normal range" that doesn't shift every time the date filter changes.
+function dailyBdMetricStats(pos,name){
+  const allRows=getDailyBreakdownRows(pos,name,null,null);
+  const stat=key=>{
+    const vals=allRows.map(r=>r[key]).filter(v=>v!=null&&isFinite(v));
+    if(!vals.length)return{mean:0,std:0,max:0};
+    const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const std=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length);
+    return{mean,std,max:Math.max(...vals)};
+  };
+  return{load:stat('load'),hsd1216:stat('hsd1216'),hsd16:stat('hsd16'),accel:stat('accel'),decel:stat('decel')};
+}
+function dailyBdAxisRange(stats){
+  const hi=Math.max(stats.mean+3*stats.std,stats.max||0);
+  return{axisMin:0,axisMax:hi>0?hi*1.15:1};
+}
+// Generic version of the rppBandsPlugin below — takes an array of per-axis configs
+// so a chart with multiple metrics on separate (possibly hidden) axes, like the HSD
+// and Accel/Decel split charts, can show independent bands per metric.
+const zBandsPlugin={
+  id:'zBands',
+  beforeDatasetsDraw(chart,args,opts){
+    const{ctx,chartArea,scales}=chart;
+    if(!chartArea)return;
+    const configs=opts.configs||[];
+    ctx.save();
+    configs.forEach(cfg=>{
+      const yScale=scales[cfg.yAxisID];
+      if(!yScale||!cfg.std)return;
+      const{mean,std,axisMin,axisMax}=cfg;
+      const zones=[
+        [mean-3*std,mean-2*std,'rgba(220,38,38,.15)'],
+        [mean-2*std,mean-1*std,'rgba(217,119,6,.15)'],
+        [mean+1*std,mean+2*std,'rgba(217,119,6,.15)'],
+        [mean+2*std,mean+3*std,'rgba(220,38,38,.15)'],
+      ];
+      zones.forEach(([lo,hi,color])=>{
+        const loC=Math.max(axisMin,Math.min(axisMax,lo));
+        const hiC=Math.max(axisMin,Math.min(axisMax,hi));
+        if(hiC<=loC)return;
+        const yTop=yScale.getPixelForValue(hiC);
+        const yBottom=yScale.getPixelForValue(loC);
+        ctx.fillStyle=color;
+        ctx.fillRect(chartArea.left,yTop,chartArea.right-chartArea.left,yBottom-yTop);
+      });
+    });
+    ctx.restore();
+  }
+};
+function dailyBdZTooltipLabel(statsByLabel){
+  return ctx=>{
+    const label=ctx.dataset.label;
+    const v=ctx.raw;
+    const stats=statsByLabel[label];
+    if(v==null)return`${label}: —`;
+    if(!stats||!stats.std)return`${label}: ${v.toFixed(2)}`;
+    const z=(v-stats.mean)/stats.std;
+    return`${label}: ${v.toFixed(2)} (z ${z>=0?'+':''}${z.toFixed(2)})`;
+  };
+}
+
 function msToInputDate(ms){
   const d=new Date(ms);
   return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -3050,6 +3117,7 @@ window.renderDailyBreakdown=function(){
   document.getElementById('dailybd-split-effort-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Accel / Decel Total Efforts`;
 
   const rows=getDailyBreakdownRows(pos,name,fromMs,toMs);
+  const mStats=dailyBdMetricStats(pos,name);
   const labels=rows.map(r=>r.activityName);
   const loads=rows.map(r=>r.load);
   const accel=rows.map(r=>r.accel);
@@ -3121,44 +3189,88 @@ window.renderDailyBreakdown=function(){
   } else {
     const dlBase=(clr)=>({font:{size:9,family:'DM Mono',weight:'bold'},color:clr,anchor:'end',align:'top',formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''});
     const xAxis={ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:60,minRotation:30,autoSkip:false},grid:{display:false}};
-    const yAxis={beginAtZero:true,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{color:C.grid}};
+    const meanDs=(label,mean,yAxisID,color)=>({type:'line',label,data:Array(labels.length).fill(mean),yAxisID,borderColor:color,borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,order:0,datalabels:{display:false}});
+    const legendFilter=item=>!item.text.endsWith(' (mean)');
+    const tooltipFilter=ctx=>!ctx.dataset.label.endsWith(' (mean)');
 
+    // ── Player Load (single metric — bands drawn directly against its own mean/std) ──
+    const loadStats=mStats.load,loadRange=dailyBdAxisRange(loadStats);
     _dailyBdSplitLoadChart=new Chart(elLoad,{
       type:'bar',
-      data:{labels,datasets:[{label:'Player Load',data:loads,backgroundColor:'#0F1923',borderRadius:3,barPercentage:.55,
-        datalabels:dlBase('#0F1923')}]},
-      plugins:[ChartDataLabels],
+      data:{labels,datasets:[
+        meanDs('Player Load (mean)',loadStats.mean,'y','#94A3B8'),
+        {type:'bar',label:'Player Load',data:loads,yAxisID:'y',backgroundColor:'#0F1923',borderRadius:3,barPercentage:.55,order:1,
+          datalabels:dlBase('#0F1923')},
+      ]},
+      plugins:[ChartDataLabels,zBandsPlugin],
       options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
-        plugins:{legend:{display:false},tooltip:{callbacks:{title:dateTooltip,label:ctx=>`Player Load: ${ctx.raw!=null?ctx.raw.toFixed(2):'—'}`}}},
-        scales:{x:xAxis,y:yAxis}}
+        plugins:{
+          legend:{display:false},
+          zBands:{configs:[{yAxisID:'y',mean:loadStats.mean,std:loadStats.std,axisMin:loadRange.axisMin,axisMax:loadRange.axisMax}]},
+          tooltip:{filter:tooltipFilter,callbacks:{title:dateTooltip,label:dailyBdZTooltipLabel({'Player Load':loadStats})}}
+        },
+        scales:{x:xAxis,y:{min:loadRange.axisMin,max:loadRange.axisMax,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{color:C.grid}}}}
     });
 
+    // ── HSD (two metrics — each gets its own hidden-ish axis so its band reflects
+    // only its own mean/std, the same way RPP overlays Bodyweight on a separate axis) ──
+    const hsd1216Stats=mStats.hsd1216,hsd1216Range=dailyBdAxisRange(hsd1216Stats);
+    const hsd16Stats=mStats.hsd16,hsd16Range=dailyBdAxisRange(hsd16Stats);
     _dailyBdSplitHsdChart=new Chart(elHsd,{
       data:{labels,datasets:[
-        {type:'bar',label:'HSD 12-16 mph',data:hsd1216,backgroundColor:'#D97706',borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+        meanDs('HSD 12-16 mph (mean)',hsd1216Stats.mean,'yHsd1216','#D97706'),
+        meanDs('HSD 16+ mph (mean)',hsd16Stats.mean,'yHsd16',C.blue),
+        {type:'bar',label:'HSD 12-16 mph',data:hsd1216,yAxisID:'yHsd1216',backgroundColor:'#D97706',borderRadius:3,barPercentage:.7,categoryPercentage:.6,order:1,
           datalabels:dlBase('#D97706')},
-        {type:'bar',label:'HSD 16+ mph',data:hsd16,backgroundColor:C.blue,borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+        {type:'bar',label:'HSD 16+ mph',data:hsd16,yAxisID:'yHsd16',backgroundColor:C.blue,borderRadius:3,barPercentage:.7,categoryPercentage:.6,order:1,
           datalabels:dlBase(C.blue)},
       ]},
-      plugins:[ChartDataLabels],
+      plugins:[ChartDataLabels,zBandsPlugin],
       options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
         interaction:{mode:'index',intersect:false},
-        plugins:{legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}},tooltip:{callbacks:{title:dateTooltip}}},
-        scales:{x:xAxis,y:yAxis}}
+        plugins:{
+          legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12,filter:legendFilter}},
+          zBands:{configs:[
+            {yAxisID:'yHsd1216',mean:hsd1216Stats.mean,std:hsd1216Stats.std,axisMin:hsd1216Range.axisMin,axisMax:hsd1216Range.axisMax},
+            {yAxisID:'yHsd16',mean:hsd16Stats.mean,std:hsd16Stats.std,axisMin:hsd16Range.axisMin,axisMax:hsd16Range.axisMax},
+          ]},
+          tooltip:{filter:tooltipFilter,callbacks:{title:dateTooltip,
+            label:dailyBdZTooltipLabel({'HSD 12-16 mph':hsd1216Stats,'HSD 16+ mph':hsd16Stats})}}
+        },
+        scales:{x:xAxis,
+          yHsd1216:{position:'left',min:hsd1216Range.axisMin,max:hsd1216Range.axisMax,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{color:C.grid}},
+          yHsd16:{position:'right',min:hsd16Range.axisMin,max:hsd16Range.axisMax,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{display:false}},
+        }}
     });
 
+    // ── Accel / Decel (same per-metric-axis treatment as HSD above) ──
+    const accelStats=mStats.accel,accelRange=dailyBdAxisRange(accelStats);
+    const decelStats=mStats.decel,decelRange=dailyBdAxisRange(decelStats);
     _dailyBdSplitEffortChart=new Chart(elEffort,{
       data:{labels,datasets:[
-        {type:'bar',label:'Accel Total Efforts',data:accel,backgroundColor:C.green,borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+        meanDs('Accel Total Efforts (mean)',accelStats.mean,'yAccel',C.green),
+        meanDs('Decel Total Efforts (mean)',decelStats.mean,'yDecel',C.red),
+        {type:'bar',label:'Accel Total Efforts',data:accel,yAxisID:'yAccel',backgroundColor:C.green,borderRadius:3,barPercentage:.7,categoryPercentage:.6,order:1,
           datalabels:dlBase(C.green)},
-        {type:'bar',label:'Decel Total Efforts',data:decel,backgroundColor:C.red,borderRadius:3,barPercentage:.7,categoryPercentage:.6,
+        {type:'bar',label:'Decel Total Efforts',data:decel,yAxisID:'yDecel',backgroundColor:C.red,borderRadius:3,barPercentage:.7,categoryPercentage:.6,order:1,
           datalabels:dlBase(C.red)},
       ]},
-      plugins:[ChartDataLabels],
+      plugins:[ChartDataLabels,zBandsPlugin],
       options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
         interaction:{mode:'index',intersect:false},
-        plugins:{legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}},tooltip:{callbacks:{title:dateTooltip}}},
-        scales:{x:xAxis,y:yAxis}}
+        plugins:{
+          legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12,filter:legendFilter}},
+          zBands:{configs:[
+            {yAxisID:'yAccel',mean:accelStats.mean,std:accelStats.std,axisMin:accelRange.axisMin,axisMax:accelRange.axisMax},
+            {yAxisID:'yDecel',mean:decelStats.mean,std:decelStats.std,axisMin:decelRange.axisMin,axisMax:decelRange.axisMax},
+          ]},
+          tooltip:{filter:tooltipFilter,callbacks:{title:dateTooltip,
+            label:dailyBdZTooltipLabel({'Accel Total Efforts':accelStats,'Decel Total Efforts':decelStats})}}
+        },
+        scales:{x:xAxis,
+          yAccel:{position:'left',min:accelRange.axisMin,max:accelRange.axisMax,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{color:C.grid}},
+          yDecel:{position:'right',min:decelRange.axisMin,max:decelRange.axisMax,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{display:false}},
+        }}
     });
   }
 
