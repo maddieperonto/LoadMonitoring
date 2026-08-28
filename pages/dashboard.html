@@ -1041,11 +1041,16 @@ function displayWk(wk){
 // end_time lands the next morning, giving it a total_duration of ~85,327 seconds (23.7
 // HOURS) for one practice, vs the real ~7,981 seconds (~2h13m) on 2582c185-..., which
 // synced same-day and is the corrected one.
+// Mock Game Tuesday (8/25/26): 4122320d-... was a stale RE-sync that landed the next
+// day (synced_at 8/26 vs 8/25 for the other copy), with a distorted total_distance —
+// 4495yd vs the true 5055yd; 2cc1d562-... is the corrected one, confirmed at 5055yd
+// total distance.
 const EXCLUDED_ACTIVITY_IDS=new Set([
   'ac90b579-1d7a-4bd7-ae7d-b17ccdb3b1a9',
   '809b793c-0013-4b22-aaaf-28b7d0382d71',
   '350820a0-081c-43a5-9b58-338b2cb133a7',
   '4b7c94d5-c1d1-46e8-a010-345d75cb7d64',
+  '4122320d-aa2f-4cc3-b64c-16ac1775b302',
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
