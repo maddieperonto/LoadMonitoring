@@ -3000,16 +3000,22 @@ function dailyBdAxisRange(stats){
 }
 // Daily Breakdown defaults to FULL history (no date range), so a chart can end up
 // with far more bars than fit legibly in the panel width. Rather than squeezing bars
-// down to illegible slivers, give each bar a fixed minimum pixel width and let the
-// wrapping .chart-wrap (overflow-x:auto) scroll horizontally once content exceeds
-// the visible width. Falls back to the container's own width when there's too few
-// bars to need scrolling, so small selections still fill the panel like before.
-function sizeScrollChart(innerId,n,pxPerBar){
+// down to illegible slivers, size each bar so exactly DAILYBD_VISIBLE_BARS fit the
+// panel's own width, then stretch the inner wrapper to fit ALL bars at that same
+// width — the wrapping .chart-wrap (overflow-x:auto) scrolls horizontally to reach
+// the rest. Scrolled to the right edge by default so what's visible on load is the
+// most RECENT sessions (bars are chronological, oldest→newest left→right), not the
+// oldest ones — scrolling left goes further back in history from there.
+const DAILYBD_VISIBLE_BARS=10;
+function sizeScrollChart(innerId,n){
   const inner=document.getElementById(innerId);
   if(!inner)return;
   const wrap=inner.parentElement;
   const containerW=wrap?wrap.clientWidth:0;
-  inner.style.width=Math.max(containerW,n*pxPerBar)+'px';
+  const pxPerBar=containerW>0?containerW/DAILYBD_VISIBLE_BARS:60;
+  const totalW=Math.max(containerW,n*pxPerBar);
+  inner.style.width=totalW+'px';
+  if(wrap)wrap.scrollLeft=totalW;
 }
 // Re-render on window resize while this page is visible, so the "no scroll needed"
 // case (few sessions) still fills the newly available width instead of staying
@@ -3197,7 +3203,7 @@ window.renderDailyBreakdown=function(){
   if(!rows.length){
     if(elMain){const ctx=elMain.getContext('2d');ctx.clearRect(0,0,elMain.width,elMain.height);}
   } else {
-    sizeScrollChart('dailybd-chart-inner',rows.length,90);
+    sizeScrollChart('dailybd-chart-inner',rows.length);
     _dailyBdChart=new Chart(elMain,{
       data:{
         labels,
@@ -3270,7 +3276,7 @@ window.renderDailyBreakdown=function(){
     // Shared builder for every single-metric split chart — bands drawn directly
     // against that metric's own full-history mean/std, no other metric involved.
     function buildDailyBdZChart(el,wrapInnerId,label,data,color){
-      sizeScrollChart(wrapInnerId,rows.length,60);
+      sizeScrollChart(wrapInnerId,rows.length);
       const stats=mStats[label.key],range=dailyBdAxisRange(stats);
       return new Chart(el,{
         type:'bar',
