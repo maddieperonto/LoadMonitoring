@@ -3346,8 +3346,12 @@ window.renderDailyBreakdown=function(){
 
 // ── LOAD MONITOR ──────────────────────────────────────────────────
 // Full display label for a phase-week code — used on Load Monitor axis/table labels
+// (and reused by the SLRU chart tooltips). Checks WEEK_LABEL_OVERRIDES first — same
+// override table used by displayWk/slruWkShort/slruWkParts, so a week renamed there
+// shows consistently everywhere a week label appears.
 function lmWkLabel(wk){
   if(!wk)return'';
+  if(WEEK_LABEL_OVERRIDES[wk])return WEEK_LABEL_OVERRIDES[wk];
   if(wk.startsWith('Sp'))return`Spring Week ${parseInt(wk.replace('Sp W',''))}`;
   if(wk.startsWith('Su'))return`Summer Week ${parseInt(wk.replace('Su W',''))}`;
   if(wk.startsWith('Fc'))return`Fall Camp Week ${parseInt(wk.replace('Fc W',''))}`;
@@ -3946,8 +3950,11 @@ const SLRU_WEEKS=[...suWks,...fcWks];
 const SLRU_CURR_WK=SLRU_WEEKS[SLRU_WEEKS.length-1]||null;
 
 // Two-line "Summer / Week N" or "Fall Camp / Week N" label — used for table headers,
-// where each part gets its own real HTML line via <br>.
+// where each part gets its own real HTML line via <br>. Checks WEEK_LABEL_OVERRIDES
+// (defined near displayWk, above) first — same override table, so a week renamed
+// there (e.g. Fc W4 -> "Mock Game Week") shows consistently here too.
 function slruWkParts(wk){
+  if(WEEK_LABEL_OVERRIDES[wk])return[WEEK_LABEL_OVERRIDES[wk],''];
   if(wk.startsWith('Su'))return['Summer',`Week ${parseInt(wk.replace('Su W',''))}`];
   if(wk.startsWith('Fc'))return['Fall Camp',`Week ${parseInt(wk.replace('Fc W',''))}`];
   return[wk];
@@ -3955,6 +3962,7 @@ function slruWkParts(wk){
 // Compact single-line "Sum W1" / "Camp W1" label — used for chart axis ticks, since
 // Chart.js can't rotate multi-line array labels and they overlap once there are many weeks.
 function slruWkShort(wk){
+  if(WEEK_LABEL_OVERRIDES[wk])return WEEK_LABEL_OVERRIDES[wk];
   if(wk.startsWith('Su'))return`Sum W${parseInt(wk.replace('Su W',''))}`;
   if(wk.startsWith('Fc'))return`Camp W${parseInt(wk.replace('Fc W',''))}`;
   return wk;
