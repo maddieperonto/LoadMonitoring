@@ -1278,20 +1278,35 @@ function lkPos(n){
 }
 function lkUnit(n){const p=lkPos(n);return OFF.includes(p)?'Offense':DEF.includes(p)?'Defense':STS.includes(p)?'Special Teams':'Other';}
 
+// GPS live-tracking on OpenField occasionally produces a physiologically impossible
+// max-velocity spike (satellite/signal glitch mid-session — e.g. 90+ mph for a human).
+// Staff clean these up in Catapult Cloud after the fact, but catapult-webhook only
+// fires on OpenField's own sync events and does a plain INSERT with no upsert, so a
+// manual correction made on Catapult's side never flows back to overwrite the row
+// already synced into Supabase — the spike stays in catapult_sessions.max_velocity
+// until someone manually fixes that row too. Rather than relying on a manual DB fix
+// every time this happens, treat any reading above this ceiling as "no valid reading"
+// (same as a session with no GPS data) at the single upstream point every page, chart,
+// and leaderboard ultimately reads max velocity from. 25 mph comfortably clears any
+// real football-player top speed (world-class sprinters top out in the low-to-mid 20s)
+// while catching the satellite-glitch spikes, which run 40-90+ mph.
+const MAX_PLAUSIBLE_VELOCITY_MPH=25;
+
 // ── BUILD SESSION DATA ─────────────────────────────────────────────
 const byP={};
 raw.forEach(r=>{
   const k=normName(r.athlete_name);
   if(!byP[k])byP[k]={name:k,sessions:[]};
   const wk=phWk(r.session_date);if(!wk)return;
-  if((+r.total_distance||0)===0)return; 
+  if((+r.total_distance||0)===0)return;
+  const rawMaxV=+r.max_velocity||0;
   byP[k].sessions.push({
     date:r.session_date,ph:phase(r.session_date),wk,
     activityId:r.catapult_activity_id||null,activityName:r.activity_name||null,startTime:r.start_time||null,
     load:+r.total_player_load||0,dist:+r.total_distance||0,
     hsr:(+r.velocity_band4_distance||0)+(+r.velocity_band5_distance||0),
     hsr12:+r.velocity_band3_distance||0,
-    maxV:+r.max_velocity||0,accel:+r.accel_total_efforts||0,decel:+r.decel_total_efforts||0,
+    maxV:rawMaxV>0&&rawMaxV<=MAX_PLAUSIBLE_VELOCITY_MPH?rawMaxV:0,accel:+r.accel_total_efforts||0,decel:+r.decel_total_efforts||0,
     tag:r.participation_tag||null
   });
 });
@@ -1408,7 +1423,7 @@ const PLAYERS=Object.values(byPFiltered).map(p=>{
   const latL=rollingACWR(p.sessions,'load',TODAY_MS);
   const latH12=rollingACWR(p.sessions,'hsr12',TODAY_MS);
   const latH16=rollingACWR(p.sessions,'hsr',TODAY_MS);
-  const allMaxVs=p.sessions.map(s=>s.maxV).filter(v=>v>0&&v<=25);
+  const allMaxVs=p.sessions.map(s=>s.maxV).filter(v=>v>0&&v<=MAX_PLAUSIBLE_VELOCITY_MPH);
  const latMaxV=allMaxVs.length?Math.max(...allMaxVs):0;
   const latest=[...p.sessions].sort((a,b)=>{
     const [am,ad,ay]=a.date.split('/').map(Number);
@@ -4142,7 +4157,7 @@ window.renderLeaderboards=function(){
     })
   })).map(p=>({
     ...p,
-    latMaxV:(()=>{const vs=p.sessions.map(s=>s.maxV).filter(v=>v>0&&v<=25);return vs.length?Math.max(...vs):0;})(),
+    latMaxV:(()=>{const vs=p.sessions.map(s=>s.maxV).filter(v=>v>0&&v<=MAX_PLAUSIBLE_VELOCITY_MPH);return vs.length?Math.max(...vs):0;})(),
   }));
 
   document.getElementById('lb-tabs').innerHTML=LB_CATS.map(c=>`<div class="lb-tab ${c.id===lbActive.id?'active':''}" onclick="setLBCat('${c.id}')">${c.lbl}</div>`).join('');
