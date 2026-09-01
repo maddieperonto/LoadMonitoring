@@ -1052,8 +1052,24 @@ function phWk(d){
   const days=Math.floor((dt-base)/86400000);
   return`${ph} W${Math.floor(days/7)+1}`;
 }
+// ── WEEK LABEL OVERRIDES ─────────────────────────────────────────────
+// phWk() keeps counting "Fc W4", "Fc W5", etc. straight through even after Fall
+// Camp itself ends and the season starts — PH.ce (camp end date) is left open until
+// the season's own phase boundaries get added, so the underlying week KEYS don't
+// change. What changes is what those weeks are actually called day-to-day (camp
+// weeks vs. a scrimmage week vs. a real game week), so override the DISPLAY label
+// per week key here instead of touching the week-numbering logic itself. Add a new
+// entry each week as the season progresses (e.g. next opponent's gameweek).
+// Fc W1-W3: actual Fall Camp weeks — no override, shown as "Camp W1"/"W2"/"W3".
+// Fc W4 (8/24-8/30/26): scrimmage vs. mock opponent.
+// Fc W5 (8/31-9/6/26): season opener vs. Florida Atlantic (FAU).
+const WEEK_LABEL_OVERRIDES={
+  'Fc W4':'Mock Game Week',
+  'Fc W5':'FAU Gameweek',
+};
 function displayWk(wk){
   if(!wk)return null;
+  if(WEEK_LABEL_OVERRIDES[wk])return WEEK_LABEL_OVERRIDES[wk];
   if(wk.startsWith('Sp')||wk.startsWith('Fa'))return wk;
   if(wk.startsWith('Fc'))return`Camp W${parseInt(wk.replace('Fc W',''))}`;
   const n=parseInt(wk.replace('Su W',''));
