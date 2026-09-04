@@ -1099,12 +1099,28 @@ function displayWk(wk){
 // day (synced_at 8/26 vs 8/25 for the other copy), with a distorted total_distance —
 // 4495yd vs the true 5055yd; 2cc1d562-... is the corrected one, confirmed at 5055yd
 // total distance.
+// FAU Monday (8/31/26): 0e7d7fe0-... was a stale RE-sync that landed the next day
+// (synced_at 9/1 12:23 vs 8/31 19:23 for the other copy), with a distorted total_distance
+// across the board (e.g. Bailey Stockton 3642yd vs the true 4223yd) and contained the
+// KJ Ford/Singleton/Lowery/Hayward velocity spikes fixed separately in the DB;
+// 0fd155c2-... is the corrected one, confirmed at 4223yd total distance/16.89mph max
+// velocity for Bailey Stockton.
+// FAU Tuesday (9/1/26): 347f4904-... was a stale RE-sync that landed the next day
+// (synced_at 9/2 13:10 vs 9/1 17:59 for the other copy), with a distorted total_distance
+// across the board (e.g. Bailey Stockton 5624yd vs the true 6355yd); 25a88a58-... is the
+// corrected one, confirmed at 6355yd total distance/20.38mph max velocity for Bailey
+// Stockton.
+// Also on 9/1/26: 8e002b1b-... is a stray "test" activity (13.4 total player load,
+// 167yd total distance for a single athlete) — not a real practice session.
 const EXCLUDED_ACTIVITY_IDS=new Set([
   'ac90b579-1d7a-4bd7-ae7d-b17ccdb3b1a9',
   '809b793c-0013-4b22-aaaf-28b7d0382d71',
   '350820a0-081c-43a5-9b58-338b2cb133a7',
   '4b7c94d5-c1d1-46e8-a010-345d75cb7d64',
   '4122320d-aa2f-4cc3-b64c-16ac1775b302',
+  '0e7d7fe0-d43b-4352-81ac-a98677c49828',
+  '347f4904-c974-4089-86cb-0c4bf0d3da9c',
+  '8e002b1b-2cc4-4e70-a8f0-62a265135fc8',
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
