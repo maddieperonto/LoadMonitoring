@@ -1063,9 +1063,25 @@ function phWk(d){
 // Fc W1-W3: actual Fall Camp weeks — no override, shown as "Camp W1"/"W2"/"W3".
 // Fc W4 (8/24-8/30/26): scrimmage vs. mock opponent.
 // Fc W5 (8/31-9/6/26): season opener vs. Florida Atlantic (FAU).
+// Fc W6-W17 (9/7/26-11/29/26): rest of the regular-season schedule, pre-programmed
+// per the season slate below — every Monday starts a new week, so these line up with
+// the existing calendar-week boundaries without needing any code changes as each
+// week arrives.
 const WEEK_LABEL_OVERRIDES={
   'Fc W4':'Mock Game Week',
   'Fc W5':'FAU Gameweek',
+  'Fc W6':'Campbell Gameweek',       // 9/7-9/13/26
+  'Fc W7':'Auburn Gameweek',         // 9/14-9/20/26
+  'Fc W8':'Ole Miss Gameweek',       // 9/21-9/27/26
+  'Fc W9':'Missouri Gameweek',       // 9/28-10/4/26
+  'Fc W10':'South Carolina Gameweek',// 10/5-10/11/26
+  'Fc W11':'Texas Gameweek',         // 10/12-10/18/26
+  'Fc W12':'Bye Week',               // 10/19-10/25/26
+  'Fc W13':'Georgia Gameweek',       // 10/26-11/1/26
+  'Fc W14':'Oklahoma Gameweek',      // 11/2-11/8/26
+  'Fc W15':'Kentucky Gameweek',      // 11/9-11/15/26
+  'Fc W16':'Vanderbilt Gameweek',    // 11/16-11/22/26
+  'Fc W17':'FSU Gameweek',           // 11/23-11/29/26
 };
 function displayWk(wk){
   if(!wk)return null;
