@@ -547,6 +547,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <button id="vald-btn-grp" onclick="setVALDView('group')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Position Group</button>
       <button id="vald-btn-flags" onclick="setVALDView('flags')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Flags</button>
       <button id="vald-btn-rpp" onclick="setVALDView('rpp')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Relative Peak Power</button>
+      <button id="vald-btn-weekly" onclick="setVALDView('weekly')" style="font-family:var(--font-d);font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:7px 16px;border:none;background:transparent;color:var(--text3);cursor:pointer">Weekly Report</button>
     </div>
   </div>
 
@@ -661,6 +662,31 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2 SD</div>
       </div>
       <div class="chart-wrap h320"><canvas id="rpp-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- WEEKLY REPORT VIEW -->
+  <div id="vald-weekly-view" style="display:none">
+    <div class="panel">
+      <div class="panel-title"><i class="ti ti-flag"></i>CMJ Weekly Flag Report</div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-bottom:14px;max-width:900px;line-height:1.5">
+        Each athlete is compared only to their own rolling baseline (up to 6 most recent prior tests, minimum 3 required).
+        Jump height, relative peak power, and RSI-mod are flagged on % change and z-score vs. that baseline; asymmetry
+        is flagged at a flat |10%| threshold with the weaker side named. Suggested Action is a routing recommendation
+        generated from the flag pattern — it is a monitoring and decision-support tool, not a diagnostic one.
+      </div>
+      <div class="sel-row" style="justify-content:space-between">
+        <div class="sel-row" style="margin-bottom:0">
+          <select class="data-sel" id="vald-weekly-sel" onchange="renderVALDWeekly()" style="min-width:240px"></select>
+          <span id="vald-weekly-badge"></span>
+        </div>
+        <button class="btn-export" id="vald-weekly-export" onclick="exportVALDWeeklyCSV()" style="font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:8px 14px;border-radius:var(--r);background:var(--surface2);border:1.5px solid var(--border2);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-export" style="font-size:13px"></i>Export CSV</button>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>Athlete</th><th>Pos</th><th>Flagged Result(s)</th><th>% Change</th><th>Flag</th><th>Suggested Action</th>
+        </tr></thead><tbody id="vald-weekly-table"></tbody></table>
+      </div>
     </div>
   </div>
 
@@ -1186,6 +1212,13 @@ const NAME_MAP={
   'VERNELL BROWN':'VERNELL BROWN III',
   'AUSTIN "ACE" CIONGOLI':'AUSTIN CIONGOLI',
   'THADDEUS TJ BULLARD JR.':'TJ BULLARD',
+  // VALD's cmj_tests.athlete_name sometimes carries the full first name "TITUS
+  // BULLARD" instead of "TJ BULLARD" (confirmed 08/10/26: same person, two test
+  // dates split across both spellings, no other athlete has a Titus/TJ pairing).
+  // Without this, normName() left them as two separate identities, so any CMJ
+  // baseline/history built on his roster name silently dropped the "TITUS
+  // BULLARD"-spelled tests instead of including them.
+  'TITUS BULLARD':'TJ BULLARD',
   "CAM'RON DOOLEY":'CAM DOOLEY',
   'HEZEKIAH KENT':'HEZE KENT',
   'WILLIAM GRIFFIN':'WILL GRIFFIN',
@@ -3516,20 +3549,23 @@ window.setVALDView=function(v){
   document.getElementById('vald-group-view').style.display=v==='group'?'':'none';
   document.getElementById('vald-flags-view').style.display=v==='flags'?'':'none';
   document.getElementById('vald-rpp-view').style.display=v==='rpp'?'':'none';
-  const bi=document.getElementById('vald-btn-ind'),bg=document.getElementById('vald-btn-grp'),bf=document.getElementById('vald-btn-flags'),br=document.getElementById('vald-btn-rpp');
+  document.getElementById('vald-weekly-view').style.display=v==='weekly'?'':'none';
+  const bi=document.getElementById('vald-btn-ind'),bg=document.getElementById('vald-btn-grp'),bf=document.getElementById('vald-btn-flags'),br=document.getElementById('vald-btn-rpp'),bw=document.getElementById('vald-btn-weekly');
   bi.style.background=v==='individual'?'var(--uf-orange)':'transparent';bi.style.color=v==='individual'?'#fff':'var(--text3)';
   bg.style.background=v==='group'?'var(--uf-orange)':'transparent';bg.style.color=v==='group'?'#fff':'var(--text3)';
   bf.style.background=v==='flags'?'var(--uf-orange)':'transparent';bf.style.color=v==='flags'?'#fff':'var(--text3)';
   br.style.background=v==='rpp'?'var(--uf-orange)':'transparent';br.style.color=v==='rpp'?'#fff':'var(--text3)';
+  bw.style.background=v==='weekly'?'var(--uf-orange)':'transparent';bw.style.color=v==='weekly'?'#fff':'var(--text3)';
   if(v==='individual')renderVALDIndividual();
   if(v==='group')renderVALDGroup();
   if(v==='flags')renderVALDFlags();
   if(v==='rpp')initRppPage();
+  if(v==='weekly')renderVALDWeekly();
 };
 
 async function loadVALD(){
   const [{data:cmj},{data:nord}]=await Promise.all([
-  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_decel_rfd_bm,force_at_zero_velocity_n,relative_peak_power_w_bm,countermovement_depth_cm,bodyweight_kg').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)  ]);
+  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_peak_force_asymmetry_pct,eccentric_decel_rfd_bm,force_at_zero_velocity_n,relative_peak_power_w_bm,countermovement_depth_cm,bodyweight_kg').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)  ]);
   cmjData=(cmj||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
   nordData=(nord||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
 
@@ -3734,6 +3770,263 @@ window.renderVALDFlags=function(){
         <td class="mono">${f.date}</td>
       </tr>`).join('')
     :'<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No flags match this date range.</td></tr>';
+};
+
+// ── WEEKLY REPORT ──────────────────────────────────────────────────────────
+// Individual-baseline CMJ flagging (Jump Height, Relative Peak Power, RSI-mod:
+// %Δ + z-score vs. each athlete's own rolling baseline; Asymmetry: flat |10%|
+// threshold with weaker side named). Ported from the offline analyze.py used
+// for the weekly docx/PDF reports — see that script for full derivation notes
+// on the thresholds and the extreme/persistence Red-confirmation rule. Keep
+// the two in sync by hand if thresholds ever change.
+const WKR_METRICS=['jump_height_cm','relative_peak_power_w_bm','rsi_modified'];
+const WKR_METRIC_LABEL={jump_height_cm:'Jump Height (Imp-Mom)',relative_peak_power_w_bm:'Relative Peak Power',rsi_modified:'RSI-mod'};
+// SD floors: guard against a hypersensitive z-score when an athlete's history is
+// unusually consistent (baseline SD near zero). Floor = this % of the baseline mean.
+const WKR_SD_FLOOR_PCT={jump_height_cm:0.03,relative_peak_power_w_bm:0.03,rsi_modified:0.05};
+const WKR_PCT_BANDS={jump_height_cm:[-5,-8],relative_peak_power_w_bm:[-6,-10],rsi_modified:[-10,-15]};
+const WKR_Z_BANDS=[1.0,2.0];       // green<1.0 · yellow 1.0–2.0 · red-magnitude ≥2.0
+const WKR_Z_EXTREME=2.5;           // |z| ≥ this confirms Red on a single isolated session
+const WKR_ASYM_PCT=10.0;           // flat asymmetry flag threshold
+const WKR_MIN_BASELINE_N=3;        // fewer prior tests than this → "Building", not a false Green
+const WKR_MAX_BASELINE=6;          // rolling baseline window (most recent N prior tests)
+const WKR_SEV={GREEN:0,YELLOW:1,RED_TENT:1.5,RED:2,BUILDING:-1};
+
+function wkrMeanSd(vals){
+  const m=vals.reduce((a,b)=>a+b,0)/vals.length;
+  if(vals.length<2)return[m,0];
+  const variance=vals.reduce((a,b)=>a+(b-m)**2,0)/(vals.length-1); // sample SD, n-1
+  return[m,Math.sqrt(variance)];
+}
+function wkrClassifyMetric(metric,x,baselineVals){
+  const[m,sd]=wkrMeanSd(baselineVals);
+  const floor=WKR_SD_FLOOR_PCT[metric]*Math.abs(m);
+  const sdEff=Math.max(sd,floor,1e-9);
+  const pct=m?((x-m)/m*100):0;
+  const z=(x-m)/sdEff;
+  const[gFloor,yFloor]=WKR_PCT_BANDS[metric];
+  if(pct>=0)return{level:'GREEN',pct,z};
+  const az=Math.abs(z);
+  if(pct>=gFloor&&az<WKR_Z_BANDS[0])return{level:'GREEN',pct,z};
+  if(pct>yFloor&&az<WKR_Z_BANDS[1])return{level:'YELLOW',pct,z};
+  if(pct<=yFloor||az>=WKR_Z_BANDS[1])return{level:'RED_TENT',pct,z};
+  return{level:'YELLOW',pct,z};
+}
+function wkrClassifyAsym(x){
+  const mag=Math.abs(x);
+  return mag<WKR_ASYM_PCT?{level:'GREEN',mag}:{level:'YELLOW',mag};
+}
+function wkrConfirm(level,extreme,priorLevel){
+  // A tentative Red only confirms as Red if extreme in this single session or the
+  // athlete was already Yellow-or-worse on this metric last time (persistence);
+  // otherwise it displays as a "pending" Yellow rather than an immediate Red.
+  if(level!=='RED_TENT')return[level,null];
+  if(['YELLOW','RED_TENT','RED'].includes(priorLevel))return['RED','persistent'];
+  if(extreme)return['RED','extreme'];
+  return['YELLOW',null];
+}
+function wkrSuggestAction(metricResults,asymLevel,asymSide,elevated){
+  const redReasons=Object.values(metricResults).filter(v=>v.level==='RED').map(v=>v.reason);
+  const anyRedPersistent=redReasons.includes('persistent');
+  const anyRed=redReasons.length>0;
+  const asymFlagged=asymLevel!=='GREEN';
+  if(anyRedPersistent)return`Sports Medicine / AT: review — persistent decline${asymFlagged?' + asymmetry':''}`;
+  if(anyRed)return`S&C staff: review session today${asymFlagged?' + asymmetry':''}`;
+  if(asymFlagged&&elevated)return'S&C + Sports Medicine: possible compensation pattern';
+  if(asymFlagged)return`S&C / AT: monitor asymmetry (${asymSide})`;
+  if(elevated)return'S&C: check sleep, soreness, training load';
+  if(Object.values(metricResults).some(v=>v.level==='YELLOW'))return'Monitor — no change; recheck next session';
+  return'No action — continue normal programming';
+}
+
+// cmj_tests holds one row per TRIAL (see trial_number), not one per athlete/day —
+// average same-day trials before doing anything else, same as the offline reports'
+// `AVG(...) GROUP BY athlete_name, test_date` SQL. rsi_modified is divided by 100
+// here: VALD's stored value runs ~100x published RSI-mod norms (verified against
+// real athlete numbers when the flagging methodology was built — see cmj_report/
+// notes). Asymmetry side is read directly off eccentric_peak_force_left/right
+// (whichever is lower is the weaker side) rather than trusting a sign convention.
+let _wkrDaily=null,_wkrDailyCount=0;
+function wkrBuildDaily(){
+  if(_wkrDaily&&_wkrDailyCount===cmjData.length)return _wkrDaily;
+  const groups={};
+  cmjData.forEach(r=>{
+    if(!rosterNames.has(r.athlete_name))return;
+    const key=r.athlete_name+'|'+r.test_date;
+    if(!groups[key])groups[key]={athlete_name:r.athlete_name,test_date:r.test_date,jh:[],rpp:[],rsi:[],asym:[],epfL:[],epfR:[]};
+    const g=groups[key];
+    if(r.jump_height_cm!=null)g.jh.push(+r.jump_height_cm);
+    if(r.relative_peak_power_w_bm!=null)g.rpp.push(+r.relative_peak_power_w_bm);
+    if(r.rsi_modified!=null)g.rsi.push(+r.rsi_modified);
+    if(r.eccentric_peak_force_asymmetry_pct!=null)g.asym.push(+r.eccentric_peak_force_asymmetry_pct);
+    if(r.eccentric_peak_force_left!=null)g.epfL.push(+r.eccentric_peak_force_left);
+    if(r.eccentric_peak_force_right!=null)g.epfR.push(+r.eccentric_peak_force_right);
+  });
+  const avg=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:null;
+  const byAthlete={};
+  Object.values(groups).forEach(g=>{
+    const rsiAvg=avg(g.rsi);
+    const row={
+      athlete_name:g.athlete_name,test_date:g.test_date,
+      jump_height_cm:avg(g.jh),relative_peak_power_w_bm:avg(g.rpp),
+      rsi_modified:rsiAvg!=null?rsiAvg/100:null,
+      asymmetry_pct:avg(g.asym),epfLeft:avg(g.epfL),epfRight:avg(g.epfR),
+    };
+    if(row.jump_height_cm==null||row.relative_peak_power_w_bm==null||row.rsi_modified==null||row.asymmetry_pct==null)return;
+    (byAthlete[g.athlete_name]=byAthlete[g.athlete_name]||[]).push(row);
+  });
+  Object.values(byAthlete).forEach(rows=>rows.sort((a,b)=>a.test_date<b.test_date?-1:a.test_date>b.test_date?1:0));
+  _wkrDaily=byAthlete;_wkrDailyCount=cmjData.length;
+  return byAthlete;
+}
+
+function wkrComputeForDate(targetDate){
+  const byAthlete=wkrBuildDaily();
+  const results=[];
+  Object.keys(byAthlete).sort().forEach(athlete=>{
+    const rows=byAthlete[athlete];
+    const idx=rows.findIndex(r=>r.test_date===targetDate);
+    if(idx===-1)return;
+    const priorRows=rows.slice(0,idx);
+
+    if(priorRows.length<WKR_MIN_BASELINE_N){
+      results.push({athlete,status:'BUILDING',nBaseline:priorRows.length,flags:[],overall:'BUILDING',elevated:false,
+        suggestedAction:`Building baseline (${priorRows.length} prior test${priorRows.length===1?'':'s'} on file, needs 3+)`});
+      return;
+    }
+
+    const baselineRows=priorRows.slice(-WKR_MAX_BASELINE);
+    const today=rows[idx];
+
+    // Prior-session tentative levels per continuous metric, for the persistence check —
+    // classified against ITS OWN baseline (the tests before it), not this week's.
+    const priorLevel={};
+    if(priorRows.length>=2){
+      const prev=priorRows[priorRows.length-1];
+      const prevBaseline=priorRows.slice(0,-1).slice(-WKR_MAX_BASELINE);
+      if(prevBaseline.length>=WKR_MIN_BASELINE_N){
+        WKR_METRICS.forEach(metric=>{
+          priorLevel[metric]=wkrClassifyMetric(metric,prev[metric],prevBaseline.map(r=>r[metric])).level;
+        });
+      }
+    }
+
+    const metricResults={};
+    WKR_METRICS.forEach(metric=>{
+      const c=wkrClassifyMetric(metric,today[metric],baselineRows.map(r=>r[metric]));
+      const[finalLevel,reason]=wkrConfirm(c.level,Math.abs(c.z)>=WKR_Z_EXTREME,priorLevel[metric]||'GREEN');
+      metricResults[metric]={level:finalLevel,pct:c.pct,z:c.z,reason};
+    });
+
+    const asym=wkrClassifyAsym(today.asymmetry_pct);
+    // Prefer deriving the side straight from raw L/R force (unambiguous — whichever is
+    // lower is weaker). Only fall back to the sign of asymmetry_pct when L/R wasn't
+    // captured for this observation; that sign convention was verified mechanically
+    // against raw L/R force across a full 41-athlete pull (09/21/26): asymmetry_pct >= 0
+    // -> LEFT is the weaker side (right is stronger), asymmetry_pct < 0 -> RIGHT is weaker.
+    const asymSide=asym.level==='GREEN'?null:
+      (today.epfLeft!=null&&today.epfRight!=null?(today.epfLeft<today.epfRight?'Left weaker':'Right weaker')
+        :(today.asymmetry_pct<0?'Right weaker':'Left weaker'));
+
+    const coreYellowPlus=WKR_METRICS.filter(m=>WKR_SEV[metricResults[m].level]>=1).length;
+    const elevated=coreYellowPlus>=2;
+
+    const overallSev=Math.max(...WKR_METRICS.map(m=>WKR_SEV[metricResults[m].level]),WKR_SEV[asym.level]);
+    const overall=overallSev>=2?'RED':overallSev>=1?'YELLOW':'GREEN';
+
+    const flagged=[];
+    WKR_METRICS.forEach(metric=>{
+      const r=metricResults[metric];
+      if(r.level!=='GREEN')flagged.push([WKR_METRIC_LABEL[metric],`${r.pct>=0?'+':''}${r.pct.toFixed(1)}%`,r.level]);
+    });
+    if(asym.level!=='GREEN')flagged.push(['Asymmetry (Ecc. Peak Force)',`${asym.mag.toFixed(1)}% — ${asymSide}`,asym.level]);
+
+    results.push({
+      athlete,status:'OK',nBaseline:baselineRows.length,flags:flagged,overall,elevated,
+      suggestedAction:wkrSuggestAction(metricResults,asym.level,asymSide,elevated),
+    });
+  });
+  return results;
+}
+
+let _wkrResults=[];
+window.renderVALDWeekly=function(){
+  const sel=document.getElementById('vald-weekly-sel');
+  if(sel.options.length===0){
+    const byAthlete=wkrBuildDaily();
+    const dateSet=new Set();
+    Object.values(byAthlete).forEach(rows=>rows.forEach(r=>dateSet.add(r.test_date)));
+    const dates=[...dateSet].sort().reverse();
+    dates.forEach(d=>{
+      const o=document.createElement('option');o.value=d;
+      const wk=phWk(d),label=wk?displayWk(wk):null;
+      o.textContent=label?`${label} — ${d}`:d;
+      sel.appendChild(o);
+    });
+  }
+  if(sel.options.length===0){
+    document.getElementById('vald-weekly-badge').innerHTML='';
+    document.getElementById('vald-weekly-table').innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No CMJ testing data found.</td></tr>';
+    return;
+  }
+  const date=sel.value||sel.options[0].value;
+  sel.value=date;
+
+  const results=wkrComputeForDate(date);
+  const rank={RED:0,YELLOW:1,GREEN:2,BUILDING:3};
+  results.sort((a,b)=>{
+    const ra=a.status==='BUILDING'?3:rank[a.overall],rb=b.status==='BUILDING'?3:rank[b.overall];
+    return ra!==rb?ra-rb:a.athlete.localeCompare(b.athlete);
+  });
+  _wkrResults=results;
+
+  const nRed=results.filter(r=>r.overall==='RED').length;
+  const nYellow=results.filter(r=>r.overall==='YELLOW').length;
+  const nGreen=results.filter(r=>r.overall==='GREEN').length;
+  const nBuild=results.filter(r=>r.status==='BUILDING').length;
+  document.getElementById('vald-weekly-badge').innerHTML=
+    `${pill('danger',nRed+' Red')} ${pill('warn',nYellow+' Yellow')} ${pill('ok',nGreen+' Green')} ${pill('info',nBuild+' Building')}`;
+
+  document.getElementById('vald-weekly-table').innerHTML=results.map(r=>{
+    const pos=lkPos(r.athlete);
+    if(r.status==='BUILDING'){
+      return`<tr>
+        <td style="font-weight:600">${r.athlete}</td><td>${pos}</td>
+        <td colspan="2" style="color:var(--text3);font-size:12px">${r.suggestedAction}</td>
+        <td>${pill('info','BUILDING')}</td>
+        <td style="color:var(--text3);font-size:12px;white-space:normal;max-width:260px">Continue weekly testing</td>
+      </tr>`;
+    }
+    const flagCls=r.overall==='RED'?'danger':r.overall==='YELLOW'?'warn':'ok';
+    const metricColor=lvl=>lvl==='RED'?'var(--acc5)':lvl==='YELLOW'?'var(--acc4)':'inherit';
+    const flagsHtml=r.flags.length?r.flags.map(f=>`<div>${f[0]}</div>`).join(''):'—';
+    const pctHtml=r.flags.length?r.flags.map(f=>`<div class="mono" style="color:${metricColor(f[2])};font-weight:600">${f[1]}</div>`).join(''):'—';
+    return`<tr>
+      <td style="font-weight:600">${r.athlete}</td><td>${pos}</td>
+      <td>${flagsHtml}</td><td>${pctHtml}</td>
+      <td>${pill(flagCls,r.overall)}${r.elevated?'<div style="font-size:9px;color:var(--text3);margin-top:3px;font-family:var(--font-m)">elevated pattern</div>':''}</td>
+      <td style="color:var(--text2);font-size:12px;white-space:normal;max-width:280px">${r.suggestedAction}</td>
+    </tr>`;
+  }).join('');
+};
+
+window.exportVALDWeeklyCSV=function(){
+  const sel=document.getElementById('vald-weekly-sel');
+  if(!sel||!_wkrResults.length)return;
+  const headers=['Athlete','Position','Flagged Result(s)','% Change','Flag','Suggested Action'];
+  const rows=_wkrResults.map(r=>[
+    r.athlete,lkPos(r.athlete),
+    r.status==='BUILDING'?r.suggestedAction:(r.flags.map(f=>f[0]).join(' | ')||''),
+    r.status==='BUILDING'?'':(r.flags.map(f=>f[1]).join(' | ')||''),
+    r.status==='BUILDING'?'BUILDING':r.overall,
+    r.suggestedAction,
+  ]);
+  const csv=[headers,...rows].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`CMJ_Weekly_Report_${sel.value}.csv`;a.click();
+  URL.revokeObjectURL(url);
 };
 
 // ── RELATIVE PEAK POWER ──────────────────────────────────────────────────
