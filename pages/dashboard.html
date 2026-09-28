@@ -305,6 +305,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="nav-item" data-page="sessioncompare"><i class="ti ti-arrows-left-right"></i>Session Compare</div>
     <div class="nav-item" data-page="periodbreakdown"><i class="ti ti-chart-histogram"></i>Period Breakdown</div>
     <div class="nav-item" data-page="dailybreakdown"><i class="ti ti-calendar-event"></i>Daily Breakdown</div>
+    <div class="nav-item" data-page="gamebreakdown"><i class="ti ti-football"></i>Game Breakdown</div>
     <div class="nav-item" data-page="weeklybreakdown"><i class="ti ti-calendar-stats"></i>Weekly Breakdown</div>
   </div>
   <div class="nav-section">
@@ -683,8 +684,8 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
         <button class="btn-export" id="vald-weekly-export" onclick="exportVALDWeeklyCSV()" style="font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:8px 14px;border-radius:var(--r);background:var(--surface2);border:1.5px solid var(--border2);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-export" style="font-size:13px"></i>Export CSV</button>
       </div>
       <div class="tbl-wrap">
-        <table><thead><tr>
-          <th>Athlete</th><th>Pos</th><th>Flagged Result(s)</th><th>% Change</th><th>Flag</th><th>Suggested Action</th>
+        <table><thead><tr style="background:var(--uf-blue)">
+          <th style="background:var(--uf-blue);color:#fff;border-bottom:none">Athlete</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Flagged Result(s)</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">% Change</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">Flag</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Suggested Action</th>
         </tr></thead><tbody id="vald-weekly-table"></tbody></table>
       </div>
     </div>
@@ -902,6 +903,81 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   </div>
 </div>
 
+<!-- GAME BREAKDOWN -->
+<div class="page" id="pg-gamebreakdown">
+  <div class="sel-row" style="margin-bottom:16px;flex-wrap:wrap;row-gap:10px">
+    <select class="data-sel" id="gamebd-pos-sel" onchange="renderGameBreakdown()" style="min-width:200px"></select>
+    <select class="data-sel" id="gamebd-name-sel" onchange="renderGameBreakdown()" style="min-width:220px"></select>
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Each bar/column is one game, labeled Week # – Opponent per the season schedule. All Catapult activity logged on that game's date is combined into a single game total. Only games that have already been played (and synced from Catapult) appear here.</div>
+  <div class="panel">
+    <div class="panel-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleCollapsePanel('gamebd-summary')">
+      <span><i class="ti ti-table"></i>Game Summary</span>
+      <i class="ti ti-chevron-down" id="gamebd-summary-chevron" style="transition:transform .15s;transform:rotate(-90deg)"></i>
+    </div>
+    <div id="gamebd-summary-wrap" style="display:none">
+      <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="gamebd-summary-thead"><tr>
+        <th>Week</th><th>Opponent</th><th>Date</th><th>Players</th><th>Player Load</th><th>Distance (y)</th>
+        <th>Max Vel</th><th>HSD 12-16</th><th>HSD 16+</th><th>Accel Eff</th><th>Decel Eff</th>
+      </tr></thead><tbody id="gamebd-summary-body"></tbody></table></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="gamebd-chart-title"><i class="ti ti-chart-bar"></i>Game Breakdown</div>
+    <div class="chart-wrap h320" style="overflow-x:auto"><div id="gamebd-chart-inner" style="height:100%"><canvas id="gamebd-chart"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="gamebd-split-load-title"><i class="ti ti-chart-bar"></i>Player Load (AU)</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#0F1923"></div>Player Load</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
+    </div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="gamebd-split-load-inner" style="height:100%"><canvas id="gamebd-split-load"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="gamebd-split-hsd1216-title"><i class="ti ti-chart-bar"></i>HSD 12-16 mph (yd)</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#D97706"></div>HSD 12–16 mph</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
+    </div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="gamebd-split-hsd1216-inner" style="height:100%"><canvas id="gamebd-split-hsd1216"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="gamebd-split-hsd16-title"><i class="ti ti-chart-bar"></i>HSD 16+ mph (yd)</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#003087"></div>HSD 16+ mph</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
+    </div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="gamebd-split-hsd16-inner" style="height:100%"><canvas id="gamebd-split-hsd16"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="gamebd-split-accel-title"><i class="ti ti-chart-bar"></i>Accel Total Efforts</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#16A34A"></div>Accel Total Efforts</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
+    </div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="gamebd-split-accel-inner" style="height:100%"><canvas id="gamebd-split-accel"></canvas></div></div>
+  </div>
+  <div class="panel">
+    <div class="panel-title" id="gamebd-split-decel-title"><i class="ti ti-chart-bar"></i>Decel Total Efforts</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#DC2626"></div>Decel Total Efforts</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
+    </div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="gamebd-split-decel-inner" style="height:100%"><canvas id="gamebd-split-decel"></canvas></div></div>
+  </div>
+</div>
+
 <!-- WEEKLY BREAKDOWN -->
 <div class="page" id="pg-weeklybreakdown">
   <div class="sel-row" style="margin-bottom:16px">
@@ -1041,6 +1117,18 @@ function parseDate(d){
   if(!d)return null;
   const p=d.split('/');
   if(p.length===3)return new Date(+p[2],+p[0]-1,+p[1]);
+  // ISO "YYYY-MM-DD" (Supabase test_date/session dates) — parse the date parts as a
+  // LOCAL calendar date instead of falling through to `new Date(d)`. A bare
+  // "YYYY-MM-DD" string is parsed by the JS engine as UTC midnight; in any timezone
+  // behind UTC (US Eastern included) that instant displays as ~8pm the PREVIOUS
+  // calendar day. phWk() buckets weeks Monday-Sunday against a local-midnight
+  // anchor, so a Monday test date silently fell back to "Sunday of the prior week"
+  // and the gameweek label shown (e.g. "Auburn Gameweek") was one week behind the
+  // real one (e.g. actual Ole Miss Gameweek) — confirmed 9/24/26. This does not
+  // affect the flag math itself (that compares raw ISO strings, which sort fine),
+  // only the human-readable week/gameweek label.
+  const iso=d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso)return new Date(+iso[1],+iso[2]-1,+iso[3]);
   return new Date(d);
 }
 const PH={
@@ -1703,7 +1791,7 @@ const tDACWR=gpsChartWks.map((_,i)=>tDACWR_daily[Math.min(i*7+6,tDACWR_daily.len
 const tAACWR=gpsChartWks.map((_,i)=>tAACWR_daily[Math.min(i*7+6,tAACWR_daily.length-1)]);
 
 // ── NAV ───────────────────────────────────────────────────────────
-const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison',sessioncompare:'Session Compare',periodbreakdown:'Period Breakdown',dailybreakdown:'Daily Breakdown',weeklybreakdown:'Weekly Breakdown',idp:'Individual Development Plan'};let gpsView='team';
+const PAGE_TITLES={dashboard:'Team Dashboard',roster:'Roster',gps:'GPS & ACWR',loadmonitor:'Load Monitor',vald:'VALD Testing',lifting:'Lifting Maxes',standards:'Strength Standards',leaderboards:'Leaderboards',injury:'Injury Risk Monitor',bodycomp:'Body Composition',compare:'Player Comparison',sessioncompare:'Session Compare',periodbreakdown:'Period Breakdown',dailybreakdown:'Daily Breakdown',gamebreakdown:'Game Breakdown',weeklybreakdown:'Weekly Breakdown',idp:'Individual Development Plan'};let gpsView='team';
 window.setGPSView=function(v){
   gpsView=v;
   const viewMap={team:'gps-team-view',player:'gps-individual-view',group:'gps-group-view','90':'gps-90-view'};
@@ -1727,7 +1815,7 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
     document.getElementById('pg-'+pg)?.classList.add('active');
     document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
     document.getElementById('content-area').scrollTop=0;
-    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},lifting:renderLifting,sessioncompare:initSessionCompare,periodbreakdown:initPeriodBreakdown,dailybreakdown:initDailyBreakdown,weeklybreakdown:initWeeklyBreakdown};
+    const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},lifting:renderLifting,sessioncompare:initSessionCompare,periodbreakdown:initPeriodBreakdown,dailybreakdown:initDailyBreakdown,gamebreakdown:initGameBreakdown,weeklybreakdown:initWeeklyBreakdown};
     if(map[pg])setTimeout(map[pg],60);
   });
 });
@@ -3431,6 +3519,267 @@ window.renderDailyBreakdown=function(){
   });
 };
 
+// ── GAME BREAKDOWN ────────────────────────────────────────────────
+// One explicit entry per game this season — the single source of truth for the Game
+// Breakdown tab, confirmed with staff (not derived from WEEK_LABEL_OVERRIDES, which
+// covers the Monday-Sunday gameweek, not the specific game day). Games are Saturdays
+// by convention except where noted (FSU 11/27/26 is a Friday rivalry game). "week" is
+// the season's own game count — it skips the Fc W12 bye, so it is NOT the same number
+// as the Fc Wxx camp-week used by WEEK_LABEL_OVERRIDES. Add one row per game as the
+// schedule is confirmed; a future date with no Catapult data yet simply won't produce
+// a row (see getGameBreakdownRows) until that week's session syncs.
+const GAME_SCHEDULE=[
+  {week:1, opponent:'FAU',            date:'2026-09-05'},
+  {week:2, opponent:'Campbell',       date:'2026-09-12'},
+  {week:3, opponent:'Auburn',         date:'2026-09-19'},
+  {week:4, opponent:'Ole Miss',       date:'2026-09-26'},
+  {week:5, opponent:'Missouri',       date:'2026-10-03'},
+  {week:6, opponent:'South Carolina', date:'2026-10-10'},
+  {week:7, opponent:'Texas',          date:'2026-10-17'},
+  {week:8, opponent:'Georgia',        date:'2026-10-31'},
+  {week:9, opponent:'Oklahoma',       date:'2026-11-07'},
+  {week:10, opponent:'Kentucky',      date:'2026-11-14'},
+  {week:11, opponent:'Vanderbilt',    date:'2026-11-21'},
+  {week:12, opponent:'FSU',           date:'2026-11-27'}, // Friday rivalry game
+];
+function gameLabel(g){return`Week ${g.week} – ${g.opponent}`;}
+function gameDateMs(iso){const[y,m,d]=iso.split('-').map(Number);return new Date(y,m-1,d).getTime();}
+const GAME_BY_MS={};
+GAME_SCHEDULE.forEach(g=>{GAME_BY_MS[gameDateMs(g.date)]=g;});
+
+// Mirrors getDailyBreakdownRows, but groups by GAME (date matched against
+// GAME_SCHEDULE) instead of by date+activityName — every Catapult activity logged on
+// that exact calendar date (e.g. a pregame walkthrough plus the game itself, if
+// separately named in Catapult) folds into one combined game-day row. Dates that
+// aren't a scheduled game are ignored entirely.
+function getGameBreakdownRows(pos,name){
+  const dbPos=SLRU_POS_MAP[pos]||pos;
+  const relevant=name?PLAYERS.filter(p=>p.name===name):PLAYERS.filter(p=>p.pos===dbPos);
+  const byWeek={};
+  relevant.forEach(p=>{
+    p.sessions.forEach(s=>{
+      if(s.tag==='Rehab')return;
+      const ms=dateToMs(s.date);
+      if(ms==null)return;
+      const g=GAME_BY_MS[ms];
+      if(!g)return;
+      const key=g.week;
+      if(!byWeek[key]){
+        byWeek[key]={week:g.week,opponent:g.opponent,label:gameLabel(g),date:s.date,ms,
+          players:new Set(),load:0,dist:0,hsd1216:0,hsd16:0,accel:0,decel:0,maxV:0};
+      }
+      const a=byWeek[key];
+      a.players.add(p.name);
+      a.load+=s.load||0;a.dist+=s.dist||0;
+      a.hsd1216+=s.hsr12||0;a.hsd16+=s.hsr||0;
+      a.accel+=s.accel||0;a.decel+=s.decel||0;
+      if((s.maxV||0)>a.maxV)a.maxV=s.maxV;
+    });
+  });
+  return Object.values(byWeek)
+    .sort((a,b)=>a.week-b.week)
+    .map(a=>{
+      const n=a.players.size;
+      return{
+        week:a.week,opponent:a.opponent,label:a.label,date:a.date,ms:a.ms,playerCount:n,
+        load:n?a.load/n:null,dist:n?a.dist/n:null,
+        hsd1216:n?a.hsd1216/n:null,hsd16:n?a.hsd16/n:null,
+        accel:n?a.accel/n:null,decel:n?a.decel/n:null,
+        maxV:a.maxV>0?a.maxV:null,
+      };
+    });
+}
+
+// Same idea as dailyBdMetricStats, but the baseline is games only — mixing in
+// practice-day loads would make the mean/SD bands meaningless, since games run far
+// higher outputs than a normal practice.
+function gameBdMetricStats(pos,name){
+  const allRows=getGameBreakdownRows(pos,name);
+  const stat=key=>{
+    const vals=allRows.map(r=>r[key]).filter(v=>v!=null&&isFinite(v));
+    if(!vals.length)return{mean:0,std:0,max:0};
+    const mean=vals.reduce((a,b)=>a+b,0)/vals.length;
+    const std=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length);
+    return{mean,std,max:Math.max(...vals)};
+  };
+  return{load:stat('load'),hsd1216:stat('hsd1216'),hsd16:stat('hsd16'),accel:stat('accel'),decel:stat('decel')};
+}
+
+let _gameBdResizeTimer=null;
+window.addEventListener('resize',()=>{
+  if(!document.getElementById('pg-gamebreakdown')?.classList.contains('active'))return;
+  clearTimeout(_gameBdResizeTimer);
+  _gameBdResizeTimer=setTimeout(()=>{if(typeof window.renderGameBreakdown==='function')window.renderGameBreakdown();},200);
+});
+
+window.initGameBreakdown=function(){
+  const selP=document.getElementById('gamebd-pos-sel');
+  const selN=document.getElementById('gamebd-name-sel');
+  if(selP.options.length===0){
+    const posOrder=['WR','RB','QB','TE','OL','CB','SAF','ILB','OLB','DL'];
+    posOrder.forEach(p=>{const o=document.createElement('option');o.value=p;o.textContent=p;selP.appendChild(o);});
+  }
+  if(selN.options.length===0){
+    const o0=document.createElement('option');o0.value='';o0.textContent='— All Players (by Position) —';selN.appendChild(o0);
+    [...PLAYERS].map(p=>p.name).sort((a,b)=>a.localeCompare(b)).forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;selN.appendChild(o);});
+  }
+  renderGameBreakdown();
+};
+
+let _gameBdChart=null,_gameBdSplitLoadChart=null,_gameBdSplitHsd1216Chart=null,_gameBdSplitHsd16Chart=null,_gameBdSplitAccelChart=null,_gameBdSplitDecelChart=null;
+
+window.renderGameBreakdown=function(){
+  const pos=document.getElementById('gamebd-pos-sel').value;
+  const name=document.getElementById('gamebd-name-sel').value;
+  if(!pos&&!name)return;
+
+  const selPEl=document.getElementById('gamebd-pos-sel');
+  selPEl.disabled=!!name;
+  selPEl.style.opacity=name?0.45:1;
+
+  const titleLbl=name||pos;
+  document.getElementById('gamebd-chart-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Game Breakdown`;
+  document.getElementById('gamebd-split-load-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Player Load (AU)`;
+  document.getElementById('gamebd-split-hsd1216-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — HSD 12-16 mph (yd)`;
+  document.getElementById('gamebd-split-hsd16-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — HSD 16+ mph (yd)`;
+  document.getElementById('gamebd-split-accel-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Accel Total Efforts`;
+  document.getElementById('gamebd-split-decel-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Decel Total Efforts`;
+
+  const rows=getGameBreakdownRows(pos,name);
+  const mStats=gameBdMetricStats(pos,name);
+  const labels=rows.map(r=>r.label);
+  const loads=rows.map(r=>r.load);
+  const accel=rows.map(r=>r.accel);
+  const decel=rows.map(r=>r.decel);
+  const hsd1216=rows.map(r=>r.hsd1216);
+  const hsd16=rows.map(r=>r.hsd16);
+
+  const dlBaseMain={font:{size:9,family:'DM Mono',weight:'bold'},formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''};
+  const dateTooltip=ctx=>rows[ctx[0].dataIndex]?.date||'';
+
+  if(_gameBdChart){_gameBdChart.destroy();_gameBdChart=null;}
+  const elMain=document.getElementById('gamebd-chart');
+
+  if(!rows.length){
+    if(elMain){const ctx=elMain.getContext('2d');ctx.clearRect(0,0,elMain.width,elMain.height);}
+  } else {
+    sizeScrollChart('gamebd-chart-inner',rows.length);
+    _gameBdChart=new Chart(elMain,{
+      data:{
+        labels,
+        datasets:[
+          {type:'bar',label:'HSD 12-16 mph (yd)',data:hsd1216,yAxisID:'yHSD',backgroundColor:'#D97706',borderRadius:3,order:4,barPercentage:.7,categoryPercentage:.5,
+            datalabels:{...dlBaseMain,anchor:'end',align:'top',color:'#D97706'}},
+          {type:'bar',label:'HSD 16+ mph (yd)',data:hsd16,yAxisID:'yHSD',backgroundColor:C.blue,borderRadius:3,order:5,barPercentage:.7,categoryPercentage:.5,
+            datalabels:{...dlBaseMain,anchor:'end',align:'top',color:C.blue}},
+          {type:'line',label:'Player Load',data:loads,yAxisID:'yLoad',fill:true,backgroundColor:'rgba(15,25,35,0.22)',borderColor:'#0F1923',borderWidth:2,pointRadius:3,pointBackgroundColor:'#0F1923',tension:.3,order:3,
+            datalabels:{...dlBaseMain,anchor:'end',align:'top',offset:6,color:'#0F1923'}},
+          {type:'line',label:'Accel Total Efforts',data:accel,yAxisID:'yEfforts',borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
+            datalabels:{...dlBaseMain,anchor:'start',align:'bottom',offset:4,color:C.green}},
+          {type:'line',label:'Decel Total Efforts',data:decel,yAxisID:'yEfforts',borderColor:C.red,backgroundColor:C.red,pointRadius:3,pointBackgroundColor:C.red,borderWidth:2,borderDash:[4,3],tension:.3,order:0,
+            datalabels:{...dlBaseMain,anchor:'start',align:'bottom',offset:16,color:C.red}},
+        ]
+      },
+      plugins:[ChartDataLabels],
+      options:{
+        responsive:true,maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        layout:{padding:{top:20,bottom:8}},
+        plugins:{
+          legend:{display:true,position:'bottom',labels:{color:C.tick,font:{size:10,family:'DM Mono'},boxWidth:10,padding:12}},
+          tooltip:{callbacks:{
+            title:dateTooltip,
+            label:ctx=>{
+              const v=ctx.raw;
+              if(v==null)return`${ctx.dataset.label}: —`;
+              return`${ctx.dataset.label}: ${v.toFixed(2)}`;
+            }
+          }}
+        },
+        scales:{
+          x:{ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:60,minRotation:30,autoSkip:false},grid:{display:false}},
+          yHSD:{display:false,beginAtZero:true},
+          yLoad:{display:false,beginAtZero:true},
+          yEfforts:{display:false,beginAtZero:true},
+        }
+      }
+    });
+  }
+
+  if(_gameBdSplitLoadChart){_gameBdSplitLoadChart.destroy();_gameBdSplitLoadChart=null;}
+  if(_gameBdSplitHsd1216Chart){_gameBdSplitHsd1216Chart.destroy();_gameBdSplitHsd1216Chart=null;}
+  if(_gameBdSplitHsd16Chart){_gameBdSplitHsd16Chart.destroy();_gameBdSplitHsd16Chart=null;}
+  if(_gameBdSplitAccelChart){_gameBdSplitAccelChart.destroy();_gameBdSplitAccelChart=null;}
+  if(_gameBdSplitDecelChart){_gameBdSplitDecelChart.destroy();_gameBdSplitDecelChart=null;}
+  const elLoad=document.getElementById('gamebd-split-load');
+  const elHsd1216=document.getElementById('gamebd-split-hsd1216');
+  const elHsd16=document.getElementById('gamebd-split-hsd16');
+  const elAccel=document.getElementById('gamebd-split-accel');
+  const elDecel=document.getElementById('gamebd-split-decel');
+  const splitEls=[elLoad,elHsd1216,elHsd16,elAccel,elDecel];
+
+  if(!rows.length){
+    splitEls.forEach(c=>{if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}});
+  } else {
+    const dlBase=(clr)=>({font:{size:9,family:'DM Mono',weight:'bold'},color:clr,anchor:'end',align:'top',formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''});
+    const xAxis={ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:60,minRotation:30,autoSkip:false},grid:{display:false}};
+    const meanDs=(label,mean,color)=>({type:'line',label,data:Array(labels.length).fill(mean),yAxisID:'y',borderColor:color,borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,order:0,datalabels:{display:false}});
+    const tooltipFilter=ctx=>!ctx.dataset.label.endsWith(' (mean)');
+
+    function buildGameBdZChart(el,wrapInnerId,label,data,color){
+      sizeScrollChart(wrapInnerId,rows.length);
+      const stats=mStats[label.key],range=dailyBdAxisRange(stats);
+      return new Chart(el,{
+        type:'bar',
+        data:{labels,datasets:[
+          meanDs(`${label.text} (mean)`,stats.mean,'#94A3B8'),
+          {type:'bar',label:label.text,data,yAxisID:'y',backgroundColor:color,borderRadius:3,barPercentage:.55,order:1,
+            datalabels:dlBase(color)},
+        ]},
+        plugins:[ChartDataLabels,zBandsPlugin],
+        options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
+          plugins:{
+            legend:{display:false},
+            zBands:{configs:[{yAxisID:'y',mean:stats.mean,std:stats.std,axisMin:range.axisMin,axisMax:range.axisMax}]},
+            tooltip:{filter:tooltipFilter,callbacks:{title:dateTooltip,label:dailyBdZTooltipLabel({[label.text]:stats})}}
+          },
+          scales:{x:xAxis,y:{min:range.axisMin,max:range.axisMax,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{color:C.grid}}}}
+      });
+    }
+
+    _gameBdSplitLoadChart=buildGameBdZChart(elLoad,'gamebd-split-load-inner',{key:'load',text:'Player Load'},loads,'#0F1923');
+    _gameBdSplitHsd1216Chart=buildGameBdZChart(elHsd1216,'gamebd-split-hsd1216-inner',{key:'hsd1216',text:'HSD 12-16 mph'},hsd1216,'#D97706');
+    _gameBdSplitHsd16Chart=buildGameBdZChart(elHsd16,'gamebd-split-hsd16-inner',{key:'hsd16',text:'HSD 16+ mph'},hsd16,C.blue);
+    _gameBdSplitAccelChart=buildGameBdZChart(elAccel,'gamebd-split-accel-inner',{key:'accel',text:'Accel Total Efforts'},accel,C.green);
+    _gameBdSplitDecelChart=buildGameBdZChart(elDecel,'gamebd-split-decel-inner',{key:'decel',text:'Decel Total Efforts'},decel,C.red);
+  }
+
+  // ── Game Summary table ──
+  const rowHTML=r=>`<tr>
+        <td class="mono">${r.week}</td>
+        <td style="font-weight:600">${r.opponent}</td>
+        <td class="mono" style="white-space:nowrap">${r.date}</td>
+        <td class="mono">${r.playerCount}</td>
+        <td class="mono">${r.load!=null?r.load.toFixed(1):'—'}</td>
+        <td class="mono">${r.dist!=null?Math.round(r.dist).toLocaleString():'—'}</td>
+        <td class="mono acc">${r.maxV!=null?r.maxV.toFixed(2):'—'}</td>
+        <td class="mono">${r.hsd1216!=null?Math.round(r.hsd1216).toLocaleString():'—'}</td>
+        <td class="mono">${r.hsd16!=null?Math.round(r.hsd16).toLocaleString():'—'}</td>
+        <td class="mono">${r.accel!=null?r.accel.toFixed(1):'—'}</td>
+        <td class="mono">${r.decel!=null?r.decel.toFixed(1):'—'}</td>
+      </tr>`;
+
+  document.getElementById('gamebd-summary-body').innerHTML=rows.length
+    ? rows.map(rowHTML).join('')
+    : `<tr><td colspan="11" style="text-align:center;padding:30px;color:var(--text3)">No games played yet for ${name?'this player':'this position'}.</td></tr>`;
+
+  makeSortableTable('gamebd-summary-thead',[
+    r=>r.week,r=>r.opponent,r=>r.ms,r=>r.playerCount,r=>r.load,r=>r.dist,r=>r.maxV,r=>r.hsd1216,r=>r.hsd16,r=>r.accel,r=>r.decel
+  ],()=>rows,(sortedRows)=>{
+    document.getElementById('gamebd-summary-body').innerHTML=sortedRows.map(rowHTML).join('');
+  });
+};
+
 // ── LOAD MONITOR ──────────────────────────────────────────────────
 // Full display label for a phase-week code — used on Load Monitor axis/table labels
 // (and reused by the SLRU chart tooltips). Checks WEEK_LABEL_OVERRIDES first — same
@@ -3966,7 +4315,7 @@ window.renderVALDWeekly=function(){
   }
   if(sel.options.length===0){
     document.getElementById('vald-weekly-badge').innerHTML='';
-    document.getElementById('vald-weekly-table').innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No CMJ testing data found.</td></tr>';
+    document.getElementById('vald-weekly-table').innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No CMJ testing data found.</td></tr>';
     return;
   }
   const date=sel.value||sel.options[0].value;
@@ -3987,25 +4336,48 @@ window.renderVALDWeekly=function(){
   document.getElementById('vald-weekly-badge').innerHTML=
     `${pill('danger',nRed+' Red')} ${pill('warn',nYellow+' Yellow')} ${pill('ok',nGreen+' Green')} ${pill('info',nBuild+' Building')}`;
 
+  // Flag-cell + suggested-action color tokens, matched to the printed CMJ Flag
+  // Summary PDF (build_summary_real.js: GOOD/WARN/CRIT/BUILD) so the in-app
+  // view reads as the same report rather than a different-looking table.
+  const WKR_TONE={
+    GREEN:{c:'#2F8F5B',bg:'#E6F4EC'},
+    YELLOW:{c:'#8F6209',bg:'#FAF1DA'},
+    RED:{c:'#B3123A',bg:'#FBE6EC'},
+    BUILDING:{c:'#5B6472',bg:'#ECEDEF'},
+  };
+  const wkrActionTone=action=>{
+    if(action.startsWith('Sports Medicine')||action.startsWith('S&C + Sports Medicine'))return'#B3123A';
+    if(action.startsWith('S&C staff')||action.startsWith('S&C / AT')||action.startsWith('S&C:'))return'#8F6209';
+    if(action.startsWith('Monitor'))return'#4A5160';
+    return'#7B8191'; // Building / No action
+  };
+  const flagCellHtml=(level,elevated)=>{
+    const t=WKR_TONE[level];
+    return`<td style="background:${t.bg};text-align:center;padding:10px 12px">`
+      +`<div style="font-family:var(--font-m);font-size:12px;font-weight:800;letter-spacing:.5px;color:${t.c};text-transform:uppercase">${level==='BUILDING'?'BUILDING':level}</div>`
+      +(elevated?`<div style="font-size:10px;font-style:italic;color:${t.c};margin-top:2px">elevated pattern</div>`:'')
+      +'</td>';
+  };
+
   document.getElementById('vald-weekly-table').innerHTML=results.map(r=>{
-    const pos=lkPos(r.athlete);
     if(r.status==='BUILDING'){
+      const tone=wkrActionTone('Building');
       return`<tr>
-        <td style="font-weight:600">${r.athlete}</td><td>${pos}</td>
-        <td colspan="2" style="color:var(--text3);font-size:12px">${r.suggestedAction}</td>
-        <td>${pill('info','BUILDING')}</td>
-        <td style="color:var(--text3);font-size:12px;white-space:normal;max-width:260px">Continue weekly testing</td>
+        <td style="font-weight:600">${r.athlete}</td>
+        <td colspan="2" style="color:var(--text3);font-size:12px">Insufficient baseline history — needs 3+ prior tests</td>
+        ${flagCellHtml('BUILDING',false)}
+        <td style="color:${tone};font-size:12px;white-space:normal;max-width:300px">${r.suggestedAction}</td>
       </tr>`;
     }
-    const flagCls=r.overall==='RED'?'danger':r.overall==='YELLOW'?'warn':'ok';
-    const metricColor=lvl=>lvl==='RED'?'var(--acc5)':lvl==='YELLOW'?'var(--acc4)':'inherit';
+    const metricColor=lvl=>lvl==='RED'?WKR_TONE.RED.c:lvl==='YELLOW'?WKR_TONE.YELLOW.c:'inherit';
     const flagsHtml=r.flags.length?r.flags.map(f=>`<div>${f[0]}</div>`).join(''):'—';
-    const pctHtml=r.flags.length?r.flags.map(f=>`<div class="mono" style="color:${metricColor(f[2])};font-weight:600">${f[1]}</div>`).join(''):'—';
+    const pctHtml=r.flags.length?r.flags.map(f=>`<div class="mono" style="color:${metricColor(f[2])};font-weight:700;text-align:center">${f[1]}</div>`).join(''):'<div style="text-align:center">—</div>';
+    const actionTone=wkrActionTone(r.suggestedAction);
     return`<tr>
-      <td style="font-weight:600">${r.athlete}</td><td>${pos}</td>
+      <td style="font-weight:600">${r.athlete}</td>
       <td>${flagsHtml}</td><td>${pctHtml}</td>
-      <td>${pill(flagCls,r.overall)}${r.elevated?'<div style="font-size:9px;color:var(--text3);margin-top:3px;font-family:var(--font-m)">elevated pattern</div>':''}</td>
-      <td style="color:var(--text2);font-size:12px;white-space:normal;max-width:280px">${r.suggestedAction}</td>
+      ${flagCellHtml(r.overall,r.elevated)}
+      <td style="color:${actionTone};font-size:12px;font-weight:${actionTone==='#B3123A'?700:400};white-space:normal;max-width:300px">${r.suggestedAction}</td>
     </tr>`;
   }).join('');
 };
