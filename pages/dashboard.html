@@ -1262,6 +1262,17 @@ function displayWk(wk){
 // Cloud (unlike the entries above) — the synced_at timing + velocity-ceiling signature
 // alone matches every confirmed prior case, but worth a quick visual confirm if time
 // allows.
+// Ole Miss Monday (9/21/26): 33dd2782-... was a stale RE-sync that landed ~2 hours
+// after the other copy (synced_at 9/22 12:18 vs 9/22 10:14, same start_time — same
+// recording window re-processed). Per-athlete numbers are nearly identical between
+// the two copies for most athletes (e.g. Aaron Philo: 319.88 load / 2574.09yd on
+// 98474273-... vs 319.86 load / 2573.59yd on 33dd2782-... — confirmed against
+// Catapult Cloud's 320 for him), so this one wasn't a "distorted totals" case like
+// the others above; it was flagged purely by the doubled team total (639.7 shown for
+// Aaron Philo = 319.88+319.86, both copies summed by date+activity_name) and confirmed
+// as the bad copy by its physically-impossible 36.54mph team max velocity (over the
+// MAX_PLAUSIBLE_VELOCITY_MPH ceiling; the other copy's max is a plausible 22.50mph).
+// 98474273-28ab-4070-9cf1-eaca6d515b6b is the correct, first-synced copy.
 const EXCLUDED_ACTIVITY_IDS=new Set([
   'ac90b579-1d7a-4bd7-ae7d-b17ccdb3b1a9',
   '809b793c-0013-4b22-aaaf-28b7d0382d71',
@@ -1273,6 +1284,7 @@ const EXCLUDED_ACTIVITY_IDS=new Set([
   '8e002b1b-2cc4-4e70-a8f0-62a265135fc8',
   '47fdcf54-0d07-41f2-bfec-0c79be18ef6f',
   'e1b4a96d-2c51-42ab-95b6-a4371c565b56',
+  '33dd2782-4116-4b21-9d40-84bdc5e5e311',
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
