@@ -685,7 +685,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       </div>
       <div class="tbl-wrap">
         <table><thead><tr style="background:var(--uf-blue)">
-          <th style="background:var(--uf-blue);color:#fff;border-bottom:none">Athlete</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Flagged Result(s)</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">% Change</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">Flag</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Suggested Action</th>
+          <th style="background:var(--uf-blue);color:#fff;border-bottom:none">Athlete</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Flagged Result(s)</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">% Change</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">Flag</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Suggested Action</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;min-width:220px">Notes</th>
         </tr></thead><tbody id="vald-weekly-table"></tbody></table>
       </div>
     </div>
@@ -4326,7 +4326,16 @@ function wkrComputeForDate(targetDate){
 }
 
 let _wkrResults=[];
-window.renderVALDWeekly=function(){
+let _wkrNotesByAthlete={};
+// Small local escaper — athlete names (e.g. "J'Vari Flowers") and free-typed note text
+// both need to be safe to drop into a data-attribute and into innerHTML.
+function wkrEsc(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function wkrFmtSavedAt(iso){
+  const d=new Date(iso);
+  if(isNaN(d))return'';
+  return d.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+}
+window.renderVALDWeekly=async function(){
   const sel=document.getElementById('vald-weekly-sel');
   if(sel.options.length===0){
     const byAthlete=wkrBuildDaily();
@@ -4342,7 +4351,7 @@ window.renderVALDWeekly=function(){
   }
   if(sel.options.length===0){
     document.getElementById('vald-weekly-badge').innerHTML='';
-    document.getElementById('vald-weekly-table').innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No CMJ testing data found.</td></tr>';
+    document.getElementById('vald-weekly-table').innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No CMJ testing data found.</td></tr>';
     return;
   }
   const date=sel.value||sel.options[0].value;
@@ -4355,6 +4364,17 @@ window.renderVALDWeekly=function(){
     return ra!==rb?ra-rb:a.athlete.localeCompare(b.athlete);
   });
   _wkrResults=results;
+
+  // Notes are per (athlete, test_date) — shared across every staff member who opens
+  // this tab, stored in cmj_weekly_notes (not localStorage: this must be visible to
+  // everyone, not just the browser that typed it). Re-fetched every render so
+  // switching weeks (or another staff member's edit) always shows the current text.
+  const noteByAthlete={};
+  const{data:notesData,error:notesErr}=await SB.from('cmj_weekly_notes')
+    .select('athlete_name,note,updated_by,updated_at').eq('test_date',date);
+  if(notesErr)console.error('cmj_weekly_notes load failed:',notesErr.message);
+  (notesData||[]).forEach(n=>{noteByAthlete[n.athlete_name]={note:n.note,updated_by:n.updated_by,updated_at:n.updated_at};});
+  _wkrNotesByAthlete=noteByAthlete;
 
   const nRed=results.filter(r=>r.overall==='RED').length;
   const nYellow=results.filter(r=>r.overall==='YELLOW').length;
@@ -4385,6 +4405,17 @@ window.renderVALDWeekly=function(){
       +(elevated?`<div style="font-size:10px;font-style:italic;color:${t.c};margin-top:2px">elevated pattern</div>`:'')
       +'</td>';
   };
+  const noteCellHtml=athlete=>{
+    const n=noteByAthlete[athlete];
+    const savedLine=n?.updated_at?`Saved ${wkrFmtSavedAt(n.updated_at)}${n.updated_by?' · '+wkrEsc(n.updated_by):''}`:'';
+    return`<td style="padding:6px 8px;vertical-align:top">`
+      +`<textarea class="wkr-note-input" data-athlete="${wkrEsc(athlete)}" placeholder="Add a note…" `
+      +`style="width:100%;min-width:200px;min-height:42px;resize:vertical;font-family:var(--font-b);font-size:12px;`
+      +`padding:6px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text)">`
+      +`${wkrEsc(n?.note||'')}</textarea>`
+      +`<div class="wkr-note-status" style="font-size:9px;color:var(--text3);font-family:var(--font-m);margin-top:2px;min-height:11px">${savedLine}</div>`
+      +'</td>';
+  };
 
   document.getElementById('vald-weekly-table').innerHTML=results.map(r=>{
     if(r.status==='BUILDING'){
@@ -4394,6 +4425,7 @@ window.renderVALDWeekly=function(){
         <td colspan="2" style="color:var(--text3);font-size:12px">Insufficient baseline history — needs 3+ prior tests</td>
         ${flagCellHtml('BUILDING',false)}
         <td style="color:${tone};font-size:12px;white-space:normal;max-width:300px">${r.suggestedAction}</td>
+        ${noteCellHtml(r.athlete)}
       </tr>`;
     }
     const metricColor=lvl=>lvl==='RED'?WKR_TONE.RED.c:lvl==='YELLOW'?WKR_TONE.YELLOW.c:'inherit';
@@ -4405,20 +4437,51 @@ window.renderVALDWeekly=function(){
       <td>${flagsHtml}</td><td>${pctHtml}</td>
       ${flagCellHtml(r.overall,r.elevated)}
       <td style="color:${actionTone};font-size:12px;font-weight:${actionTone==='#B3123A'?700:400};white-space:normal;max-width:300px">${r.suggestedAction}</td>
+      ${noteCellHtml(r.athlete)}
     </tr>`;
   }).join('');
+
+  // Save-on-blur, not a separate Save button — "edit directly in the AMS". Skips the
+  // network call entirely if the text didn't actually change (e.g. clicking in and out
+  // without typing), and shows a brief green confirmation so staff know it landed.
+  document.querySelectorAll('#vald-weekly-table .wkr-note-input').forEach(ta=>{
+    ta.addEventListener('blur',async()=>{
+      const athlete=ta.dataset.athlete;
+      const val=ta.value.trim();
+      const prev=noteByAthlete[athlete]?.note||'';
+      if(val===prev)return;
+      const statusEl=ta.nextElementSibling;
+      ta.style.opacity='.6';
+      const nowIso=new Date().toISOString();
+      const{error}=await SB.from('cmj_weekly_notes')
+        .upsert({athlete_name:athlete,test_date:date,note:val||null,updated_by:me.full_name,updated_at:nowIso},{onConflict:'athlete_name,test_date'});
+      ta.style.opacity='1';
+      if(error){
+        console.error('cmj_weekly_notes save failed:',error.message);
+        if(statusEl){statusEl.textContent='Save failed — check connection and retry';statusEl.style.color='var(--acc5)';}
+        return;
+      }
+      noteByAthlete[athlete]={note:val,updated_by:me.full_name,updated_at:nowIso};
+      if(statusEl){
+        statusEl.textContent=`Saved ${wkrFmtSavedAt(nowIso)} · ${me.full_name}`;
+        statusEl.style.color='#16A34A';
+        setTimeout(()=>{if(statusEl)statusEl.style.color='var(--text3)';},1800);
+      }
+    });
+  });
 };
 
 window.exportVALDWeeklyCSV=function(){
   const sel=document.getElementById('vald-weekly-sel');
   if(!sel||!_wkrResults.length)return;
-  const headers=['Athlete','Position','Flagged Result(s)','% Change','Flag','Suggested Action'];
+  const headers=['Athlete','Position','Flagged Result(s)','% Change','Flag','Suggested Action','Notes'];
   const rows=_wkrResults.map(r=>[
     r.athlete,lkPos(r.athlete),
     r.status==='BUILDING'?r.suggestedAction:(r.flags.map(f=>f[0]).join(' | ')||''),
     r.status==='BUILDING'?'':(r.flags.map(f=>f[1]).join(' | ')||''),
     r.status==='BUILDING'?'BUILDING':r.overall,
     r.suggestedAction,
+    _wkrNotesByAthlete[r.athlete]?.note||'',
   ]);
   const csv=[headers,...rows].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'});
