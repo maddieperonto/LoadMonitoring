@@ -941,8 +941,6 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="zone-legend" style="margin-bottom:10px">
       <div class="zl"><div class="zl-dot" style="background:#FA4616"></div>Max Velocity</div>
       <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
-      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
-      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
     </div>
     <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="gamebd-split-maxv-inner" style="height:100%"><canvas id="gamebd-split-maxv"></canvas></div></div>
   </div>
@@ -3829,7 +3827,7 @@ window.renderGameBreakdown=function(){
         options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
           plugins:{
             legend:{display:false},
-            zBands:{configs:[{yAxisID:'y',mean:stats.mean,std:stats.std,axisMin:range.axisMin,axisMax:range.axisMax}]},
+            zBands:{configs:opts.hideBands?[]:[{yAxisID:'y',mean:stats.mean,std:stats.std,axisMin:range.axisMin,axisMax:range.axisMax}]},
             tooltip:{filter:tooltipFilter,callbacks:{title:dateTooltip,label:dailyBdZTooltipLabel({[label.text]:stats})}}
           },
           scales:{x:xAxis,y:{min:range.axisMin,max:range.axisMax,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{color:C.grid}}}}
@@ -3837,7 +3835,7 @@ window.renderGameBreakdown=function(){
     }
 
     _gameBdSplitLoadChart=buildGameBdZChart(elLoad,'gamebd-split-load-inner',{key:'load',text:'Player Load'},loads,'#0F1923');
-    _gameBdSplitMaxVChart=buildGameBdZChart(elMaxV,'gamebd-split-maxv-inner',{key:'maxV',text:'Max Velocity'},maxV,C.acc,{asLine:true,pctOfMax:true,pctBase:gameBdProfileMaxV(pos,name),zoomAxis:true});
+    _gameBdSplitMaxVChart=buildGameBdZChart(elMaxV,'gamebd-split-maxv-inner',{key:'maxV',text:'Max Velocity'},maxV,C.acc,{asLine:true,pctOfMax:true,pctBase:gameBdProfileMaxV(pos,name),zoomAxis:true,hideBands:true});
     _gameBdSplitHsd1216Chart=buildGameBdZChart(elHsd1216,'gamebd-split-hsd1216-inner',{key:'hsd1216',text:'HSD 12-16 mph'},hsd1216,'#D97706');
     _gameBdSplitHsd16Chart=buildGameBdZChart(elHsd16,'gamebd-split-hsd16-inner',{key:'hsd16',text:'HSD 16+ mph'},hsd16,C.blue);
     _gameBdSplitAccelChart=buildGameBdZChart(elAccel,'gamebd-split-accel-inner',{key:'accel',text:'Accel Total Efforts'},accel,C.green);
