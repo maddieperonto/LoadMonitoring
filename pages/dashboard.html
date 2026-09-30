@@ -937,6 +937,16 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="gamebd-split-load-inner" style="height:100%"><canvas id="gamebd-split-load"></canvas></div></div>
   </div>
   <div class="panel">
+    <div class="panel-title" id="gamebd-split-maxv-title"><i class="ti ti-chart-bar"></i>Max Velocity (mph)</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#FA4616"></div>Max Velocity</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(217,119,6,.5)"></div>1–2 SD</div>
+      <div class="zl"><div class="zl-dot" style="background:rgba(220,38,38,.5)"></div>2–3 SD</div>
+    </div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="gamebd-split-maxv-inner" style="height:100%"><canvas id="gamebd-split-maxv"></canvas></div></div>
+  </div>
+  <div class="panel">
     <div class="panel-title" id="gamebd-split-hsd1216-title"><i class="ti ti-chart-bar"></i>HSD 12-16 mph (yd)</div>
     <div class="zone-legend" style="margin-bottom:10px">
       <div class="zl"><div class="zl-dot" style="background:#D97706"></div>HSD 12–16 mph</div>
@@ -3629,7 +3639,7 @@ function gameBdMetricStats(pos,name){
     const std=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length);
     return{mean,std,max:Math.max(...vals)};
   };
-  return{load:stat('load'),hsd1216:stat('hsd1216'),hsd16:stat('hsd16'),accel:stat('accel'),decel:stat('decel')};
+  return{load:stat('load'),hsd1216:stat('hsd1216'),hsd16:stat('hsd16'),accel:stat('accel'),decel:stat('decel'),maxV:stat('maxV')};
 }
 
 let _gameBdResizeTimer=null;
@@ -3653,7 +3663,7 @@ window.initGameBreakdown=function(){
   renderGameBreakdown();
 };
 
-let _gameBdChart=null,_gameBdSplitLoadChart=null,_gameBdSplitHsd1216Chart=null,_gameBdSplitHsd16Chart=null,_gameBdSplitAccelChart=null,_gameBdSplitDecelChart=null;
+let _gameBdChart=null,_gameBdSplitLoadChart=null,_gameBdSplitMaxVChart=null,_gameBdSplitHsd1216Chart=null,_gameBdSplitHsd16Chart=null,_gameBdSplitAccelChart=null,_gameBdSplitDecelChart=null;
 
 window.renderGameBreakdown=function(){
   const pos=document.getElementById('gamebd-pos-sel').value;
@@ -3667,6 +3677,7 @@ window.renderGameBreakdown=function(){
   const titleLbl=name||pos;
   document.getElementById('gamebd-chart-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Game Breakdown`;
   document.getElementById('gamebd-split-load-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Player Load (AU)`;
+  document.getElementById('gamebd-split-maxv-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Max Velocity (mph)`;
   document.getElementById('gamebd-split-hsd1216-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — HSD 12-16 mph (yd)`;
   document.getElementById('gamebd-split-hsd16-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — HSD 16+ mph (yd)`;
   document.getElementById('gamebd-split-accel-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Accel Total Efforts`;
@@ -3680,6 +3691,7 @@ window.renderGameBreakdown=function(){
   const decel=rows.map(r=>r.decel);
   const hsd1216=rows.map(r=>r.hsd1216);
   const hsd16=rows.map(r=>r.hsd16);
+  const maxV=rows.map(r=>r.maxV);
 
   const dlBaseMain={font:{size:9,family:'DM Mono',weight:'bold'},formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''};
   const dateTooltip=ctx=>rows[ctx[0].dataIndex]?.date||'';
@@ -3701,6 +3713,8 @@ window.renderGameBreakdown=function(){
             datalabels:{...dlBaseMain,anchor:'end',align:'top',color:C.blue}},
           {type:'line',label:'Player Load',data:loads,yAxisID:'yLoad',fill:true,backgroundColor:'rgba(15,25,35,0.22)',borderColor:'#0F1923',borderWidth:2,pointRadius:3,pointBackgroundColor:'#0F1923',tension:.3,order:3,
             datalabels:{...dlBaseMain,anchor:'end',align:'top',offset:6,color:'#0F1923'}},
+          {type:'line',label:'Max Velocity',data:maxV,yAxisID:'yVelo',borderColor:C.acc,backgroundColor:C.acc,pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,tension:.3,order:2,
+            datalabels:{...dlBaseMain,anchor:'end',align:'top',offset:6,color:C.acc}},
           {type:'line',label:'Accel Total Efforts',data:accel,yAxisID:'yEfforts',borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
             datalabels:{...dlBaseMain,anchor:'start',align:'bottom',offset:4,color:C.green}},
           {type:'line',label:'Decel Total Efforts',data:decel,yAxisID:'yEfforts',borderColor:C.red,backgroundColor:C.red,pointRadius:3,pointBackgroundColor:C.red,borderWidth:2,borderDash:[4,3],tension:.3,order:0,
@@ -3728,22 +3742,25 @@ window.renderGameBreakdown=function(){
           yHSD:{display:false,beginAtZero:true},
           yLoad:{display:false,beginAtZero:true},
           yEfforts:{display:false,beginAtZero:true},
+          yVelo:{display:false,beginAtZero:true},
         }
       }
     });
   }
 
   if(_gameBdSplitLoadChart){_gameBdSplitLoadChart.destroy();_gameBdSplitLoadChart=null;}
+  if(_gameBdSplitMaxVChart){_gameBdSplitMaxVChart.destroy();_gameBdSplitMaxVChart=null;}
   if(_gameBdSplitHsd1216Chart){_gameBdSplitHsd1216Chart.destroy();_gameBdSplitHsd1216Chart=null;}
   if(_gameBdSplitHsd16Chart){_gameBdSplitHsd16Chart.destroy();_gameBdSplitHsd16Chart=null;}
   if(_gameBdSplitAccelChart){_gameBdSplitAccelChart.destroy();_gameBdSplitAccelChart=null;}
   if(_gameBdSplitDecelChart){_gameBdSplitDecelChart.destroy();_gameBdSplitDecelChart=null;}
   const elLoad=document.getElementById('gamebd-split-load');
+  const elMaxV=document.getElementById('gamebd-split-maxv');
   const elHsd1216=document.getElementById('gamebd-split-hsd1216');
   const elHsd16=document.getElementById('gamebd-split-hsd16');
   const elAccel=document.getElementById('gamebd-split-accel');
   const elDecel=document.getElementById('gamebd-split-decel');
-  const splitEls=[elLoad,elHsd1216,elHsd16,elAccel,elDecel];
+  const splitEls=[elLoad,elMaxV,elHsd1216,elHsd16,elAccel,elDecel];
 
   if(!rows.length){
     splitEls.forEach(c=>{if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}});
@@ -3775,6 +3792,7 @@ window.renderGameBreakdown=function(){
     }
 
     _gameBdSplitLoadChart=buildGameBdZChart(elLoad,'gamebd-split-load-inner',{key:'load',text:'Player Load'},loads,'#0F1923');
+    _gameBdSplitMaxVChart=buildGameBdZChart(elMaxV,'gamebd-split-maxv-inner',{key:'maxV',text:'Max Velocity'},maxV,C.acc);
     _gameBdSplitHsd1216Chart=buildGameBdZChart(elHsd1216,'gamebd-split-hsd1216-inner',{key:'hsd1216',text:'HSD 12-16 mph'},hsd1216,'#D97706');
     _gameBdSplitHsd16Chart=buildGameBdZChart(elHsd16,'gamebd-split-hsd16-inner',{key:'hsd16',text:'HSD 16+ mph'},hsd16,C.blue);
     _gameBdSplitAccelChart=buildGameBdZChart(elAccel,'gamebd-split-accel-inner',{key:'accel',text:'Accel Total Efforts'},accel,C.green);
