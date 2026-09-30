@@ -3766,19 +3766,32 @@ window.renderGameBreakdown=function(){
     splitEls.forEach(c=>{if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}});
   } else {
     const dlBase=(clr)=>({font:{size:9,family:'DM Mono',weight:'bold'},color:clr,anchor:'end',align:'top',formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''});
+    // Same as dlBase, but appends "(pct% of their max)" in brackets — used for the Max
+    // Velocity split chart, where "their max" is the highest single-game max velocity
+    // in the current position/player selection (stats.max from gameBdMetricStats).
+    const pctOfMaxDlBase=(clr,maxVal)=>({font:{size:9,family:'DM Mono',weight:'bold'},color:clr,anchor:'end',align:'top',formatter:v=>{
+      if(v==null)return'';
+      const val=(Math.round(v*10)/10).toFixed(1);
+      if(!maxVal)return val;
+      return`${val} (${(v/maxVal*100).toFixed(1)}%)`;
+    }});
     const xAxis={ticks:{color:C.tick,font:{size:10,family:'DM Mono'},maxRotation:60,minRotation:30,autoSkip:false},grid:{display:false}};
     const meanDs=(label,mean,color)=>({type:'line',label,data:Array(labels.length).fill(mean),yAxisID:'y',borderColor:color,borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,order:0,datalabels:{display:false}});
     const tooltipFilter=ctx=>!ctx.dataset.label.endsWith(' (mean)');
 
-    function buildGameBdZChart(el,wrapInnerId,label,data,color){
+    function buildGameBdZChart(el,wrapInnerId,label,data,color,opts={}){
       sizeScrollChart(wrapInnerId,rows.length);
       const stats=mStats[label.key],range=dailyBdAxisRange(stats);
+      const mainDs=opts.asLine
+        ?{type:'line',label:label.text,data,yAxisID:'y',borderColor:color,backgroundColor:color,pointRadius:3,pointBackgroundColor:color,borderWidth:2,tension:.3,fill:false,order:1,
+            datalabels:opts.pctOfMax?pctOfMaxDlBase(color,stats.max):dlBase(color)}
+        :{type:'bar',label:label.text,data,yAxisID:'y',backgroundColor:color,borderRadius:3,barPercentage:.55,order:1,
+            datalabels:dlBase(color)};
       return new Chart(el,{
         type:'bar',
         data:{labels,datasets:[
           meanDs(`${label.text} (mean)`,stats.mean,'#94A3B8'),
-          {type:'bar',label:label.text,data,yAxisID:'y',backgroundColor:color,borderRadius:3,barPercentage:.55,order:1,
-            datalabels:dlBase(color)},
+          mainDs,
         ]},
         plugins:[ChartDataLabels,zBandsPlugin],
         options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
@@ -3792,7 +3805,7 @@ window.renderGameBreakdown=function(){
     }
 
     _gameBdSplitLoadChart=buildGameBdZChart(elLoad,'gamebd-split-load-inner',{key:'load',text:'Player Load'},loads,'#0F1923');
-    _gameBdSplitMaxVChart=buildGameBdZChart(elMaxV,'gamebd-split-maxv-inner',{key:'maxV',text:'Max Velocity'},maxV,C.acc);
+    _gameBdSplitMaxVChart=buildGameBdZChart(elMaxV,'gamebd-split-maxv-inner',{key:'maxV',text:'Max Velocity'},maxV,C.acc,{asLine:true,pctOfMax:true});
     _gameBdSplitHsd1216Chart=buildGameBdZChart(elHsd1216,'gamebd-split-hsd1216-inner',{key:'hsd1216',text:'HSD 12-16 mph'},hsd1216,'#D97706');
     _gameBdSplitHsd16Chart=buildGameBdZChart(elHsd16,'gamebd-split-hsd16-inner',{key:'hsd16',text:'HSD 16+ mph'},hsd16,C.blue);
     _gameBdSplitAccelChart=buildGameBdZChart(elAccel,'gamebd-split-accel-inner',{key:'accel',text:'Accel Total Efforts'},accel,C.green);
