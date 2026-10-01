@@ -1,8 +1,24 @@
 name: VALD Nightly Sync
 
+# Two schedules, both in UTC (GitHub Actions cron has no timezone support):
+#   - '0 6 * * *'  — nightly catch-all, every day, ~1-2am Eastern. Keeps everything
+#     (CMJ, NordBord, any make-up/late testing) in sync even on non-testing days.
+#   - '0 19 * * 1' — Monday-only, 19:00 UTC. CMJ force plate testing wraps ~1:30pm
+#     Eastern every Monday; this fires a couple hours later so the data has time to
+#     land in VALD Cloud, and the Weekly Flag Report on the AMS is current same-day
+#     instead of waiting for the next nightly run. 19:00 UTC is 3:00pm Eastern during
+#     EDT (now) and 2:00pm Eastern during EST (after the Nov 1 2026 DST change) — both
+#     comfortably after 1:30pm either way, so this doesn't need updating across the
+#     DST switch.
+# vald_sync.R itself isn't date-bound to "today" — each run picks up everything
+# modified since the last synced test, regardless of what time it runs — so adding a
+# second scheduled run is safe and won't double-sync or skip anything.
+# Can also be fired on demand any time via the "Run workflow" button below
+# (Actions tab → VALD Nightly Sync → Run workflow), e.g. right after testing today.
 on:
   schedule:
     - cron: '0 6 * * *'
+    - cron: '0 19 * * 1'
   workflow_dispatch:
 
 env:
