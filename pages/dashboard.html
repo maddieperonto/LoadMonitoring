@@ -1295,6 +1295,14 @@ function displayWk(wk){
 // as the bad copy by its physically-impossible 36.54mph team max velocity (over the
 // MAX_PLAUSIBLE_VELOCITY_MPH ceiling; the other copy's max is a plausible 22.50mph).
 // 98474273-28ab-4070-9cf1-eaca6d515b6b is the correct, first-synced copy.
+// 10/6/26: "South Carolina Monday" (10/05/2026) synced twice — Catapult re-synced the
+// session under a second activity ID roughly 19 hours later (86 athletes in each copy,
+// near-identical team totals: 20,372 vs 20,418 player load), so every metric summed to
+// double wherever rows are grouped by date+activity name. bf9ba923-3adb-4a5c-9115-139f89a74c0d
+// (synced 10/06 12:23 UTC) is the stale copy — flagged by a physically-impossible 42.56mph
+// team max velocity (over the MAX_PLAUSIBLE_VELOCITY_MPH ceiling; the other copy's max is
+// a plausible 21.57mph). 9d551be2-2a84-47e8-9347-90270e6f3142 (synced 10/05 17:38 UTC)
+// is the correct, first-synced copy.
 const EXCLUDED_ACTIVITY_IDS=new Set([
   'ac90b579-1d7a-4bd7-ae7d-b17ccdb3b1a9',
   '809b793c-0013-4b22-aaaf-28b7d0382d71',
@@ -1307,6 +1315,7 @@ const EXCLUDED_ACTIVITY_IDS=new Set([
   '47fdcf54-0d07-41f2-bfec-0c79be18ef6f',
   'e1b4a96d-2c51-42ab-95b6-a4371c565b56',
   '33dd2782-4116-4b21-9d40-84bdc5e5e311',
+  'bf9ba923-3adb-4a5c-9115-139f89a74c0d',
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
