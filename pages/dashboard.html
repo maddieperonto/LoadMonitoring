@@ -830,11 +830,21 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
   <div class="sel-row" style="margin-bottom:16px;flex-wrap:wrap;row-gap:10px">
     <select class="data-sel" id="dailybd-pos-sel" onchange="renderDailyBreakdown()" style="min-width:200px"></select>
     <select class="data-sel" id="dailybd-name-sel" onchange="renderDailyBreakdown()" style="min-width:220px"></select>
+    <select class="data-sel" id="dailybd-dow-sel" onchange="renderDailyBreakdown()" style="min-width:230px" title="Limit to one weekday, in-season only (since the FAU gameweek)">
+      <option value="">All Days</option>
+      <option value="1">Mondays (in-season)</option>
+      <option value="2">Tuesdays (in-season)</option>
+      <option value="3">Wednesdays (in-season)</option>
+      <option value="4">Thursdays (in-season)</option>
+      <option value="5">Fridays (in-season)</option>
+      <option value="6">Saturdays (in-season)</option>
+      <option value="0">Sundays (in-season)</option>
+    </select>
     <input type="date" class="data-sel" id="dailybd-from-sel" onchange="renderDailyBreakdown()" style="min-width:150px">
     <span style="color:var(--text3);font-size:12px;align-self:center">to</span>
     <input type="date" class="data-sel" id="dailybd-to-sel" onchange="renderDailyBreakdown()" style="min-width:150px">
   </div>
-  <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Each bar/column is one Catapult activity within the selected date range (defaults to every session on record — narrow it with the date pickers above, or scroll the charts below), named exactly as it's named in Catapult Cloud.</div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:10px">Each bar/column is one Catapult activity within the selected date range (defaults to every session on record — narrow it with the date pickers above, or scroll the charts below), named exactly as it's named in Catapult Cloud. The weekday dropdown limits it to one day of the week, in-season only (from the FAU gameweek on), and the mean/SD shading then uses that weekday's own history as its baseline.</div>
   <div class="panel">
     <div class="panel-title" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between" onclick="toggleCollapsePanel('dailybd-summary')">
       <span><i class="ti ti-table"></i>Daily Summary</span>
@@ -3209,8 +3219,8 @@ let _dailyBdSplitLoadChart=null,_dailyBdSplitHsd1216Chart=null,_dailyBdSplitHsd1
 // The baseline is always the FULL history for the current position/player selection
 // — not just the currently displayed date range — so the bands represent a stable
 // "normal range" that doesn't shift every time the date filter changes.
-function dailyBdMetricStats(pos,name){
-  const allRows=getDailyBreakdownRows(pos,name,null,null);
+function dailyBdMetricStats(pos,name,dow){
+  const allRows=getDailyBreakdownRows(pos,name,null,null,dow);
   const stat=key=>{
     const vals=allRows.map(r=>r[key]).filter(v=>v!=null&&isFinite(v));
     if(!vals.length)return{mean:0,std:0,max:0};
@@ -3367,7 +3377,20 @@ function canonicalActivityName(name){
   return mapped||name;
 }
 
-function getDailyBreakdownRows(pos,name,fromMs,toMs){
+// Start of the in-season window used by the weekday filter: the Monday of the FAU
+// gameweek (GAME_SCHEDULE[0], Week 1), so fall camp isn't mixed into "Mondays" etc.
+function seasonStartMs(){
+  const[y,m,d]=GAME_SCHEDULE[0].date.split('-').map(Number);
+  const g=new Date(y,m-1,d);
+  g.setDate(g.getDate()-((g.getDay()+6)%7));
+  return g.getTime();
+}
+const DOW_NAMES=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+// dow: '' / null = no weekday filter; 0-6 (JS getDay, Sun=0) = only that weekday,
+// restricted to in-season sessions (on/after seasonStartMs()).
+function getDailyBreakdownRows(pos,name,fromMs,toMs,dow){
+  const dowNum=(dow===''||dow==null)?null:+dow;
+  const seasonMs=dowNum!=null?seasonStartMs():null;
   const dbPos=SLRU_POS_MAP[pos]||pos;
   const relevant=name?PLAYERS.filter(p=>p.name===name):PLAYERS.filter(p=>p.pos===dbPos);
   const byActivity={};
@@ -3378,6 +3401,7 @@ function getDailyBreakdownRows(pos,name,fromMs,toMs){
       if(ms==null)return;
       if(fromMs!=null&&ms<fromMs)return;
       if(toMs!=null&&ms>toMs)return;
+      if(dowNum!=null&&(ms<seasonMs||new Date(ms).getDay()!==dowNum))return;
       const displayName=canonicalActivityName(s.activityName)||'Untitled Activity';
       const key=`${s.date}__${displayName}`;
       if(!byActivity[key]){
@@ -3412,13 +3436,14 @@ window.renderDailyBreakdown=function(){
   const name=document.getElementById('dailybd-name-sel').value;
   const fromMs=inputDateToMs(document.getElementById('dailybd-from-sel').value);
   const toMs=inputDateToMs(document.getElementById('dailybd-to-sel').value);
+  const dow=document.getElementById('dailybd-dow-sel').value;
   if(!pos&&!name)return;
 
   const selPEl=document.getElementById('dailybd-pos-sel');
   selPEl.disabled=!!name;
   selPEl.style.opacity=name?0.45:1;
 
-  const titleLbl=name||pos;
+  const titleLbl=(name||pos)+(dow!==''?` — ${DOW_NAMES[+dow]}s (in-season)`:'');
   document.getElementById('dailybd-chart-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Daily Breakdown`;
   document.getElementById('dailybd-split-load-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Player Load (AU)`;
   document.getElementById('dailybd-split-hsd1216-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — HSD 12-16 mph (yd)`;
@@ -3426,8 +3451,8 @@ window.renderDailyBreakdown=function(){
   document.getElementById('dailybd-split-accel-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Accel Total Efforts`;
   document.getElementById('dailybd-split-decel-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Decel Total Efforts`;
 
-  const rows=getDailyBreakdownRows(pos,name,fromMs,toMs);
-  const mStats=dailyBdMetricStats(pos,name);
+  const rows=getDailyBreakdownRows(pos,name,fromMs,toMs,dow);
+  const mStats=dailyBdMetricStats(pos,name,dow);
   const labels=rows.map(r=>r.activityName);
   const loads=rows.map(r=>r.load);
   const accel=rows.map(r=>r.accel);
@@ -3560,7 +3585,7 @@ window.renderDailyBreakdown=function(){
 
   document.getElementById('dailybd-summary-body').innerHTML=rows.length
     ? rows.map(rowHTML).join('')
-    : `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">No activities for ${name?'this player':'this position'} in that date range.</td></tr>`;
+    : `<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--text3)">No activities for ${name?'this player':'this position'} in that date range${dow!==''?` on ${DOW_NAMES[+dow]}s`:''}.</td></tr>`;
 
   makeSortableTable('dailybd-summary-thead',[
     r=>r.ms,r=>r.activityName,r=>r.playerCount,r=>r.load,r=>r.dist,r=>r.maxV,r=>r.hsd1216,r=>r.hsd16,r=>r.accel,r=>r.decel
