@@ -681,7 +681,11 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
           <select class="data-sel" id="vald-weekly-sel" onchange="renderVALDWeekly()" style="min-width:240px"></select>
           <span id="vald-weekly-badge"></span>
         </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;font-family:var(--font-m);font-size:10px;color:var(--text2);cursor:pointer;user-select:none" title="PDF only: leave out Green and Building athletes"><input type="checkbox" id="vald-weekly-pdf-ry" style="accent-color:var(--uf-orange)">PDF: Red/Yellow only</label>
+          <button class="btn-export" id="vald-weekly-export-pdf" onclick="exportVALDWeeklyPDF()" style="font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:8px 14px;border-radius:var(--r);background:var(--surface2);border:1.5px solid var(--border2);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-type-pdf" style="font-size:13px"></i>Export PDF</button>
         <button class="btn-export" id="vald-weekly-export" onclick="exportVALDWeeklyCSV()" style="font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;padding:8px 14px;border-radius:var(--r);background:var(--surface2);border:1.5px solid var(--border2);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-file-export" style="font-size:13px"></i>Export CSV</button>
+        </div>
       </div>
       <div class="tbl-wrap">
         <table><thead><tr style="background:var(--uf-blue)">
@@ -4555,6 +4559,95 @@ window.renderVALDWeekly=async function(){
       }
     });
   });
+};
+
+// Print-ready PDF of the Weekly Report. Builds a standalone landscape-Letter document
+// in a hidden iframe and opens the browser's print dialog (choose "Save as PDF" or a
+// printer) — no PDF library needed, and it matches the on-screen report's colors.
+// "Red/Yellow only" leaves out Green AND Building athletes (nothing to act on).
+// Notes are read from the live text boxes, so unsaved edits still make it onto the page.
+window.exportVALDWeeklyPDF=function(){
+  const sel=document.getElementById('vald-weekly-sel');
+  if(!sel||!_wkrResults.length)return;
+  const ryOnly=document.getElementById('vald-weekly-pdf-ry').checked;
+  const TONE={GREEN:{c:'#2F8F5B',bg:'#E6F4EC'},YELLOW:{c:'#8F6209',bg:'#FAF1DA'},RED:{c:'#B3123A',bg:'#FBE6EC'},BUILDING:{c:'#5B6472',bg:'#ECEDEF'}};
+  const actionTone=a=>{
+    if(a.startsWith('Sports Medicine')||a.startsWith('S&C + Sports Medicine'))return'#B3123A';
+    if(a.startsWith('S&C staff')||a.startsWith('S&C / AT')||a.startsWith('S&C:'))return'#8F6209';
+    if(a.startsWith('Monitor'))return'#4A5160';
+    return'#7B8191';
+  };
+  const lvl=r=>r.status==='BUILDING'?'BUILDING':r.overall;
+  const liveNote=a=>{
+    const ta=[...document.querySelectorAll('#vald-weekly-table .wkr-note-input')].find(t=>t.dataset.athlete===a);
+    return ta?ta.value.trim():(_wkrNotesByAthlete[a]?.note||'');
+  };
+  const all=_wkrResults;
+  const shown=ryOnly?all.filter(r=>lvl(r)==='RED'||lvl(r)==='YELLOW'):all;
+  const cnt=k=>all.filter(r=>lvl(r)===k).length;
+  const weekLabel=sel.options[sel.selectedIndex]?.textContent||sel.value;
+  const E=wkrEsc;
+
+  const rowHtml=r=>{
+    const L=lvl(r),t=TONE[L];
+    const flagCell=`<td style="background:${t.bg};text-align:center"><div style="font-family:'DM Mono',monospace;font-weight:800;letter-spacing:.4px;color:${t.c}">${L}</div>${r.elevated&&L!=='BUILDING'?`<div style="font-size:8.5px;font-style:italic;color:${t.c}">elevated pattern</div>`:''}</td>`;
+    const note=liveNote(r.athlete);
+    const noteCell=`<td>${note?`<div class="note">${E(note)}</div>`:''}</td>`;
+    if(L==='BUILDING'){
+      return`<tr><td class="ath">${E(r.athlete)}</td><td colspan="2" style="color:#94A3B8">Insufficient baseline history — needs 3+ prior tests</td>${flagCell}<td style="color:${actionTone('Building')}">${E(r.suggestedAction)}</td>${noteCell}</tr>`;
+    }
+    const mc=l=>l==='RED'?TONE.RED.c:l==='YELLOW'?TONE.YELLOW.c:'inherit';
+    const flags=r.flags.length?r.flags.map(f=>`<div>${E(f[0])}</div>`).join(''):'—';
+    const pcts=r.flags.length?r.flags.map(f=>`<div class="mono" style="color:${mc(f[2])};font-weight:700;text-align:center">${E(f[1])}</div>`).join(''):'<div style="text-align:center">—</div>';
+    const at=actionTone(r.suggestedAction);
+    return`<tr><td class="ath">${E(r.athlete)}</td><td>${flags}</td><td>${pcts}</td>${flagCell}<td style="color:${at};font-weight:${at==='#B3123A'?700:400}">${E(r.suggestedAction)}</td>${noteCell}</tr>`;
+  };
+  const body=shown.length?shown.map(rowHtml).join(''):'<tr><td colspan="6" style="text-align:center;padding:24px;color:#94A3B8">No Red or Yellow flags this week.</td></tr>';
+  const omitted=ryOnly?`Red/Yellow only — ${cnt('GREEN')} Green and ${cnt('BUILDING')} Building athlete(s) not shown.`:'All athletes shown.';
+  const stamp=new Date().toLocaleString('en-US',{month:'numeric',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+
+  const doc=`<!doctype html><html><head><meta charset="utf-8"><title>CMJ Weekly Flag Report — ${E(sel.value)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+@page{size:Letter landscape;margin:0.4in}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Barlow',Arial,sans-serif;color:#0F1923;font-size:11px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.hdr{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #FA4616;padding-bottom:8px;margin-bottom:8px}
+h1{margin:0;font-family:'Barlow Condensed',Arial,sans-serif;font-size:24px;letter-spacing:.5px;text-transform:uppercase}
+.sub{font-family:'DM Mono',monospace;font-size:10px;color:#475569;margin-top:2px}
+.meta{font-family:'DM Mono',monospace;font-size:9px;color:#94A3B8;text-align:right}
+.pills{margin:8px 0 10px;font-family:'DM Mono',monospace;font-size:10px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.pills b{font-size:11px}
+.scope{color:#8F6209}
+table{width:100%;border-collapse:collapse}
+thead{display:table-header-group}
+thead th{background:#003087;color:#fff;font-family:'DM Mono',monospace;font-size:8.5px;letter-spacing:.8px;text-transform:uppercase;text-align:left;padding:7px 10px}
+tbody td{padding:7px 10px;border-bottom:1px solid #DDE3EE;vertical-align:top;font-size:11px}
+tr{break-inside:avoid;page-break-inside:avoid}
+.ath{font-weight:700;white-space:nowrap}
+.mono{font-family:'DM Mono',monospace}
+.note{border:1px solid #CBD5E1;border-radius:5px;background:#F8F9FB;padding:5px 7px;font-size:10.5px;line-height:1.35;white-space:pre-wrap}
+.foot{margin-top:8px;font-family:'DM Mono',monospace;font-size:8px;color:#94A3B8}
+</style></head><body>
+<div class="hdr"><div><h1>CMJ Weekly Flag Report</h1><div class="sub">${E(weekLabel)}</div></div>
+<div class="meta">Generated ${E(stamp)}${me&&me.full_name?' · '+E(me.full_name):''}<br>Florida Football S&amp;C</div></div>
+<div class="pills"><span style="color:#B3123A"><b>${cnt('RED')}</b> Red</span><span style="color:#8F6209"><b>${cnt('YELLOW')}</b> Yellow</span><span style="color:#2F8F5B"><b>${cnt('GREEN')}</b> Green</span><span style="color:#5B6472"><b>${cnt('BUILDING')}</b> Building</span><span class="scope">${E(omitted)}</span></div>
+<table><thead><tr><th>Athlete</th><th>Flagged Result(s)</th><th style="text-align:center">% Change</th><th style="text-align:center">Flag</th><th>Suggested Action</th><th style="width:24%">Notes</th></tr></thead><tbody>${body}</tbody></table>
+<div class="foot">Each athlete is compared to their own rolling baseline (up to 6 prior tests, minimum 3). Suggested Action is a monitoring and decision-support recommendation, not a diagnosis.</div>
+</body></html>`;
+
+  const fr=document.createElement('iframe');
+  fr.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(fr);
+  const w=fr.contentWindow;
+  w.document.open();w.document.write(doc);w.document.close();
+  const go=()=>{
+    try{w.focus();w.print();}catch(e){console.error('Weekly PDF print failed:',e);}
+    setTimeout(()=>fr.remove(),60000);
+  };
+  // Give webfonts a moment so the PDF doesn't fall back to Arial; print anyway if they stall.
+  const fonts=w.document.fonts&&w.document.fonts.ready;
+  Promise.race([fonts||Promise.resolve(),new Promise(r=>setTimeout(r,1500))]).then(()=>setTimeout(go,150));
 };
 
 window.exportVALDWeeklyCSV=function(){
