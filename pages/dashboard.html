@@ -1303,6 +1303,13 @@ function displayWk(wk){
 // team max velocity (over the MAX_PLAUSIBLE_VELOCITY_MPH ceiling; the other copy's max is
 // a plausible 21.57mph). 9d551be2-2a84-47e8-9347-90270e6f3142 (synced 10/05 17:38 UTC)
 // is the correct, first-synced copy.
+// 10/8/26: "South Carolina Tuesday" (10/06/2026) re-synced the same way — second copy
+// landed ~20 hours after the original (synced 10/07 12:59 UTC vs 10/06 16:35), 87 athletes
+// in each, near-identical load (38,057 vs 38,045) but 16% less team distance and a
+// physically-impossible 80.62mph team max velocity. 97f247e9-b484-459e-bceb-6181282be6bf
+// is the bad copy; c71157be-c876-4760-b1c3-cdc9f228203b (21.68mph) is the correct one.
+// From here on, pairs like this are also caught automatically (see AUTO DEDUPE below) —
+// this list stays as the explicit record of what has been confirmed by hand.
 const EXCLUDED_ACTIVITY_IDS=new Set([
   'ac90b579-1d7a-4bd7-ae7d-b17ccdb3b1a9',
   '809b793c-0013-4b22-aaaf-28b7d0382d71',
@@ -1316,19 +1323,65 @@ const EXCLUDED_ACTIVITY_IDS=new Set([
   'e1b4a96d-2c51-42ab-95b6-a4371c565b56',
   '33dd2782-4116-4b21-9d40-84bdc5e5e311',
   'bf9ba923-3adb-4a5c-9115-139f89a74c0d',
+  '97f247e9-b484-459e-bceb-6181282be6bf',
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
 let raw=[], _page=0, _done=false;
 while(!_done){
   const {data:chunk,error:eR2}=await SB.from('catapult_sessions')
-    .select('athlete_name,session_date,activity_name,catapult_activity_id,start_time,total_player_load,total_distance,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts,participation_tag,total_duration,max_accel,max_decel')
+    .select('athlete_name,session_date,activity_name,catapult_activity_id,start_time,total_player_load,total_distance,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts,participation_tag,total_duration,max_accel,max_decel,synced_at')
     .order('session_date',{ascending:true})
     .range(_page*1000,(_page+1)*1000-1);
   if(eR2||!chunk||chunk.length===0)_done=true;
   else{raw=[...raw,...chunk];if(chunk.length<1000)_done=true;_page++;}
 }
 raw=raw.filter(r=>!EXCLUDED_ACTIVITY_IDS.has(r.catapult_activity_id));
+
+// ── AUTO DEDUPE ───────────────────────────────────────────────────
+// Catapult sometimes re-syncs a finished session under a brand-new catapult_activity_id,
+// hours-to-days later (seen on FAU Tue/Fri, Ole Miss Mon/Wed, South Carolina Mon/Tue).
+// The second copy is always stale — it has less distance and an impossible max velocity —
+// and anywhere rows are grouped by date + activity name the two copies add together,
+// doubling every metric. Rule: for one athlete + date + activity name that exists under
+// more than one activity ID, keep only the FIRST-synced copy and drop the later ones —
+// but only if the later one landed at least 30 minutes afterwards, so two genuinely
+// separate sessions logged together aren't mistaken for a re-sync. Every drop is logged
+// to the console. An ID dropped for every athlete in it is added to AUTO_EXCLUDED_IDS so
+// the athlete-level pages (which load their own rows) can skip it too; STALE_PAIRS holds
+// each dropped athlete|activity-id for the period-level data. Confirmed cases are still
+// listed by hand in EXCLUDED_ACTIVITY_IDS above.
+const AUTO_EXCLUDED_IDS=new Set(), STALE_PAIRS=new Set();
+(function(){
+  const MIN_GAP_MS=30*60*1000;
+  const t=r=>{const v=r.synced_at?Date.parse(r.synced_at):NaN;return isNaN(v)?Infinity:v;};
+  const groups={};
+  raw.forEach(r=>{
+    const k=`${r.athlete_name}|${r.session_date}|${(r.activity_name||'').trim().toUpperCase()}`;
+    (groups[k]=groups[k]||[]).push(r);
+  });
+  const dropped=new Set(), idRows={}, idDropped={};
+  raw.forEach(r=>{idRows[r.catapult_activity_id]=(idRows[r.catapult_activity_id]||0)+1;});
+  Object.values(groups).forEach(g=>{
+    const ids=new Set(g.map(r=>r.catapult_activity_id));
+    if(ids.size<2)return;
+    const first=Math.min(...g.map(t));
+    g.forEach(r=>{
+      if(t(r)-first>=MIN_GAP_MS){
+        dropped.add(r);
+        STALE_PAIRS.add(`${r.athlete_name}|${r.catapult_activity_id}`);
+        idDropped[r.catapult_activity_id]=(idDropped[r.catapult_activity_id]||0)+1;
+      }
+    });
+  });
+  if(!dropped.size)return;
+  Object.keys(idDropped).forEach(id=>{if(idDropped[id]===idRows[id])AUTO_EXCLUDED_IDS.add(id);});
+  const summary={};
+  dropped.forEach(r=>{const k=`${r.session_date} ${r.activity_name} [${r.catapult_activity_id}]`;summary[k]=(summary[k]||0)+1;});
+  console.warn('[auto-dedupe] ignored later-synced duplicate Catapult copies (rows per copy):',summary);
+  raw=raw.filter(r=>!dropped.has(r));
+})();
+const isExcludedActivity=id=>EXCLUDED_ACTIVITY_IDS.has(id)||AUTO_EXCLUDED_IDS.has(id);
 const eR=null;
 const {data:aths}=await SB.from('athletes').select('name,position,weight_lbs,max_velocity_mph');
 if(!raw.length){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data returned from Supabase.</div>`;throw 0;}
@@ -2034,7 +2087,7 @@ window.openRosterAthlete=async function(name){
     .ilike('athlete_name',name)
     .gt('total_distance',0)
     .order('session_date',{ascending:false});
-  const sessions=(sessionsRaw||[]).filter(s=>!EXCLUDED_ACTIVITY_IDS.has(s.catapult_activity_id));
+  const sessions=(sessionsRaw||[]).filter(s=>!isExcludedActivity(s.catapult_activity_id));
 
   const sorted=(sessions||[]).sort((a,b)=>{
     const[am,ad,ay]=a.session_date.split('/').map(Number);
@@ -2793,7 +2846,7 @@ window.renderPeriodBreakdown=async function(){
     else if(!chunk||chunk.length===0){_pbDone=true;}
     else{periodRows=[...periodRows,...chunk];if(chunk.length<1000)_pbDone=true;_pbPage++;}
   }
-  periodRows=periodRows.filter(r=>!EXCLUDED_ACTIVITY_IDS.has(r.catapult_activity_id));
+  periodRows=periodRows.filter(r=>!isExcludedActivity(r.catapult_activity_id)&&!STALE_PAIRS.has(`${r.athlete_name}|${r.catapult_activity_id}`));
   const error=periodError;
 
   if(error||!periodRows){
@@ -5312,7 +5365,7 @@ async function renderIDP(name){
   }
 
   const{data:sessionsRaw}=await SB.from('catapult_sessions').select('session_date,catapult_activity_id,max_velocity').ilike('athlete_name',nameUp).order('session_date',{ascending:true}).limit(40);
-  const sessions=(sessionsRaw||[]).filter(s=>!EXCLUDED_ACTIVITY_IDS.has(s.catapult_activity_id));
+  const sessions=(sessionsRaw||[]).filter(s=>!isExcludedActivity(s.catapult_activity_id));
   if(sessions&&sessions.length){
     const f=sessions.filter(s=>+s.max_velocity>0);
     mk('idp-chart-maxv',{type:'line',data:{labels:f.map(s=>s.session_date),datasets:[{label:'Max Velocity',data:f.map(s=>+s.max_velocity),borderColor:C.acc,backgroundColor:C.acc,tension:.3,pointRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}}});
