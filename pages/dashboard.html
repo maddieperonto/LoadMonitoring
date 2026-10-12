@@ -915,6 +915,14 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     </div>
     <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-decel-inner" style="height:100%"><canvas id="dailybd-split-decel"></canvas></div></div>
   </div>
+  <div class="panel">
+    <div class="panel-title" id="dailybd-split-maxv-title"><i class="ti ti-chart-bar"></i>Max Velocity (mph)</div>
+    <div class="zone-legend" style="margin-bottom:10px">
+      <div class="zl"><div class="zl-dot" style="background:#FA4616"></div>Max Velocity</div>
+      <div class="zl"><div class="zl-dot" style="background:#94A3B8"></div>Mean</div>
+    </div>
+    <div class="chart-wrap" style="height:280px;overflow-x:auto"><div id="dailybd-split-maxv-inner" style="height:100%"><canvas id="dailybd-split-maxv"></canvas></div></div>
+  </div>
 </div>
 
 <!-- GAME BREAKDOWN -->
@@ -3276,7 +3284,7 @@ window.renderWeeklyBreakdown=function(){
 // catapult_activity_id (falling back to date+name for any legacy row missing that id) and
 // labeled with activity_name exactly as it's named in Catapult Cloud — no relabeling.
 let _dailyBdChart=null;
-let _dailyBdSplitLoadChart=null,_dailyBdSplitHsd1216Chart=null,_dailyBdSplitHsd16Chart=null,_dailyBdSplitAccelChart=null,_dailyBdSplitDecelChart=null;
+let _dailyBdSplitLoadChart=null,_dailyBdSplitMaxVChart=null,_dailyBdSplitHsd1216Chart=null,_dailyBdSplitHsd16Chart=null,_dailyBdSplitAccelChart=null,_dailyBdSplitDecelChart=null;
 
 // ── Z-SCORE / STD-DEV BANDS ─────────────────────────────────────────
 // Same visual language as the Relative Peak Power bands in VALD Testing: colored
@@ -3294,7 +3302,7 @@ function dailyBdMetricStats(pos,name,dow){
     const std=Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0)/vals.length);
     return{mean,std,max:Math.max(...vals)};
   };
-  return{load:stat('load'),hsd1216:stat('hsd1216'),hsd16:stat('hsd16'),accel:stat('accel'),decel:stat('decel')};
+  return{load:stat('load'),hsd1216:stat('hsd1216'),hsd16:stat('hsd16'),accel:stat('accel'),decel:stat('decel'),maxV:stat('maxV')};
 }
 function dailyBdAxisRange(stats){
   const hi=Math.max(stats.mean+3*stats.std,stats.max||0);
@@ -3516,6 +3524,7 @@ window.renderDailyBreakdown=function(){
   document.getElementById('dailybd-split-hsd16-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — HSD 16+ mph (yd)`;
   document.getElementById('dailybd-split-accel-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Accel Total Efforts`;
   document.getElementById('dailybd-split-decel-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Decel Total Efforts`;
+  document.getElementById('dailybd-split-maxv-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Max Velocity (mph)`;
 
   const rows=getDailyBreakdownRows(pos,name,fromMs,toMs,dow);
   const mStats=dailyBdMetricStats(pos,name,dow);
@@ -3525,6 +3534,7 @@ window.renderDailyBreakdown=function(){
   const decel=rows.map(r=>r.decel);
   const hsd1216=rows.map(r=>r.hsd1216);
   const hsd16=rows.map(r=>r.hsd16);
+  const maxV=rows.map(r=>r.maxV);
 
   const dlBaseMain={font:{size:9,family:'DM Mono',weight:'bold'},formatter:v=>v!=null?(Math.round(v*10)/10).toLocaleString():''};
   const dateTooltip=ctx=>rows[ctx[0].dataIndex]?.date||'';
@@ -3546,6 +3556,8 @@ window.renderDailyBreakdown=function(){
             datalabels:{...dlBaseMain,anchor:'end',align:'top',color:C.blue}},
           {type:'line',label:'Player Load',data:loads,yAxisID:'yLoad',fill:true,backgroundColor:'rgba(15,25,35,0.22)',borderColor:'#0F1923',borderWidth:2,pointRadius:3,pointBackgroundColor:'#0F1923',tension:.3,order:3,
             datalabels:{...dlBaseMain,anchor:'end',align:'top',offset:6,color:'#0F1923'}},
+          {type:'line',label:'Max Velocity',data:maxV,yAxisID:'yVelo',borderColor:C.acc,backgroundColor:C.acc,pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,tension:.3,order:2,
+            datalabels:{...dlBaseMain,anchor:'end',align:'top',offset:6,color:C.acc}},
           {type:'line',label:'Accel Total Efforts',data:accel,yAxisID:'yEfforts',borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
             datalabels:{...dlBaseMain,anchor:'start',align:'bottom',offset:4,color:C.green}},
           {type:'line',label:'Decel Total Efforts',data:decel,yAxisID:'yEfforts',borderColor:C.red,backgroundColor:C.red,pointRadius:3,pointBackgroundColor:C.red,borderWidth:2,borderDash:[4,3],tension:.3,order:0,
@@ -3573,6 +3585,7 @@ window.renderDailyBreakdown=function(){
           yHSD:{display:false,beginAtZero:true},
           yLoad:{display:false,beginAtZero:true},
           yEfforts:{display:false,beginAtZero:true},
+          yVelo:{display:false,beginAtZero:true},
         }
       }
     });
@@ -3586,6 +3599,7 @@ window.renderDailyBreakdown=function(){
   // band belongs to which metric. Splitting into separate charts removes that
   // overlap entirely and lets every panel use the same orange/red band language.
   if(_dailyBdSplitLoadChart){_dailyBdSplitLoadChart.destroy();_dailyBdSplitLoadChart=null;}
+  if(_dailyBdSplitMaxVChart){_dailyBdSplitMaxVChart.destroy();_dailyBdSplitMaxVChart=null;}
   if(_dailyBdSplitHsd1216Chart){_dailyBdSplitHsd1216Chart.destroy();_dailyBdSplitHsd1216Chart=null;}
   if(_dailyBdSplitHsd16Chart){_dailyBdSplitHsd16Chart.destroy();_dailyBdSplitHsd16Chart=null;}
   if(_dailyBdSplitAccelChart){_dailyBdSplitAccelChart.destroy();_dailyBdSplitAccelChart=null;}
@@ -3595,7 +3609,8 @@ window.renderDailyBreakdown=function(){
   const elHsd16=document.getElementById('dailybd-split-hsd16');
   const elAccel=document.getElementById('dailybd-split-accel');
   const elDecel=document.getElementById('dailybd-split-decel');
-  const splitEls=[elLoad,elHsd1216,elHsd16,elAccel,elDecel];
+  const elMaxV=document.getElementById('dailybd-split-maxv');
+  const splitEls=[elLoad,elHsd1216,elHsd16,elAccel,elDecel,elMaxV];
 
   if(!rows.length){
     splitEls.forEach(c=>{if(c){const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);}});
@@ -3607,21 +3622,36 @@ window.renderDailyBreakdown=function(){
 
     // Shared builder for every single-metric split chart — bands drawn directly
     // against that metric's own full-history mean/std, no other metric involved.
-    function buildDailyBdZChart(el,wrapInnerId,label,data,color){
+    // opts (Max Velocity only): asLine draws a line instead of bars; zoomAxis doesn't pin the
+    // y-axis to 0 so game-to-game slope stays readable; hideBands drops the SD shading;
+    // pctOfMax adds "(87.5%)" — % of pctBase, the athlete's Catapult Cloud max velocity.
+    // Same options as the Game Breakdown Max Velocity chart.
+    const pctOfMaxDlBase=(clr,maxVal)=>({font:{size:9,family:'DM Mono',weight:'bold'},color:clr,anchor:'end',align:'top',formatter:v=>{
+      if(v==null)return'';
+      const val=(Math.round(v*10)/10).toFixed(1);
+      if(!maxVal)return val;
+      return`${val} (${(v/maxVal*100).toFixed(1)}%)`;
+    }});
+    function buildDailyBdZChart(el,wrapInnerId,label,data,color,opts={}){
       sizeScrollChart(wrapInnerId,rows.length);
-      const stats=mStats[label.key],range=dailyBdAxisRange(stats);
+      const stats=mStats[label.key];
+      const range=opts.zoomAxis?zoomedAxisRange(stats,data):dailyBdAxisRange(stats);
+      const mainDs=opts.asLine
+        ?{type:'line',label:label.text,data,yAxisID:'y',borderColor:color,backgroundColor:color,pointRadius:3,pointBackgroundColor:color,borderWidth:2.5,tension:.35,fill:false,order:1,
+            datalabels:opts.pctOfMax?pctOfMaxDlBase(color,opts.pctBase??stats.max):dlBase(color)}
+        :{type:'bar',label:label.text,data,yAxisID:'y',backgroundColor:color,borderRadius:3,barPercentage:.55,order:1,
+            datalabels:dlBase(color)};
       return new Chart(el,{
         type:'bar',
         data:{labels,datasets:[
           meanDs(`${label.text} (mean)`,stats.mean,'#94A3B8'),
-          {type:'bar',label:label.text,data,yAxisID:'y',backgroundColor:color,borderRadius:3,barPercentage:.55,order:1,
-            datalabels:dlBase(color)},
+          mainDs,
         ]},
         plugins:[ChartDataLabels,zBandsPlugin],
         options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22}},
           plugins:{
             legend:{display:false},
-            zBands:{configs:[{yAxisID:'y',mean:stats.mean,std:stats.std,axisMin:range.axisMin,axisMax:range.axisMax}]},
+            zBands:{configs:opts.hideBands?[]:[{yAxisID:'y',mean:stats.mean,std:stats.std,axisMin:range.axisMin,axisMax:range.axisMax}]},
             tooltip:{filter:tooltipFilter,callbacks:{title:dateTooltip,label:dailyBdZTooltipLabel({[label.text]:stats})}}
           },
           scales:{x:xAxis,y:{min:range.axisMin,max:range.axisMax,ticks:{color:C.tick,font:{size:9,family:'DM Mono'}},grid:{color:C.grid}}}}
@@ -3633,6 +3663,7 @@ window.renderDailyBreakdown=function(){
     _dailyBdSplitHsd16Chart=buildDailyBdZChart(elHsd16,'dailybd-split-hsd16-inner',{key:'hsd16',text:'HSD 16+ mph'},hsd16,C.blue);
     _dailyBdSplitAccelChart=buildDailyBdZChart(elAccel,'dailybd-split-accel-inner',{key:'accel',text:'Accel Total Efforts'},accel,C.green);
     _dailyBdSplitDecelChart=buildDailyBdZChart(elDecel,'dailybd-split-decel-inner',{key:'decel',text:'Decel Total Efforts'},decel,C.red);
+    _dailyBdSplitMaxVChart=buildDailyBdZChart(elMaxV,'dailybd-split-maxv-inner',{key:'maxV',text:'Max Velocity'},maxV,C.acc,{asLine:true,pctOfMax:true,pctBase:gameBdProfileMaxV(pos,name),zoomAxis:true,hideBands:true});
   }
 
   // ── Daily Summary table ──
