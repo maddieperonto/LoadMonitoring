@@ -692,6 +692,14 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
           <th style="background:var(--uf-blue);color:#fff;border-bottom:none">Athlete</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Flagged Result(s)</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">% Change</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">Flag</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Suggested Action</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;min-width:220px">Notes</th>
         </tr></thead><tbody id="vald-weekly-table"></tbody></table>
       </div>
+      <div id="vald-weekly-unable" style="margin-top:14px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);padding:12px 14px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+          <div style="font-family:var(--font-d);font-size:13px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--text)">Unable to Test</div>
+          <div style="font-size:10px;color:var(--text3);font-family:var(--font-m)">Type names, one per line or comma-separated. Kept in this browser per test date and printed in the PDF.</div>
+        </div>
+        <textarea id="vald-weekly-unable-input" placeholder="e.g. John Smith, Jane Doe…" style="width:100%;min-height:54px;resize:vertical;font-family:var(--font-b);font-size:12px;padding:8px 10px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text)"></textarea>
+        <div id="vald-weekly-unable-status" style="font-size:9px;color:var(--text3);font-family:var(--font-m);margin-top:2px;min-height:11px"></div>
+      </div>
     </div>
   </div>
 
@@ -4529,6 +4537,9 @@ function wkrFmtSavedAt(iso){
   if(isNaN(d))return'';
   return d.toLocaleDateString(undefined,{month:'numeric',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
 }
+function wkrParseUnable(v){
+  return String(v||'').split(/[\n,;]+/).map(x=>x.trim()).filter(Boolean);
+}
 window.renderVALDWeekly=async function(){
   const sel=document.getElementById('vald-weekly-sel');
   if(sel.options.length===0){
@@ -4569,6 +4580,26 @@ window.renderVALDWeekly=async function(){
   if(notesErr)console.error('cmj_weekly_notes load failed:',notesErr.message);
   (notesData||[]).forEach(n=>{noteByAthlete[n.athlete_name]={note:n.note,updated_by:n.updated_by,updated_at:n.updated_at};});
   _wkrNotesByAthlete=noteByAthlete;
+
+  // "Unable to Test" — free-typed list of names for this test date. Not stored in
+  // Supabase: kept in this browser's localStorage (per test date) so it survives a
+  // refresh, and printed at the bottom of the PDF. Wrapped in try/catch in case
+  // storage is blocked — the PDF always reads the live text box either way.
+  const unableEl=document.getElementById('vald-weekly-unable-input');
+  const unableStatus=document.getElementById('vald-weekly-unable-status');
+  const unableKey='wkr_unable_'+date;
+  let unableStored='';
+  try{unableStored=localStorage.getItem(unableKey)||'';}catch(e){}
+  unableEl.value=unableStored;
+  unableStatus.textContent=unableStored?'Restored from this browser':'';
+  unableStatus.style.color='var(--text3)';
+  unableEl.oninput=()=>{
+    const val=unableEl.value;
+    try{
+      if(val.trim())localStorage.setItem(unableKey,val);else localStorage.removeItem(unableKey);
+      unableStatus.textContent='Saved in this browser';
+    }catch(e){unableStatus.textContent='Not saved (browser storage blocked) — still prints in the PDF';}
+  };
 
   const nRed=results.filter(r=>r.overall==='RED').length;
   const nYellow=results.filter(r=>r.overall==='YELLOW').length;
@@ -4709,6 +4740,9 @@ window.exportVALDWeeklyPDF=function(){
   const body=shown.length?shown.map(rowHtml).join(''):'<tr><td colspan="6" style="text-align:center;padding:24px;color:#94A3B8">No Red or Yellow flags this week.</td></tr>';
   const omitted=ryOnly?`Red/Yellow only — ${cnt('GREEN')} Green and ${cnt('BUILDING')} Building athlete(s) not shown.`:'All athletes shown.';
   const stamp=new Date().toLocaleString('en-US',{month:'numeric',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+  // Unable to Test names — split on newlines/commas/semicolons so they print as tidy chips.
+  const unableNames=wkrParseUnable((document.getElementById('vald-weekly-unable-input')||{}).value);
+  const unableHtml=`<div class="unable"><div class="unable-h">Unable to Test <span>(${unableNames.length})</span></div>${unableNames.length?`<div class="unable-names">${unableNames.map(n=>`<span class="chip">${E(n)}</span>`).join('')}</div>`:'<div class="unable-none">None</div>'}</div>`;
 
   const doc=`<!doctype html><html><head><meta charset="utf-8"><title>CMJ Weekly Flag Report — ${E(sel.value)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -4731,12 +4765,19 @@ tr{break-inside:avoid;page-break-inside:avoid}
 .ath{font-weight:700;white-space:nowrap}
 .mono{font-family:'DM Mono',monospace}
 .note{border:1px solid #CBD5E1;border-radius:5px;background:#F8F9FB;padding:5px 7px;font-size:10.5px;line-height:1.35;white-space:pre-wrap}
+.unable{margin-top:12px;border:1px solid #CBD5E1;border-radius:6px;padding:8px 10px;break-inside:avoid;page-break-inside:avoid}
+.unable-h{font-family:'Barlow Condensed',Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#003087;margin-bottom:5px}
+.unable-h span{font-family:'DM Mono',monospace;font-size:10px;color:#475569;font-weight:400}
+.unable-names{display:flex;flex-wrap:wrap;gap:5px}
+.chip{border:1px solid #CBD5E1;background:#F8F9FB;border-radius:10px;padding:2px 9px;font-size:10.5px;font-weight:600}
+.unable-none{font-size:10.5px;color:#94A3B8;font-style:italic}
 .foot{margin-top:8px;font-family:'DM Mono',monospace;font-size:8px;color:#94A3B8}
 </style></head><body>
 <div class="hdr"><div><h1>CMJ Weekly Flag Report</h1><div class="sub">${E(weekLabel)}</div></div>
 <div class="meta">Generated ${E(stamp)}${me&&me.full_name?' · '+E(me.full_name):''}<br>Florida Football S&amp;C</div></div>
 <div class="pills"><span style="color:#B3123A"><b>${cnt('RED')}</b> Red</span><span style="color:#8F6209"><b>${cnt('YELLOW')}</b> Yellow</span><span style="color:#2F8F5B"><b>${cnt('GREEN')}</b> Green</span><span style="color:#5B6472"><b>${cnt('BUILDING')}</b> Building</span><span class="scope">${E(omitted)}</span></div>
 <table><thead><tr><th>Athlete</th><th>Flagged Result(s)</th><th style="text-align:center">% Change</th><th style="text-align:center">Flag</th><th>Suggested Action</th><th style="width:24%">Notes</th></tr></thead><tbody>${body}</tbody></table>
+${unableHtml}
 <div class="foot">Each athlete is compared to their own rolling baseline (up to 6 prior tests, minimum 3). Suggested Action is a monitoring and decision-support recommendation, not a diagnosis.</div>
 </body></html>`;
 
@@ -4766,7 +4807,9 @@ window.exportVALDWeeklyCSV=function(){
     r.suggestedAction,
     _wkrNotesByAthlete[r.athlete]?.note||'',
   ]);
-  const csv=[headers,...rows].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const unable=wkrParseUnable((document.getElementById('vald-weekly-unable-input')||{}).value);
+  const extra=unable.length?[[],['Unable to Test',unable.join('; ')]]:[];
+  const csv=[headers,...rows,...extra].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
