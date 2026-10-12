@@ -1318,6 +1318,13 @@ function displayWk(wk){
 // is the bad copy; c71157be-c876-4760-b1c3-cdc9f228203b (21.68mph) is the correct one.
 // From here on, pairs like this are also caught automatically (see AUTO DEDUPE below) —
 // this list stays as the explicit record of what has been confirmed by hand.
+// 10/12/26: South Carolina week Thursday (10/08) and Friday (10/09) — each day was a
+// single athlete doing rehab work (1 row, ~110-116 player load), not a team practice,
+// so they don't belong in any breakdown or load number. They were tagged 'Full' rather
+// than 'Rehab' in Catapult, so the participation-tag filter didn't catch them, and each
+// day also synced twice under two activity IDs (all four IDs excluded here):
+//   10/08 "South Carolina Thursday": 5981eb27-4284-41b2-a7d1-47f1646afe3d, 93c50cc3-6d27-47d4-96f4-0eab74f1af52
+//   10/09 "fri":                     096a0aa1-50e2-4c82-abf8-9623d7b4ed75, 344fe2c9-245d-41a9-aa46-58e5642f0c4f
 const EXCLUDED_ACTIVITY_IDS=new Set([
   'ac90b579-1d7a-4bd7-ae7d-b17ccdb3b1a9',
   '809b793c-0013-4b22-aaaf-28b7d0382d71',
@@ -1332,6 +1339,10 @@ const EXCLUDED_ACTIVITY_IDS=new Set([
   '33dd2782-4116-4b21-9d40-84bdc5e5e311',
   'bf9ba923-3adb-4a5c-9115-139f89a74c0d',
   '97f247e9-b484-459e-bceb-6181282be6bf',
+  '5981eb27-4284-41b2-a7d1-47f1646afe3d',
+  '93c50cc3-6d27-47d4-96f4-0eab74f1af52',
+  '096a0aa1-50e2-4c82-abf8-9623d7b4ed75',
+  '344fe2c9-245d-41a9-aa46-58e5642f0c4f',
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
