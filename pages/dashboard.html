@@ -4157,8 +4157,26 @@ window.setVALDView=function(v){
 };
 
 async function loadVALD(){
-  const [{data:cmj},{data:nord}]=await Promise.all([
-  SB.from('cmj_tests').select('athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_peak_force_asymmetry_pct,eccentric_decel_rfd_bm,force_at_zero_velocity_n,relative_peak_power_w_bm,countermovement_depth_cm,bodyweight_kg').order('test_date',{ascending:false}).limit(1000),    SB.from('nordbord_tests').select('athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct').order('test_date',{ascending:false}).limit(1000)  ]);
+  // Pull EVERY VALD test since the start of 2025, not just the newest 1,000 rows.
+  // (cmj_tests is one row per TRIAL, so a flat .limit(1000) only reached back a few
+  // months.) Paged 1,000 at a time — Supabase caps a single response at 1,000 rows.
+  const VALD_SINCE='2025-01-01';
+  const vFetchAll=async(table,cols,orderCols)=>{
+    let out=[];
+    for(let pg=0;;pg++){
+      let q=SB.from(table).select(cols).gte('test_date',VALD_SINCE).order('test_date',{ascending:false});
+      orderCols.forEach(c=>{q=q.order(c,{ascending:true});});
+      const{data,error}=await q.range(pg*1000,pg*1000+999);
+      if(error){console.error(table+' load failed:',error.message);break;}
+      out=out.concat(data||[]);
+      if(!data||data.length<1000)break;
+    }
+    return out;
+  };
+  const [cmj,nord]=await Promise.all([
+    vFetchAll('cmj_tests','athlete_name,test_date,jump_height_cm,peak_force_n,peak_power_w,rsi_modified,concentric_impulse_ns,eccentric_decel_impulse_ns,eccentric_peak_force_left,eccentric_peak_force_right,eccentric_peak_force_asymmetry_pct,eccentric_decel_rfd_bm,force_at_zero_velocity_n,relative_peak_power_w_bm,countermovement_depth_cm,bodyweight_kg',['athlete_name','vald_test_id','trial_number']),
+    vFetchAll('nordbord_tests','athlete_name,test_date,left_peak_force_n,right_peak_force_n,lsi_pct',['athlete_name','vald_test_id'])
+  ]);
   cmjData=(cmj||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
   nordData=(nord||[]).map(r=>({...r,athlete_name:normName(r.athlete_name),pos:lkPos(normName(r.athlete_name)),unit:lkUnit(normName(r.athlete_name))}));
 

@@ -1,25 +1,22 @@
 name: VALD Nightly Sync
 
 # Two schedules, both in UTC (GitHub Actions cron has no timezone support):
-#   - '0 6 * * *'  — nightly catch-all, every day, ~1-2am Eastern. Keeps everything
-#     (CMJ, NordBord, any make-up/late testing) in sync even on non-testing days.
-#   - '0 19 * * 1' — Monday-only, 19:00 UTC. CMJ force plate testing wraps ~1:30pm
-#     Eastern every Monday; this fires a couple hours later so the data has time to
-#     land in VALD Cloud, and the Weekly Flag Report on the AMS is current same-day
-#     instead of waiting for the next nightly run. 19:00 UTC is 3:00pm Eastern during
-#     EDT (now) and 2:00pm Eastern during EST (after the Nov 1 2026 DST change) — both
-#     comfortably after 1:30pm either way, so this doesn't need updating across the
-#     DST switch.
-# vald_sync.R itself isn't date-bound to "today" — each run picks up everything
-# modified since the last synced test, regardless of what time it runs — so adding a
-# second scheduled run is safe and won't double-sync or skip anything.
-# Can also be fired on demand any time via the "Run workflow" button below
-# (Actions tab → VALD Nightly Sync → Run workflow), e.g. right after testing today.
+#   - '0 6 * * *'  — nightly catch-all, every day, ~1-2am Eastern.
+#   - '0 19 * * 1' — Monday-only, 19:00 UTC (3pm EDT / 2pm EST), after CMJ testing wraps.
+# Can also be fired on demand via Actions tab → VALD Nightly Sync → Run workflow.
+# Optional "from_date" (YYYY-MM-DD) on a manual run re-pulls VALD history from that date
+# (e.g. 2025-01-01) instead of only "since the last synced test". Safe to repeat — rows
+# upsert on VALD test id. Leave it blank for a normal sync; scheduled runs never set it.
 on:
   schedule:
     - cron: '0 6 * * *'
     - cron: '0 19 * * 1'
   workflow_dispatch:
+    inputs:
+      from_date:
+        description: 'Backfill from this date (YYYY-MM-DD), e.g. 2025-01-01. Leave blank for normal sync.'
+        required: false
+        default: ''
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -43,6 +40,7 @@ jobs:
           VALD_DUENDE_ID: ${{ secrets.VALD_DUENDE_ID }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          VALD_FROM_DATE: ${{ github.event.inputs.from_date }}
         run: |
           Rscript -e "install.packages(c('httr2','jsonlite','dplyr','lubridate','stringr'), repos='https://packagemanager.posit.co/cran/__linux__/noble/latest')"
           Rscript scripts/vald_sync.R

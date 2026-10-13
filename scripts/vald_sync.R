@@ -100,6 +100,19 @@ get_last_sync <- function(table, date_col) {
   as.POSIXct(rows[[date_col]][1], format = "%Y-%m-%d", tz = "UTC")
 }
 
+# ── Optional backfill start date ──────────────────────────────────────────
+# Normally each run only pulls tests modified since the last synced test_date. Setting
+# VALD_FROM_DATE (YYYY-MM-DD; the "from_date" box on the workflow's Run workflow button)
+# overrides that start for BOTH ForceDecks and NordBord so older history can be loaded,
+# e.g. 2025-01-01. Safe to re-run: rows upsert on their VALD test id, so nothing doubles.
+from_override <- NULL
+.fo <- trimws(Sys.getenv("VALD_FROM_DATE", ""))
+if (nzchar(.fo)) {
+  from_override <- as.POSIXct(paste0(.fo, "T00:00:00Z"), format = "%Y-%m-%dT%H:%M:%SZ", tz = "UTC")
+  if (is.na(from_override)) stop("[VALD Sync] VALD_FROM_DATE must look like 2025-01-01, got: ", .fo)
+  cat("[VALD Sync] VALD_FROM_DATE override in effect:", .fo, "\n")
+}
+
 # ── Step 2: Fetch profiles ────────────────────────────────────────────────
 cat("[VALD Sync] Fetching athlete profiles...\n")
 profiles_raw <- vald_get("/profiles", query = list(tenantId = VALD_TENANT_ID), base_url = VALD_PROF_BASE)
@@ -145,7 +158,8 @@ if (!is.null(rd_raw) && length(rd_raw) > 0) {
 cat("[VALD Sync] Fetching ForceDecks tests...\n")
 last_cmj <- get_last_sync("cmj_tests", "test_date")
 from_utc <- format(
-  if (is.null(last_cmj)) as.POSIXct("2026-01-01T00:00:00Z", tz = "UTC") else last_cmj - days(1),
+  if (!is.null(from_override)) from_override
+  else if (is.null(last_cmj)) as.POSIXct("2026-01-01T00:00:00Z", tz = "UTC") else last_cmj - days(1),
   "%Y-%m-%dT%H:%M:%SZ"
 )
 cat("[VALD Sync] ForceDecks from:", from_utc, "\n")
@@ -323,7 +337,8 @@ if (!is.null(fd_raw) && nrow(fd_raw) > 0) {
 cat("[VALD Sync] Fetching NordBord tests...\n")
 last_nord   <- get_last_sync("nordbord_tests", "test_date")
 from_utc_nb <- format(
-  if (is.null(last_nord)) as.POSIXct("2026-01-01T00:00:00Z", tz = "UTC") else last_nord - days(1),
+  if (!is.null(from_override)) from_override
+  else if (is.null(last_nord)) as.POSIXct("2026-01-01T00:00:00Z", tz = "UTC") else last_nord - days(1),
   "%Y-%m-%dT%H:%M:%SZ"
 )
 cat("[VALD Sync] NordBord from:", from_utc_nb, "\n")
