@@ -865,7 +865,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div id="dailybd-summary-wrap" style="display:none">
       <div class="tbl-wrap"><table class="sesscmp-tbl"><thead id="dailybd-summary-thead"><tr>
         <th>Date</th><th>Activity</th><th>Players</th><th>Player Load</th><th>Distance (y)</th>
-        <th>Max Vel</th><th>HSD 12-16</th><th>HSD 16+</th><th>Accel Eff</th><th>Decel Eff</th>
+        <th title="Average of each athlete's top speed in the activity">Avg Max Vel</th><th>HSD 12-16</th><th>HSD 16+</th><th>Accel Eff</th><th>Decel Eff</th>
       </tr></thead><tbody id="dailybd-summary-body"></tbody></table></div>
     </div>
   </div>
@@ -3499,7 +3499,7 @@ function getDailyBreakdownRows(pos,name,fromMs,toMs,dow){
       const key=`${s.date}__${displayName}`;
       if(!byActivity[key]){
         byActivity[key]={key,date:s.date,ms,startTime:s.startTime,activityName:displayName,
-          players:new Set(),load:0,dist:0,hsd1216:0,hsd16:0,accel:0,decel:0,maxV:0};
+          players:new Set(),load:0,dist:0,hsd1216:0,hsd16:0,accel:0,decel:0,maxVByPlayer:new Map()};
       }
       const a=byActivity[key];
       if(s.startTime&&(!a.startTime||s.startTime<a.startTime))a.startTime=s.startTime;
@@ -3507,19 +3507,23 @@ function getDailyBreakdownRows(pos,name,fromMs,toMs,dow){
       a.load+=s.load||0;a.dist+=s.dist||0;
       a.hsd1216+=s.hsr12||0;a.hsd16+=s.hsr||0;
       a.accel+=s.accel||0;a.decel+=s.decel||0;
-      if((s.maxV||0)>a.maxV)a.maxV=s.maxV;
+      // Max velocity is each athlete's own top speed in the activity; the group value is
+      // the AVERAGE of those (matches OpenField's position-group average), not the single
+      // fastest player. Athletes with no valid reading (0) are left out of the average.
+      if((s.maxV||0)>(a.maxVByPlayer.get(p.name)||0))a.maxVByPlayer.set(p.name,s.maxV);
     });
   });
   return Object.values(byActivity)
     .sort((a,b)=>(a.ms-b.ms)||(a.startTime||'').localeCompare(b.startTime||''))
     .map(a=>{
       const n=a.players.size;
+      const mv=[...a.maxVByPlayer.values()].filter(v=>v>0);
       return{
         date:a.date,ms:a.ms,activityName:a.activityName,playerCount:n,
         load:n?a.load/n:null,dist:n?a.dist/n:null,
         hsd1216:n?a.hsd1216/n:null,hsd16:n?a.hsd16/n:null,
         accel:n?a.accel/n:null,decel:n?a.decel/n:null,
-        maxV:a.maxV>0?a.maxV:null,
+        maxV:mv.length?mv.reduce((x,y)=>x+y,0)/mv.length:null,
       };
     });
 }
@@ -3543,7 +3547,8 @@ window.renderDailyBreakdown=function(){
   document.getElementById('dailybd-split-hsd16-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — HSD 16+ mph (yd)`;
   document.getElementById('dailybd-split-accel-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Accel Total Efforts`;
   document.getElementById('dailybd-split-decel-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Decel Total Efforts`;
-  document.getElementById('dailybd-split-maxv-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — Max Velocity (mph)`;
+  const mvLbl=name?'Max Velocity':'Avg Max Velocity';
+  document.getElementById('dailybd-split-maxv-title').innerHTML=`<i class="ti ti-chart-bar"></i>${titleLbl} — ${mvLbl} (mph)`;
 
   const rows=getDailyBreakdownRows(pos,name,fromMs,toMs,dow);
   const mStats=dailyBdMetricStats(pos,name,dow);
@@ -3575,7 +3580,7 @@ window.renderDailyBreakdown=function(){
             datalabels:{...dlBaseMain,anchor:'end',align:'top',color:C.blue}},
           {type:'line',label:'Player Load',data:loads,yAxisID:'yLoad',fill:true,backgroundColor:'rgba(15,25,35,0.22)',borderColor:'#0F1923',borderWidth:2,pointRadius:3,pointBackgroundColor:'#0F1923',tension:.3,order:3,
             datalabels:{...dlBaseMain,anchor:'end',align:'top',offset:6,color:'#0F1923'}},
-          {type:'line',label:'Max Velocity',data:maxV,yAxisID:'yVelo',borderColor:C.acc,backgroundColor:C.acc,pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,tension:.3,order:2,
+          {type:'line',label:(name?'Max Velocity':'Avg Max Velocity'),data:maxV,yAxisID:'yVelo',borderColor:C.acc,backgroundColor:C.acc,pointRadius:3,pointBackgroundColor:C.acc,borderWidth:2,tension:.3,order:2,
             datalabels:{...dlBaseMain,anchor:'end',align:'top',offset:6,color:C.acc}},
           {type:'line',label:'Accel Total Efforts',data:accel,yAxisID:'yEfforts',borderColor:C.green,backgroundColor:C.green,pointRadius:3,pointBackgroundColor:C.green,borderWidth:2,tension:.3,order:1,
             datalabels:{...dlBaseMain,anchor:'start',align:'bottom',offset:4,color:C.green}},
@@ -3682,7 +3687,7 @@ window.renderDailyBreakdown=function(){
     _dailyBdSplitHsd16Chart=buildDailyBdZChart(elHsd16,'dailybd-split-hsd16-inner',{key:'hsd16',text:'HSD 16+ mph'},hsd16,C.blue);
     _dailyBdSplitAccelChart=buildDailyBdZChart(elAccel,'dailybd-split-accel-inner',{key:'accel',text:'Accel Total Efforts'},accel,C.green);
     _dailyBdSplitDecelChart=buildDailyBdZChart(elDecel,'dailybd-split-decel-inner',{key:'decel',text:'Decel Total Efforts'},decel,C.red);
-    _dailyBdSplitMaxVChart=buildDailyBdZChart(elMaxV,'dailybd-split-maxv-inner',{key:'maxV',text:'Max Velocity'},maxV,C.acc,{asLine:true,pctOfMax:true,pctBase:gameBdProfileMaxV(pos,name),zoomAxis:true,hideBands:true});
+    _dailyBdSplitMaxVChart=buildDailyBdZChart(elMaxV,'dailybd-split-maxv-inner',{key:'maxV',text:mvLbl},maxV,C.acc,{asLine:true,pctOfMax:true,pctBase:dailyBdProfileMaxV(pos,name),zoomAxis:true,hideBands:true});
   }
 
   // ── Daily Summary table ──
@@ -3794,6 +3799,16 @@ function gameBdProfileMaxV(pos,name){
   const relevant=name?PLAYERS.filter(p=>p.name===name):PLAYERS.filter(p=>p.pos===dbPos);
   const vals=relevant.map(p=>athMaxVelMap[p.name]).filter(v=>v!=null&&v>0);
   return vals.length?Math.max(...vals):null;
+}
+
+// Daily Breakdown version of the above: the daily Max Velocity value for a position
+// group is an AVERAGE of the athletes' top speeds, so "% of max" compares it to the
+// AVERAGE profile max of the same group (one athlete selected = their own profile max).
+function dailyBdProfileMaxV(pos,name){
+  const dbPos=SLRU_POS_MAP[pos]||pos;
+  const relevant=name?PLAYERS.filter(p=>p.name===name):PLAYERS.filter(p=>p.pos===dbPos);
+  const vals=relevant.map(p=>athMaxVelMap[p.name]).filter(v=>v!=null&&v>0);
+  return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
 }
 
 // Same idea as dailyBdMetricStats, but the baseline is games only — mixing in
