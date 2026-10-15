@@ -3145,7 +3145,7 @@ function getWeeklyBreakdownRows(pos,name){
   const dbPos=SLRU_POS_MAP[pos]||pos;
   const relevant=name?PLAYERS.filter(p=>p.name===name):PLAYERS.filter(p=>p.pos===dbPos);
   return SLRU_WEEKS.map(wk=>{
-    const nonRehab=p=>p.sessions.filter(s=>s.wk===wk&&s.tag!=='Rehab');
+    const nonRehab=p=>p.sessions.filter(s=>s.wk===wk&&s.tag!=='Rehab'&&(name||!isGroupViewExcluded(s,p.name)));
     const active=relevant.filter(p=>nonRehab(p).length>0);
     const sum=field=>relevant.reduce((t,p)=>t+nonRehab(p).reduce((st,s)=>st+(s[field]||0),0),0);
     const avg=field=>active.length?sum(field)/active.length:null;
@@ -3470,6 +3470,20 @@ function canonicalActivityName(name){
   return mapped||name;
 }
 
+// Sessions that count for an individual athlete but should NOT be mixed into POSITION-GROUP
+// Daily/Weekly Breakdown averages (e.g. a single athlete doing return-to-play work on a
+// day the rest of the group wasn't in a practice). Picking that athlete by name still
+// shows the session. Matched on the activity name (case/punctuation-insensitive,
+// "contains") for the listed athletes only, so anyone else who took part in an activity
+// of that name still counts.
+const GROUP_VIEW_EXCLUSIONS=[
+  {athlete:'VERNELL BROWN III',activity:'TEXAS THURSDAY'}, // RTP work only, Thu 10/15/2026
+];
+function isGroupViewExcluded(sess,athleteName){
+  const act=normActivityKey(sess.activityName);
+  return GROUP_VIEW_EXCLUSIONS.some(x=>x.athlete===athleteName&&act.includes(x.activity));
+}
+
 // Start of the in-season window used by the weekday filter: the Monday of the FAU
 // gameweek (GAME_SCHEDULE[0], Week 1), so fall camp isn't mixed into "Mondays" etc.
 function seasonStartMs(){
@@ -3490,6 +3504,7 @@ function getDailyBreakdownRows(pos,name,fromMs,toMs,dow){
   relevant.forEach(p=>{
     p.sessions.forEach(s=>{
       if(s.tag==='Rehab')return;
+      if(!name&&isGroupViewExcluded(s,p.name))return;
       const ms=dateToMs(s.date);
       if(ms==null)return;
       if(fromMs!=null&&ms<fromMs)return;
