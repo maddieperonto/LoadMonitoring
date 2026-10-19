@@ -3475,13 +3475,14 @@ function canonicalActivityName(name){
 // day the rest of the group wasn't in a practice). Picking that athlete by name still
 // shows the session. Matched on the activity name (case/punctuation-insensitive,
 // "contains") for the listed athletes only, so anyone else who took part in an activity
-// of that name still counts.
+// of that name still counts. Optional `date` (MM/DD/YYYY) limits a rule to that day.
 const GROUP_VIEW_EXCLUSIONS=[
   {athlete:'VERNELL BROWN III',activity:'TEXAS THURSDAY'}, // RTP work only, Thu 10/15/2026
+  {athlete:'VERNELL BROWN III',activity:'RTP',date:'10/16/2026'}, // "RTP Oct 16" — his RTP only
 ];
 function isGroupViewExcluded(sess,athleteName){
   const act=normActivityKey(sess.activityName);
-  return GROUP_VIEW_EXCLUSIONS.some(x=>x.athlete===athleteName&&act.includes(x.activity));
+  return GROUP_VIEW_EXCLUSIONS.some(x=>x.athlete===athleteName&&act.includes(x.activity)&&(!x.date||sess.date===x.date));
 }
 
 // Start of the in-season window used by the weekday filter: the Monday of the FAU
