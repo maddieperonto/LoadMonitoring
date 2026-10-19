@@ -671,8 +671,8 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel">
       <div class="panel-title"><i class="ti ti-flag"></i>CMJ Weekly Flag Report</div>
       <div style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-bottom:14px;max-width:900px;line-height:1.5">
-        Each athlete is compared only to their own rolling baseline (up to 6 most recent prior tests, minimum 3 required).
-        Jump height, relative peak power, and RSI-mod are flagged on % change and z-score vs. that baseline; asymmetry
+        Athletes tested are primarily starters and backups, not scout team players. Each athlete is compared only to their own rolling baseline
+        (up to 6 most recent prior tests, minimum 3 required). Jump height, relative peak power, and RSI-mod are flagged on % change and z-score vs. that baseline; asymmetry
         is flagged at a flat |10%| threshold with the weaker side named. This report is a monitoring and
         decision-support tool, not a diagnostic one.
       </div>
@@ -4822,7 +4822,7 @@ tr{break-inside:avoid;page-break-inside:avoid}
 <div class="pills"><span style="color:#B3123A"><b>${cnt('RED')}</b> Red</span><span style="color:#8F6209"><b>${cnt('YELLOW')}</b> Yellow</span><span style="color:#2F8F5B"><b>${cnt('GREEN')}</b> Green</span><span style="color:#5B6472"><b>${cnt('BUILDING')}</b> Building</span><span class="scope">${E(omitted)}</span></div>
 <table><thead><tr><th>Athlete</th><th>Flagged Result(s)</th><th style="text-align:center">% Change</th><th style="text-align:center">Flag</th><th style="width:34%">Notes</th></tr></thead><tbody>${body}</tbody></table>
 ${unableHtml}
-<div class="foot">Each athlete is compared to their own rolling baseline (up to 6 prior tests, minimum 3). This report is a monitoring and decision-support tool, not a diagnosis.</div>
+<div class="foot">Athletes tested are primarily starters and backups, not scout team players. Each athlete is compared to their own rolling baseline (up to 6 prior tests, minimum 3). This report is a monitoring and decision-support tool, not a diagnosis.</div>
 </body></html>`;
 
   const fr=document.createElement('iframe');
