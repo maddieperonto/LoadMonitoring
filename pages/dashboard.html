@@ -673,8 +673,8 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       <div style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-bottom:14px;max-width:900px;line-height:1.5">
         Each athlete is compared only to their own rolling baseline (up to 6 most recent prior tests, minimum 3 required).
         Jump height, relative peak power, and RSI-mod are flagged on % change and z-score vs. that baseline; asymmetry
-        is flagged at a flat |10%| threshold with the weaker side named. Suggested Action is a routing recommendation
-        generated from the flag pattern — it is a monitoring and decision-support tool, not a diagnostic one.
+        is flagged at a flat |10%| threshold with the weaker side named. This report is a monitoring and
+        decision-support tool, not a diagnostic one.
       </div>
       <div class="sel-row" style="justify-content:space-between">
         <div class="sel-row" style="margin-bottom:0">
@@ -689,7 +689,7 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
       </div>
       <div class="tbl-wrap">
         <table><thead><tr style="background:var(--uf-blue)">
-          <th style="background:var(--uf-blue);color:#fff;border-bottom:none">Athlete</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Flagged Result(s)</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">% Change</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">Flag</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Suggested Action</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;min-width:220px">Notes</th>
+          <th style="background:var(--uf-blue);color:#fff;border-bottom:none">Athlete</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none">Flagged Result(s)</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">% Change</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;text-align:center">Flag</th><th style="background:var(--uf-blue);color:#fff;border-bottom:none;min-width:220px">Notes</th>
         </tr></thead><tbody id="vald-weekly-table"></tbody></table>
       </div>
       <div id="vald-weekly-unable" style="margin-top:14px;border:1px solid var(--border2);border-radius:var(--r);background:var(--surface);padding:12px 14px">
@@ -4605,7 +4605,7 @@ window.renderVALDWeekly=async function(){
   }
   if(sel.options.length===0){
     document.getElementById('vald-weekly-badge').innerHTML='';
-    document.getElementById('vald-weekly-table').innerHTML='<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No CMJ testing data found.</td></tr>';
+    document.getElementById('vald-weekly-table').innerHTML='<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text3);font-family:var(--font-m);font-size:12px">No CMJ testing data found.</td></tr>';
     return;
   }
   const date=sel.value||sel.options[0].value;
@@ -4693,24 +4693,20 @@ window.renderVALDWeekly=async function(){
 
   document.getElementById('vald-weekly-table').innerHTML=results.map(r=>{
     if(r.status==='BUILDING'){
-      const tone=wkrActionTone('Building');
       return`<tr>
         <td style="font-weight:600">${r.athlete}</td>
         <td colspan="2" style="color:var(--text3);font-size:12px">Insufficient baseline history — needs 3+ prior tests</td>
         ${flagCellHtml('BUILDING',false)}
-        <td style="color:${tone};font-size:12px;white-space:normal;max-width:300px">${r.suggestedAction}</td>
         ${noteCellHtml(r.athlete)}
       </tr>`;
     }
     const metricColor=lvl=>lvl==='RED'?WKR_TONE.RED.c:lvl==='YELLOW'?WKR_TONE.YELLOW.c:'inherit';
     const flagsHtml=r.flags.length?r.flags.map(f=>`<div>${f[0]}</div>`).join(''):'—';
     const pctHtml=r.flags.length?r.flags.map(f=>`<div class="mono" style="color:${metricColor(f[2])};font-weight:700;text-align:center">${f[1]}</div>`).join(''):'<div style="text-align:center">—</div>';
-    const actionTone=wkrActionTone(r.suggestedAction);
     return`<tr>
       <td style="font-weight:600">${r.athlete}</td>
       <td>${flagsHtml}</td><td>${pctHtml}</td>
       ${flagCellHtml(r.overall,r.elevated)}
-      <td style="color:${actionTone};font-size:12px;font-weight:${actionTone==='#B3123A'?700:400};white-space:normal;max-width:300px">${r.suggestedAction}</td>
       ${noteCellHtml(r.athlete)}
     </tr>`;
   }).join('');
@@ -4778,15 +4774,14 @@ window.exportVALDWeeklyPDF=function(){
     const note=liveNote(r.athlete);
     const noteCell=`<td>${note?`<div class="note">${E(note)}</div>`:''}</td>`;
     if(L==='BUILDING'){
-      return`<tr><td class="ath">${E(r.athlete)}</td><td colspan="2" style="color:#94A3B8">Insufficient baseline history — needs 3+ prior tests</td>${flagCell}<td style="color:${actionTone('Building')}">${E(r.suggestedAction)}</td>${noteCell}</tr>`;
+      return`<tr><td class="ath">${E(r.athlete)}</td><td colspan="2" style="color:#94A3B8">Insufficient baseline history — needs 3+ prior tests</td>${flagCell}${noteCell}</tr>`;
     }
     const mc=l=>l==='RED'?TONE.RED.c:l==='YELLOW'?TONE.YELLOW.c:'inherit';
     const flags=r.flags.length?r.flags.map(f=>`<div>${E(f[0])}</div>`).join(''):'—';
     const pcts=r.flags.length?r.flags.map(f=>`<div class="mono" style="color:${mc(f[2])};font-weight:700;text-align:center">${E(f[1])}</div>`).join(''):'<div style="text-align:center">—</div>';
-    const at=actionTone(r.suggestedAction);
-    return`<tr><td class="ath">${E(r.athlete)}</td><td>${flags}</td><td>${pcts}</td>${flagCell}<td style="color:${at};font-weight:${at==='#B3123A'?700:400}">${E(r.suggestedAction)}</td>${noteCell}</tr>`;
+    return`<tr><td class="ath">${E(r.athlete)}</td><td>${flags}</td><td>${pcts}</td>${flagCell}${noteCell}</tr>`;
   };
-  const body=shown.length?shown.map(rowHtml).join(''):'<tr><td colspan="6" style="text-align:center;padding:24px;color:#94A3B8">No Red or Yellow flags this week.</td></tr>';
+  const body=shown.length?shown.map(rowHtml).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:#94A3B8">No Red or Yellow flags this week.</td></tr>';
   const omitted=ryOnly?`Red/Yellow only — ${cnt('GREEN')} Green and ${cnt('BUILDING')} Building athlete(s) not shown.`:'All athletes shown.';
   const stamp=new Date().toLocaleString('en-US',{month:'numeric',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
   // Unable to Test names — split on newlines/commas/semicolons so they print as tidy chips.
@@ -4825,9 +4820,9 @@ tr{break-inside:avoid;page-break-inside:avoid}
 <div class="hdr"><div><h1>CMJ Weekly Flag Report</h1><div class="sub">${E(weekLabel)}</div></div>
 <div class="meta">Generated ${E(stamp)}${me&&me.full_name?' · '+E(me.full_name):''}<br>Florida Football S&amp;C</div></div>
 <div class="pills"><span style="color:#B3123A"><b>${cnt('RED')}</b> Red</span><span style="color:#8F6209"><b>${cnt('YELLOW')}</b> Yellow</span><span style="color:#2F8F5B"><b>${cnt('GREEN')}</b> Green</span><span style="color:#5B6472"><b>${cnt('BUILDING')}</b> Building</span><span class="scope">${E(omitted)}</span></div>
-<table><thead><tr><th>Athlete</th><th>Flagged Result(s)</th><th style="text-align:center">% Change</th><th style="text-align:center">Flag</th><th>Suggested Action</th><th style="width:24%">Notes</th></tr></thead><tbody>${body}</tbody></table>
+<table><thead><tr><th>Athlete</th><th>Flagged Result(s)</th><th style="text-align:center">% Change</th><th style="text-align:center">Flag</th><th style="width:34%">Notes</th></tr></thead><tbody>${body}</tbody></table>
 ${unableHtml}
-<div class="foot">Each athlete is compared to their own rolling baseline (up to 6 prior tests, minimum 3). Suggested Action is a monitoring and decision-support recommendation, not a diagnosis.</div>
+<div class="foot">Each athlete is compared to their own rolling baseline (up to 6 prior tests, minimum 3). This report is a monitoring and decision-support tool, not a diagnosis.</div>
 </body></html>`;
 
   const fr=document.createElement('iframe');
@@ -4847,13 +4842,12 @@ ${unableHtml}
 window.exportVALDWeeklyCSV=function(){
   const sel=document.getElementById('vald-weekly-sel');
   if(!sel||!_wkrResults.length)return;
-  const headers=['Athlete','Position','Flagged Result(s)','% Change','Flag','Suggested Action','Notes'];
+  const headers=['Athlete','Position','Flagged Result(s)','% Change','Flag','Notes'];
   const rows=_wkrResults.map(r=>[
     r.athlete,lkPos(r.athlete),
     r.status==='BUILDING'?r.suggestedAction:(r.flags.map(f=>f[0]).join(' | ')||''),
     r.status==='BUILDING'?'':(r.flags.map(f=>f[1]).join(' | ')||''),
     r.status==='BUILDING'?'BUILDING':r.overall,
-    r.suggestedAction,
     _wkrNotesByAthlete[r.athlete]?.note||'',
   ]);
   const unable=wkrParseUnable((document.getElementById('vald-weekly-unable-input')||{}).value);
