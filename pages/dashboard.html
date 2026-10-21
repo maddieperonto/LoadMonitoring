@@ -4816,13 +4816,14 @@ tr{break-inside:avoid;page-break-inside:avoid}
 .chip{border:1px solid #CBD5E1;background:#F8F9FB;border-radius:10px;padding:2px 9px;font-size:10.5px;font-weight:600}
 .unable-none{font-size:10.5px;color:#94A3B8;font-style:italic}
 .foot{margin-top:8px;font-family:'DM Mono',monospace;font-size:8px;color:#94A3B8}
+.intro{margin:0 0 10px;font-family:'DM Mono',monospace;font-size:8.5px;line-height:1.5;color:#475569;max-width:100%}
 </style></head><body>
 <div class="hdr"><div><h1>CMJ Weekly Flag Report</h1><div class="sub">${E(weekLabel)}</div></div>
 <div class="meta">Generated ${E(stamp)}${me&&me.full_name?' · '+E(me.full_name):''}<br>Florida Football S&amp;C</div></div>
 <div class="pills"><span style="color:#B3123A"><b>${cnt('RED')}</b> Red</span><span style="color:#8F6209"><b>${cnt('YELLOW')}</b> Yellow</span><span style="color:#2F8F5B"><b>${cnt('GREEN')}</b> Green</span><span style="color:#5B6472"><b>${cnt('BUILDING')}</b> Building</span><span class="scope">${E(omitted)}</span></div>
+<div class="intro">Athletes tested are primarily starters and backups, not scout team players. Each athlete is compared only to their own rolling baseline (up to 6 most recent prior tests, minimum 3 required). Jump height, relative peak power, and RSI-mod are flagged on % change and z-score vs. that baseline; asymmetry is flagged at a flat |10%| threshold with the weaker side named. This report is a monitoring and decision-support tool, not a diagnostic one.</div>
 <table><thead><tr><th>Athlete</th><th>Flagged Result(s)</th><th style="text-align:center">% Change</th><th style="text-align:center">Flag</th><th style="width:34%">Notes</th></tr></thead><tbody>${body}</tbody></table>
 ${unableHtml}
-<div class="foot">Athletes tested are primarily starters and backups, not scout team players. Each athlete is compared to their own rolling baseline (up to 6 prior tests, minimum 3). This report is a monitoring and decision-support tool, not a diagnosis.</div>
 </body></html>`;
 
   const fr=document.createElement('iframe');
