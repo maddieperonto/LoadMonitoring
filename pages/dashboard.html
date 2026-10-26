@@ -4692,19 +4692,19 @@ window.renderVALDWeekly=async function(){
     if(action.startsWith('Monitor'))return'#4A5160';
     return'#7B8191'; // Building / No action
   };
-  const flagCellHtml=(level,elevated)=>{
+  const flagCellHtml=(level,elevated,compact)=>{
     const t=WKR_TONE[level];
-    return`<td style="background:${t.bg};text-align:center;padding:10px 12px">`
+    return`<td style="background:${t.bg};text-align:center;padding:${compact?'3px 12px':'10px 12px'}">`
       +`<div style="font-family:var(--font-m);font-size:12px;font-weight:800;letter-spacing:.5px;color:${t.c};text-transform:uppercase">${level==='BUILDING'?'BUILDING':level}</div>`
       +(elevated?`<div style="font-size:10px;font-style:italic;color:${t.c};margin-top:2px">elevated pattern</div>`:'')
       +'</td>';
   };
-  const noteCellHtml=athlete=>{
+  const noteCellHtml=(athlete,compact)=>{
     const n=noteByAthlete[athlete];
     const savedLine=n?.updated_at?`Saved ${wkrFmtSavedAt(n.updated_at)}${n.updated_by?' · '+wkrEsc(n.updated_by):''}`:'';
-    return`<td style="padding:6px 8px;vertical-align:top">`
+    return`<td style="padding:${compact?'2px 8px':'6px 8px'};vertical-align:top">`
       +`<textarea class="wkr-note-input" data-athlete="${wkrEsc(athlete)}" placeholder="Add a note…" `
-      +`style="width:100%;min-width:200px;min-height:42px;resize:vertical;font-family:var(--font-b);font-size:12px;`
+      +`style="width:100%;min-width:200px;min-height:${compact?'26px':'42px'};${compact?'height:26px;':''}resize:vertical;font-family:var(--font-b);font-size:12px;`
       +`padding:6px 8px;border:1px solid var(--border2);border-radius:6px;background:var(--surface);color:var(--text)">`
       +`${wkrEsc(n?.note||'')}</textarea>`
       +`<div class="wkr-note-status" style="font-size:9px;color:var(--text3);font-family:var(--font-m);margin-top:2px;min-height:11px">${savedLine}</div>`
@@ -4718,6 +4718,15 @@ window.renderVALDWeekly=async function(){
         <td colspan="2" style="color:var(--text3);font-size:12px">Insufficient baseline history — needs 3+ prior tests</td>
         ${flagCellHtml('BUILDING',false)}
         ${noteCellHtml(r.athlete)}
+      </tr>`;
+    }
+    // Green = nothing flagged: one slim line (name · "No flags" · GREEN · note) instead of a full row.
+    if(r.overall==='GREEN'){
+      return`<tr>
+        <td style="font-weight:600;padding-top:3px;padding-bottom:3px;font-size:12px">${r.athlete}</td>
+        <td colspan="2" style="color:var(--text3);font-size:11px;padding-top:3px;padding-bottom:3px">No flags</td>
+        ${flagCellHtml('GREEN',false,true)}
+        ${noteCellHtml(r.athlete,true)}
       </tr>`;
     }
     const metricColor=lvl=>lvl==='RED'?WKR_TONE.RED.c:lvl==='YELLOW'?WKR_TONE.YELLOW.c:'inherit';
@@ -4801,7 +4810,13 @@ window.exportVALDWeeklyPDF=function(){
     const pcts=r.flags.length?r.flags.map(f=>`<div class="mono" style="color:${mc(f[2])};font-weight:700;text-align:center">${E(f[1])}</div>`).join(''):'<div style="text-align:center">—</div>';
     return`<tr><td class="ath">${E(r.athlete)}</td><td>${flags}</td><td>${pcts}</td>${flagCell}${noteCell}</tr>`;
   };
-  const body=shown.length?shown.map(rowHtml).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:#94A3B8">No Red or Yellow flags this week.</td></tr>';
+  // Green athletes (nothing flagged) are folded into ONE compact block of name chips so they
+  // still appear on the report without a full row each; a staff note, if any, rides along.
+  const greenList=shown.filter(r=>lvl(r)==='GREEN');
+  const greenBlock=greenList.length
+    ?`<tr class="grn"><td colspan="5"><div class="grn-h">Green — no flags <span>(${greenList.length})</span></div><div class="grn-names">${greenList.map(r=>{const n=liveNote(r.athlete);return`<span class="gchip"><b>${E(r.athlete)}</b>${n?` <i>— ${E(n)}</i>`:''}</span>`;}).join('')}</div></td></tr>`
+    :'';
+  const body=shown.length?shown.filter(r=>lvl(r)==='RED'||lvl(r)==='YELLOW').map(rowHtml).join('')+greenBlock+shown.filter(r=>lvl(r)==='BUILDING').map(rowHtml).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:#94A3B8">No Red or Yellow flags this week.</td></tr>';
   const omitted=ryOnly?`Red/Yellow only — ${cnt('GREEN')} Green and ${cnt('BUILDING')} Building athlete(s) not shown.`:'All athletes shown.';
   const stamp=new Date().toLocaleString('en-US',{month:'numeric',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
   // Unable to Test names — split on newlines/commas/semicolons so they print as tidy chips.
@@ -4829,6 +4844,12 @@ tr{break-inside:avoid;page-break-inside:avoid}
 .ath{font-weight:700;white-space:nowrap}
 .mono{font-family:'DM Mono',monospace}
 .note{border:1px solid #CBD5E1;border-radius:5px;background:#F8F9FB;padding:5px 7px;font-size:10.5px;line-height:1.35;white-space:pre-wrap}
+.grn td{background:#F3FAF6;border-bottom:1px solid #DDE3EE;padding:6px 10px}
+.grn-h{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:#2F8F5B;font-weight:700;margin-bottom:4px}
+.grn-h span{color:#475569;font-weight:400}
+.grn-names{display:flex;flex-wrap:wrap;gap:4px 6px}
+.gchip{border:1px solid #BFE0CC;background:#fff;border-radius:9px;padding:1px 8px;font-size:10px}
+.gchip i{color:#475569;font-style:normal}
 .unable{margin-top:12px;border:1px solid #CBD5E1;border-radius:6px;padding:8px 10px;break-inside:avoid;page-break-inside:avoid}
 .unable-h{font-family:'Barlow Condensed',Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#003087;margin-bottom:5px}
 .unable-h span{font-family:'DM Mono',monospace;font-size:10px;color:#475569;font-weight:400}
