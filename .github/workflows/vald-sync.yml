@@ -1,16 +1,21 @@
 name: VALD Nightly Sync
 
-# Two schedules, both in UTC (GitHub Actions cron has no timezone support):
-#   - '0 6 * * *'  — nightly catch-all, every day, ~1-2am Eastern.
-#   - '0 19 * * 1' — Monday-only, 19:00 UTC (3pm EDT / 2pm EST), after CMJ testing wraps.
+# Schedules, all in UTC (GitHub Actions cron has no timezone support). GitHub delays or
+# silently drops scheduled runs that sit exactly on the hour (heaviest load), so the
+# minutes are deliberately off-peak, and Monday has a second backup run:
+#   - '43 5 * * *'  — nightly catch-all, every day, ~1-2am Eastern.
+#   - '17 19 * * 1' — Monday, 19:17 UTC (3:17pm EDT / 2:17pm EST), after CMJ testing wraps.
+#   - '47 21 * * 1' — Monday backup, 21:47 UTC, in case the 19:17 run is dropped. Re-running
+#     is harmless: rows upsert on VALD test id, so nothing doubles.
 # Can also be fired on demand via Actions tab → VALD Nightly Sync → Run workflow.
 # Optional "from_date" (YYYY-MM-DD) on a manual run re-pulls VALD history from that date
 # (e.g. 2025-01-01) instead of only "since the last synced test". Safe to repeat — rows
 # upsert on VALD test id. Leave it blank for a normal sync; scheduled runs never set it.
 on:
   schedule:
-    - cron: '0 6 * * *'
-    - cron: '0 19 * * 1'
+    - cron: '43 5 * * *'
+    - cron: '17 19 * * 1'
+    - cron: '47 21 * * 1'
   workflow_dispatch:
     inputs:
       from_date:
