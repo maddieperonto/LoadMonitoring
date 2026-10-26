@@ -4792,7 +4792,7 @@ window.exportVALDWeeklyPDF=function(){
     return ta?ta.value.trim():(_wkrNotesByAthlete[a]?.note||'');
   };
   const all=_wkrResults;
-  const shown=ryOnly?all.filter(r=>lvl(r)==='RED'||lvl(r)==='YELLOW'):all;
+  const shown=ryOnly?all.filter(r=>lvl(r)==='RED'||lvl(r)==='YELLOW'):all.filter(r=>lvl(r)!=='BUILDING'); // Building athletes never print
   const cnt=k=>all.filter(r=>lvl(r)===k).length;
   const weekLabel=sel.options[sel.selectedIndex]?.textContent||sel.value;
   const E=wkrEsc;
@@ -4816,8 +4816,8 @@ window.exportVALDWeeklyPDF=function(){
   const greenBlock=greenList.length
     ?`<tr class="grn"><td colspan="5"><div class="grn-h">Green — no flags <span>(${greenList.length})</span></div><div class="grn-names">${greenList.map(r=>{const n=liveNote(r.athlete);return`<span class="gchip"><b>${E(r.athlete)}</b>${n?` <i>— ${E(n)}</i>`:''}</span>`;}).join('')}</div></td></tr>`
     :'';
-  const body=shown.length?shown.filter(r=>lvl(r)==='RED'||lvl(r)==='YELLOW').map(rowHtml).join('')+greenBlock+shown.filter(r=>lvl(r)==='BUILDING').map(rowHtml).join(''):'<tr><td colspan="5" style="text-align:center;padding:24px;color:#94A3B8">No Red or Yellow flags this week.</td></tr>';
-  const omitted=ryOnly?`Red/Yellow only — ${cnt('GREEN')} Green and ${cnt('BUILDING')} Building athlete(s) not shown.`:'All athletes shown.';
+  const body=shown.length?shown.filter(r=>lvl(r)==='RED'||lvl(r)==='YELLOW').map(rowHtml).join('')+greenBlock:'<tr><td colspan="5" style="text-align:center;padding:24px;color:#94A3B8">No Red or Yellow flags this week.</td></tr>';
+  const omitted=ryOnly?`Red/Yellow only — ${cnt('GREEN')} Green and ${cnt('BUILDING')} Building athlete(s) not shown.`:`${cnt('BUILDING')} Building athlete(s) (not enough baseline history yet) not shown.`;
   const stamp=new Date().toLocaleString('en-US',{month:'numeric',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
   // Unable to Test names — split on newlines/commas/semicolons so they print as tidy chips.
   const unableNames=wkrParseUnable((document.getElementById('vald-weekly-unable-input')||{}).value);
