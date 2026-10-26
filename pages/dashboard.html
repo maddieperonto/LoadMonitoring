@@ -671,9 +671,11 @@ td.ok{color:#15803D;font-weight:600}td.warn{color:#92400E;font-weight:600}td.dan
     <div class="panel">
       <div class="panel-title"><i class="ti ti-flag"></i>CMJ Weekly Flag Report</div>
       <div style="font-size:11px;color:var(--text3);font-family:var(--font-m);margin-bottom:14px;max-width:900px;line-height:1.5">
-        Athletes tested are primarily starters and backups in skills and mid positions. Each athlete is compared only to their own rolling baseline
-        (up to 6 most recent prior tests, minimum 3 required). Jump height, relative peak power, and RSI-mod are flagged on % change and z-score vs. that baseline; asymmetry
-        is flagged at a flat |10%| threshold with the weaker side named. This report is a monitoring and
+        Athletes tested are primarily starters and backups in skills and mid positions. Each athlete is compared only to their own
+        rolling baseline (up to 6 most recent prior tests, minimum 3 required). Jump height, relative peak power, and RSI-mod are flagged
+        on % change and z-score vs. that baseline. Asymmetry (eccentric peak force, left vs. right) is flagged when it jumps clearly above
+        that athlete's own usual level (at least 5 points higher and well outside their normal week-to-week variation) or reaches 25% or more;
+        the weaker side is named. Athletes who are always asymmetric are not re-flagged every week. This report is a monitoring and
         decision-support tool, not a diagnostic one.
       </div>
       <div class="sel-row" style="justify-content:space-between">
@@ -4401,8 +4403,9 @@ window.renderVALDFlags=function(){
 
 // ── WEEKLY REPORT ──────────────────────────────────────────────────────────
 // Individual-baseline CMJ flagging (Jump Height, Relative Peak Power, RSI-mod:
-// %Δ + z-score vs. each athlete's own rolling baseline; Asymmetry: flat |10%|
-// threshold with weaker side named). Ported from the offline analyze.py used
+// %Δ + z-score vs. each athlete's own rolling baseline; Asymmetry: rise above the
+// athlete's own usual |asymmetry| (see WKR_ASYM_* below) or a high absolute backstop,
+// with weaker side named). Ported from the offline analyze.py used
 // for the weekly docx/PDF reports — see that script for full derivation notes
 // on the thresholds and the extreme/persistence Red-confirmation rule. Keep
 // the two in sync by hand if thresholds ever change.
@@ -4414,7 +4417,16 @@ const WKR_SD_FLOOR_PCT={jump_height_cm:0.03,relative_peak_power_w_bm:0.03,rsi_mo
 const WKR_PCT_BANDS={jump_height_cm:[-5,-8],relative_peak_power_w_bm:[-6,-10],rsi_modified:[-10,-15]};
 const WKR_Z_BANDS=[1.0,2.0];       // green<1.0 · yellow 1.0–2.0 · red-magnitude ≥2.0
 const WKR_Z_EXTREME=2.5;           // |z| ≥ this confirms Red on a single isolated session
-const WKR_ASYM_PCT=10.0;           // flat asymmetry flag threshold
+// Asymmetry flag = change from the athlete's OWN usual |asymmetry|, not a flat cutoff
+// (a flat 10% flagged ~31% of all test days, mostly athletes who are habitually
+// asymmetric). Tuned on the full cmj_tests history (2,036 scored test days): setting
+// "2.0 SD and +5 pts" with a 25% backstop flags ~9% of test days.
+// Flag when |today| is >= WKR_ASYM_Z baseline SDs AND >= WKR_ASYM_DELTA points above
+// the baseline mean of |asymmetry|, or when |today| >= WKR_ASYM_BACKSTOP regardless.
+const WKR_ASYM_Z=2.0;
+const WKR_ASYM_DELTA=5.0;          // percentage points above the athlete's usual
+const WKR_ASYM_BACKSTOP=25.0;      // always flag at/above this magnitude
+const WKR_ASYM_SD_FLOOR=2.0;       // baseline SD floor (points), so a very steady athlete doesn't over-flag
 const WKR_MIN_BASELINE_N=3;        // fewer prior tests than this → "Building", not a false Green
 const WKR_MAX_BASELINE=6;          // rolling baseline window (most recent N prior tests)
 const WKR_SEV={GREEN:0,YELLOW:1,RED_TENT:1.5,RED:2,BUILDING:-1};
@@ -4439,9 +4451,17 @@ function wkrClassifyMetric(metric,x,baselineVals){
   if(pct<=yFloor||az>=WKR_Z_BANDS[1])return{level:'RED_TENT',pct,z};
   return{level:'YELLOW',pct,z};
 }
-function wkrClassifyAsym(x){
+function wkrClassifyAsym(x,baselineVals){
   const mag=Math.abs(x);
-  return mag<WKR_ASYM_PCT?{level:'GREEN',mag}:{level:'YELLOW',mag};
+  const base=(baselineVals||[]).map(v=>Math.abs(v)).filter(v=>isFinite(v));
+  let mu=null,reason=null;
+  if(base.length){
+    mu=base.reduce((a,b)=>a+b,0)/base.length;
+    const sd=Math.sqrt(base.reduce((a,b)=>a+(b-mu)**2,0)/base.length); // population SD (matches the tuning query)
+    if((mag-mu)>=WKR_ASYM_DELTA&&(mag-mu)/Math.max(sd,WKR_ASYM_SD_FLOOR)>=WKR_ASYM_Z)reason='change';
+  }
+  if(!reason&&mag>=WKR_ASYM_BACKSTOP)reason='backstop';
+  return reason?{level:'YELLOW',mag,mu,reason}:{level:'GREEN',mag,mu,reason:null};
 }
 function wkrConfirm(level,extreme,priorLevel){
   // A tentative Red only confirms as Red if extreme in this single session or the
@@ -4545,7 +4565,7 @@ function wkrComputeForDate(targetDate){
       metricResults[metric]={level:finalLevel,pct:c.pct,z:c.z,reason};
     });
 
-    const asym=wkrClassifyAsym(today.asymmetry_pct);
+    const asym=wkrClassifyAsym(today.asymmetry_pct,baselineRows.map(r=>r.asymmetry_pct));
     // Prefer deriving the side straight from raw L/R force (unambiguous — whichever is
     // lower is weaker). Only fall back to the sign of asymmetry_pct when L/R wasn't
     // captured for this observation; that sign convention was verified mechanically
@@ -4566,7 +4586,7 @@ function wkrComputeForDate(targetDate){
       const r=metricResults[metric];
       if(r.level!=='GREEN')flagged.push([WKR_METRIC_LABEL[metric],`${r.pct>=0?'+':''}${r.pct.toFixed(1)}%`,r.level]);
     });
-    if(asym.level!=='GREEN')flagged.push(['Asymmetry (Ecc. Peak Force)',`${asym.mag.toFixed(1)}% — ${asymSide}`,asym.level]);
+    if(asym.level!=='GREEN')flagged.push(['Asymmetry (Ecc. Peak Force)',`${asym.mag.toFixed(1)}% — ${asymSide}${asym.reason==='change'?` (usual ${asym.mu.toFixed(1)}%)`:` (${WKR_ASYM_BACKSTOP}%+)`}`,asym.level]);
 
     results.push({
       athlete,status:'OK',nBaseline:baselineRows.length,flags:flagged,overall,elevated,
@@ -4821,7 +4841,7 @@ tr{break-inside:avoid;page-break-inside:avoid}
 <div class="hdr"><div><h1>CMJ Weekly Flag Report</h1><div class="sub">${E(weekLabel)}</div></div>
 <div class="meta">Generated ${E(stamp)}${me&&me.full_name?' · '+E(me.full_name):''}<br>Florida Football S&amp;C</div></div>
 <div class="pills"><span style="color:#B3123A"><b>${cnt('RED')}</b> Red</span><span style="color:#8F6209"><b>${cnt('YELLOW')}</b> Yellow</span><span style="color:#2F8F5B"><b>${cnt('GREEN')}</b> Green</span><span style="color:#5B6472"><b>${cnt('BUILDING')}</b> Building</span><span class="scope">${E(omitted)}</span></div>
-<div class="intro">Athletes tested are primarily starters and backups in skills and mid positions. Each athlete is compared only to their own rolling baseline (up to 6 most recent prior tests, minimum 3 required). Jump height, relative peak power, and RSI-mod are flagged on % change and z-score vs. that baseline; asymmetry is flagged at a flat |10%| threshold with the weaker side named. This report is a monitoring and decision-support tool, not a diagnostic one.</div>
+<div class="intro">Athletes tested are primarily starters and backups in skills and mid positions. Each athlete is compared only to their own rolling baseline (up to 6 most recent prior tests, minimum 3 required). Jump height, relative peak power, and RSI-mod are flagged on % change and z-score vs. that baseline. Asymmetry (eccentric peak force, left vs. right) is flagged when it jumps clearly above that athlete's own usual level (at least 5 points higher and well outside their normal week-to-week variation) or reaches 25% or more; the weaker side is named. Athletes who are always asymmetric are not re-flagged every week. This report is a monitoring and decision-support tool, not a diagnostic one.</div>
 <table><thead><tr><th>Athlete</th><th>Flagged Result(s)</th><th style="text-align:center">% Change</th><th style="text-align:center">Flag</th><th style="width:34%">Notes</th></tr></thead><tbody>${body}</tbody></table>
 ${unableHtml}
 </body></html>`;
