@@ -1360,14 +1360,44 @@ const EXCLUDED_ACTIVITY_IDS=new Set([
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
-let raw=[], _page=0, _done=false;
-while(!_done){
-  const {data:chunk,error:eR2}=await SB.from('catapult_sessions')
-    .select('athlete_name,session_date,activity_name,catapult_activity_id,start_time,total_player_load,total_distance,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts,participation_tag,total_duration,max_accel,max_decel,synced_at')
-    .order('session_date',{ascending:true})
-    .range(_page*1000,(_page+1)*1000-1);
-  if(eR2||!chunk||chunk.length===0)_done=true;
-  else{raw=[...raw,...chunk];if(chunk.length<1000)_done=true;_page++;}
+// Speed: the athletes lookup starts right away (it used to wait until every session row had
+// downloaded), and the session history is fetched as concurrent 1,000-row pages instead of
+// one page at a time. Sorting adds athlete/activity tie-breakers so rows that share a
+// session_date can't be skipped or repeated at a page boundary.
+const _athsPromise=SB.from('athletes').select('name,position,weight_lbs,max_velocity_mph');
+const SESS_COLS='athlete_name,session_date,activity_name,catapult_activity_id,start_time,total_player_load,total_distance,velocity_band3_distance,velocity_band4_distance,velocity_band5_distance,max_velocity,accel_total_efforts,decel_total_efforts,participation_tag,total_duration,max_accel,max_decel,synced_at';
+const SESS_PAGE=1000;
+const fetchSessPage=async pg=>{
+  for(let attempt=0;attempt<3;attempt++){
+    const{data,error}=await SB.from('catapult_sessions').select(SESS_COLS)
+      .order('session_date',{ascending:true}).order('catapult_activity_id',{ascending:true}).order('athlete_name',{ascending:true})
+      .range(pg*SESS_PAGE,(pg+1)*SESS_PAGE-1);
+    if(!error)return data||[];
+    console.warn('catapult_sessions page '+pg+' failed (attempt '+(attempt+1)+'):',error.message);
+  }
+  return null;
+};
+let raw=[];
+{
+  const{count}=await SB.from('catapult_sessions').select('catapult_activity_id',{count:'exact',head:true});
+  if(count&&count>0){
+    const nPages=Math.ceil(count/SESS_PAGE),pages=new Array(nPages);
+    let next=0;
+    await Promise.all(Array.from({length:Math.min(6,nPages)},async()=>{
+      while(next<nPages){const pg=next++;pages[pg]=await fetchSessPage(pg);}
+    }));
+    const failed=pages.filter(p=>p===null).length;
+    if(failed)console.error('catapult_sessions: '+failed+' page(s) failed to load — some history is missing');
+    pages.forEach(pg=>{if(pg)for(const r of pg)raw.push(r);});
+  }else{
+    // Count unavailable — fall back to the original one-page-at-a-time loop.
+    let _page=0,_done=false;
+    while(!_done){
+      const chunk=await fetchSessPage(_page);
+      if(!chunk||chunk.length===0)_done=true;
+      else{for(const r of chunk)raw.push(r);if(chunk.length<SESS_PAGE)_done=true;_page++;}
+    }
+  }
 }
 raw=raw.filter(r=>!EXCLUDED_ACTIVITY_IDS.has(r.catapult_activity_id));
 
@@ -1416,7 +1446,7 @@ const AUTO_EXCLUDED_IDS=new Set(), STALE_PAIRS=new Set();
 })();
 const isExcludedActivity=id=>EXCLUDED_ACTIVITY_IDS.has(id)||AUTO_EXCLUDED_IDS.has(id);
 const eR=null;
-const {data:aths}=await SB.from('athletes').select('name,position,weight_lbs,max_velocity_mph');
+const {data:aths}=await _athsPromise;
 if(!raw.length){document.getElementById('content-area').innerHTML=`<div class="uf-error" style="margin:2rem">⚠ No session data returned from Supabase.</div>`;throw 0;}
 
 // ── NAME NORMALIZATION ─────────────────────────────────────────────
