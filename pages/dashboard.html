@@ -1328,6 +1328,9 @@ function displayWk(wk){
 // is the bad copy; c71157be-c876-4760-b1c3-cdc9f228203b (21.68mph) is the correct one.
 // From here on, pairs like this are also caught automatically (see AUTO DEDUPE below) —
 // this list stays as the explicit record of what has been confirmed by hand.
+// 10/27/26: Georgia Tuesday synced twice, 19 min apart (so the 30-min auto-dedupe gap missed it):
+//   640feb3f-07af-4822-816e-32c641efd6e8  first copy, kept  (4,511 yd avg, 22.8 mph top)
+//   88811ba8-6016-407a-a162-342626ac37f6  stale copy, excluded (4,317 yd avg, impossible 29.1 mph top)
 // 10/12/26: South Carolina week Thursday (10/08) and Friday (10/09) — each day was a
 // single athlete doing rehab work (1 row, ~110-116 player load), not a team practice,
 // so they don't belong in any breakdown or load number. They were tagged 'Full' rather
@@ -1353,6 +1356,7 @@ const EXCLUDED_ACTIVITY_IDS=new Set([
   '93c50cc3-6d27-47d4-96f4-0eab74f1af52',
   '096a0aa1-50e2-4c82-abf8-9623d7b4ed75',
   '344fe2c9-245d-41a9-aa46-58e5642f0c4f',
+  '88811ba8-6016-407a-a162-342626ac37f6',
 ]);
 
 // ── FETCH ─────────────────────────────────────────────────────────
@@ -1374,15 +1378,15 @@ raw=raw.filter(r=>!EXCLUDED_ACTIVITY_IDS.has(r.catapult_activity_id));
 // and anywhere rows are grouped by date + activity name the two copies add together,
 // doubling every metric. Rule: for one athlete + date + activity name that exists under
 // more than one activity ID, keep only the FIRST-synced copy and drop the later ones —
-// but only if the later one landed at least 30 minutes afterwards, so two genuinely
-// separate sessions logged together aren't mistaken for a re-sync. Every drop is logged
+// but only if the later one landed at least 5 minutes afterwards, so two genuinely
+// separate sessions logged in the same sync batch aren't mistaken for a re-sync. Every drop is logged
 // to the console. An ID dropped for every athlete in it is added to AUTO_EXCLUDED_IDS so
 // the athlete-level pages (which load their own rows) can skip it too; STALE_PAIRS holds
 // each dropped athlete|activity-id for the period-level data. Confirmed cases are still
 // listed by hand in EXCLUDED_ACTIVITY_IDS above.
 const AUTO_EXCLUDED_IDS=new Set(), STALE_PAIRS=new Set();
 (function(){
-  const MIN_GAP_MS=30*60*1000;
+  const MIN_GAP_MS=5*60*1000; // was 30 min; Georgia Tuesday's re-sync landed 19 min later and slipped through
   const t=r=>{const v=r.synced_at?Date.parse(r.synced_at):NaN;return isNaN(v)?Infinity:v;};
   const groups={};
   raw.forEach(r=>{
