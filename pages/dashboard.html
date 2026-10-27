@@ -1960,7 +1960,13 @@ document.querySelectorAll('.nav-item[data-page]').forEach(el=>{
     document.getElementById('page-title').textContent=PAGE_TITLES[pg]||pg;
     document.getElementById('content-area').scrollTop=0;
     const map={gps:()=>setGPSView('team'),loadmonitor:renderLMAll,leaderboards:()=>{if(!cmjData.length)loadVALD().then(()=>renderLeaderboards());else renderLeaderboards();},injury:renderInjury,compare:renderCompare,vald:loadVALD,roster:()=>{if(!cmjData.length)loadVALD().then(()=>filterRoster());else filterRoster();},lifting:renderLifting,sessioncompare:initSessionCompare,periodbreakdown:initPeriodBreakdown,dailybreakdown:initDailyBreakdown,gamebreakdown:initGameBreakdown,weeklybreakdown:initWeeklyBreakdown};
-    if(map[pg])setTimeout(map[pg],60);
+    // Run the page's loader after the page switch paints. Any error (sync or async) is caught
+    // and logged so one failing loader can't leave the app half-rendered or throw out of the
+    // click handler.
+    if(map[pg])setTimeout(()=>{
+      try{const r=map[pg]();if(r&&typeof r.catch==='function')r.catch(e=>console.error('[nav] '+pg+' failed:',e));}
+      catch(e){console.error('[nav] '+pg+' failed:',e);}
+    },60);
   });
 });
 function populateGPSSel(){const s=document.getElementById('gps-sel');if(s.options.length>1)return;PLAYERS.forEach(p=>{const o=document.createElement('option');o.value=p.name;o.textContent=p.name;s.appendChild(o);});}
@@ -4179,7 +4185,18 @@ window.setVALDView=function(v){
   if(v==='weekly')renderVALDWeekly();
 };
 
+// Clicking "VALD Testing" used to re-download the entire VALD history (10+ sequential
+// requests since the 2025 backfill) on EVERY click, and rapid repeat clicks started
+// overlapping downloads. Now: share one in-flight load, and reuse data loaded in the
+// last 5 minutes (a hard refresh always pulls fresh).
+let _valdLoadedAt=0,_valdInflight=null;
 async function loadVALD(){
+  if(_valdInflight)return _valdInflight;
+  if(cmjData.length&&Date.now()-_valdLoadedAt<5*60*1000){setVALDView('individual');return;}
+  _valdInflight=_loadVALDFetch().finally(()=>{_valdInflight=null;});
+  return _valdInflight;
+}
+async function _loadVALDFetch(){
   // Pull EVERY VALD test since the start of 2025, not just the newest 1,000 rows.
   // (cmj_tests is one row per TRIAL, so a flat .limit(1000) only reached back a few
   // months.) Paged 1,000 at a time — Supabase caps a single response at 1,000 rows.
@@ -4209,6 +4226,7 @@ async function loadVALD(){
   sel.innerHTML='';
   allNames.forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
 
+  _valdLoadedAt=Date.now();
   setVALDView('individual');
 }
 
